@@ -39,7 +39,7 @@ export default function Structure() {
         <div className="card p-4">
           <ul className="mb-4 space-y-1">
             {departments.data?.map((d) => (
-              <li key={d.id} className={`flex items-center rounded-lg px-3 py-2 text-sm ${d.id === current ? 'bg-brand text-white' : 'hover:bg-brand-50'}`}>
+              <li key={d.id} className={`flex items-center rounded-lg px-3 py-2 text-sm ${d.id === current ? 'bg-brand-600 text-white' : 'hover:bg-brand-50'}`}>
                 <button className="flex-1 text-left" onClick={() => setSelected(d.id)}>{d.name}</button>
                 <button aria-label="Ўчириш" className="opacity-60 hover:opacity-100" onClick={() => confirm(`«${d.name}» ўчирилсинми?`) && delDept.mutate(d.id)}><Trash2 size={15} /></button>
               </li>

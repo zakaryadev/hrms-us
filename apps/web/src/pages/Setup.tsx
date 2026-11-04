@@ -44,7 +44,7 @@ export default function Setup() {
         <ol className="mb-6 flex items-center justify-center gap-2 text-xs">
           {STEPS.map((s, i) => (
             <li key={s} className="flex items-center gap-2">
-              <span className={`flex h-6 w-6 items-center justify-center rounded-full font-semibold ${i < step ? 'bg-brand-600 text-white' : i === step ? 'bg-brand text-white' : 'bg-surface-line text-ink-500'}`}>{i < step ? <Check size={14} /> : i + 1}</span>
+              <span className={`flex h-6 w-6 items-center justify-center rounded-full font-semibold ${i < step ? 'bg-brand-600 text-white' : i === step ? 'bg-brand-600 text-white' : 'bg-surface-line text-ink-500'}`}>{i < step ? <Check size={14} /> : i + 1}</span>
               <span className={i === step ? 'font-medium text-ink' : 'text-ink-500'}>{s}</span>
               {i < STEPS.length - 1 && <span className="h-px w-6 bg-surface-line" />}
             </li>
