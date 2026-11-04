@@ -54,7 +54,7 @@ export class DocumentsService {
   private static fio = (e: { lastName: string; firstName: string; middleName: string | null }) =>
     [e.lastName, e.firstName, e.middleName].filter(Boolean).join(' ');
 
-  async generate(type: DocType, employeeId: string, params: Params = {}) {
+  async generate(type: DocType, employeeId: string, params: Params = {}, persist = true) {
     const e = await this.employee(employeeId);
     const s = await this.settings.getAll();
     const cur = DocumentsService.names(e.department);
@@ -63,6 +63,7 @@ export class DocumentsService {
       tashkilot_nomi: s.tashkilot_nomi, rahbar_fish: s.bosh_direktor_fish, bosh_direktor_fish: s.bosh_direktor_fish,
       shahar: s.shahar, vakil_fish: s.vakil_fish, ishonchnoma_matni: s.ishonchnoma_matni,
       ish_beruvchi_rekvizitlari: s.ish_beruvchi_rekvizitlari,
+      imzolovchi: params.signer || 'Bosh direktor',
       xodim_fish: fish, amaldagi_filial: cur.filial, amaldagi_bolim: cur.bolim, amaldagi_lavozim: e.position.title,
     };
     let data: Record<string, unknown>;
@@ -142,7 +143,11 @@ export class DocumentsService {
         const basic = Number(params.basicDays ?? e.annualLeaveBasicDays);
         const extra = Number(params.extraDays ?? e.annualLeaveExtraDays);
         const leave = calcLeave(params.startDate, basic + extra);
-        const wy = workYear(e.hireDate.toISOString().slice(0, 10), params.startDate);
+        const auto = workYear(e.hireDate.toISOString().slice(0, 10), params.startDate);
+        const wy = {
+          start: ISO.test(String(params.workYearStart ?? '')) ? params.workYearStart : auto.start,
+          end: ISO.test(String(params.workYearEnd ?? '')) ? params.workYearEnd : auto.end,
+        };
         number = String(params.orderNumber || `T-${(await this.prisma.order.count()) + 1}`);
         order = { type: 'tatil_berish', number, date: params.orderDate };
         data = {
@@ -153,6 +158,7 @@ export class DocumentsService {
           boshlanish_yili: fmtYear(params.startDate), boshlanish_sanasi: fmtDayMonth(params.startDate),
           chiqish_yili: fmtYear(leave.returnDate), ishga_chiqish_sanasi: fmtDayMonth(leave.returnDate),
           moddiy_yordam: !!params.materialAid,
+          asos_matni: String(params.basis || `${fish}ning arizasi va O'zR Mehnat kodeksining 216, 217, 221-moddalari`).replace(/[.\s]+$/, ''),
         };
         params = { ...params, calculated: leave };
         break;
@@ -162,6 +168,9 @@ export class DocumentsService {
     }
 
     const buffer = this.docx.render(type, data);
+    if (!persist) {
+      return { buffer, fileName: `${type}-${e.tabNumber}${number ? '-' + number.replace(/[^\w-]/g, '_') : ''}.docx` };
+    }
     mkdirSync(GENERATED_DIR, { recursive: true });
     const fileName = `${randomUUID()}.docx`;
     writeFileSync(join(GENERATED_DIR, fileName), buffer);
@@ -181,6 +190,28 @@ export class DocumentsService {
       return created;
     });
     return { id: doc.id, type, number, downloadUrl: `/api/documents/generated/${doc.id}/download` };
+  }
+
+  async listAll(type?: string) {
+    const rows = await this.prisma.generatedDocument.findMany({
+      where: type ? { type } : undefined, orderBy: { createdAt: 'desc' }, take: 300,
+      include: { employee: { select: { id: true, tabNumber: true, firstName: true, lastName: true, middleName: true } } },
+    });
+    return rows.map(({ payload, filePath, ...r }) => r);
+  }
+
+  async listOrders(type?: string) {
+    const rows = await this.prisma.order.findMany({
+      where: type ? { orderType: type as any } : undefined, orderBy: [{ orderDate: 'desc' }, { createdAt: 'desc' }], take: 300,
+      include: { employee: { select: { id: true, tabNumber: true, firstName: true, lastName: true, middleName: true } } },
+    });
+    return rows.map(({ docxFilePath, ...r }) => ({ ...r, hasFile: !!docxFilePath }));
+  }
+
+  async orderFile(id: string) {
+    const o = await this.prisma.order.findUnique({ where: { id }, include: { employee: true } });
+    if (!o?.docxFilePath) throw new NotFoundException();
+    return { path: join(GENERATED_DIR, o.docxFilePath), name: `buyruq-${o.orderNumber.replace(/[^\w-]/g, '_')}-${o.employee.tabNumber}.docx` };
   }
 
   listForEmployee(employeeId: string) {

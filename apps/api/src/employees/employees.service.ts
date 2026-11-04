@@ -26,6 +26,8 @@ export class EmployeesService {
     const where: Prisma.EmployeeWhereInput = {
       ...(q.departmentId && { departmentId: q.departmentId }),
       ...(q.status && { status: q.status as any }),
+      ...(q.archived === 'true' && { status: 'ishdan_boshagan' as const }),
+      ...(q.archived === 'false' && { status: { not: 'ishdan_boshagan' as const } }),
       ...(q.q && {
         OR: [
           { firstName: { contains: q.q, mode: 'insensitive' } },
@@ -53,7 +55,7 @@ export class EmployeesService {
     return this.prisma.employee.findUniqueOrThrow({
       where: { id },
       include: {
-        department: true, position: true, education: true, workHistory: { orderBy: { startDate: 'asc' } },
+        department: { include: { parent: true } }, position: true, education: true, workHistory: { orderBy: { startDate: 'asc' } },
         relatives: true, documents: true,
       },
     });

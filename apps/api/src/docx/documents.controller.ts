@@ -1,4 +1,4 @@
-import { BadRequestException, Body, Controller, Get, NotFoundException, Param, Post, Query, Res } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Get, NotFoundException, Param, Post, Query, Res, StreamableFile } from '@nestjs/common';
 import { IsObject, IsOptional, IsUUID } from 'class-validator';
 import type { Response } from 'express';
 import { existsSync } from 'fs';
@@ -15,9 +15,30 @@ export class DocumentsGenController {
   constructor(private svc: DocumentsService) {}
 
   @Post('documents/generate/:type')
-  generate(@Param('type') type: string, @Body() dto: GenerateDto) {
+  async generate(@Param('type') type: string, @Body() dto: GenerateDto, @Res({ passthrough: true }) res: Response) {
     if (!DOC_TYPES.includes(type as DocType)) throw new NotFoundException(`Noma'lum hujjat turi: ${type}`);
-    return this.svc.generate(type as DocType, dto.employeeId, dto.params);
+    // save:false — hujjat bazaga yozilmaydi, faylning o'zi qaytariladi
+    const persist = dto.params?.save !== false;
+    const r = await this.svc.generate(type as DocType, dto.employeeId, dto.params, persist);
+    if ('buffer' in r && r.buffer && 'fileName' in r) {
+      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+      res.setHeader('Content-Disposition', `attachment; filename="${r.fileName}"`);
+      return new StreamableFile(r.buffer);
+    }
+    return r;
+  }
+
+  @Get('documents/generated')
+  all(@Query('type') type?: string) { return this.svc.listAll(type); }
+
+  @Get('orders')
+  orders(@Query('type') type?: string) { return this.svc.listOrders(type); }
+
+  @Get('orders/:id/download')
+  async orderDownload(@Param('id') id: string, @Res() res: Response) {
+    const f = await this.svc.orderFile(id);
+    if (!existsSync(f.path)) throw new NotFoundException('Fayl topilmadi');
+    return res.download(f.path, f.name);
   }
 
   @Get('employees/:id/generated')

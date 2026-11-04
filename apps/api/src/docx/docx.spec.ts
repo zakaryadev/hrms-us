@@ -40,11 +40,13 @@ describe('DocxService shablonlari', () => {
       ish_yili_boshi: '01.05.2026', ish_yili_oxiri: '30.04.2027', asosiy_kun: 21, qoshimcha_kun: 6, jami_kun: 27,
       boshlanish_yili: '2026', boshlanish_sanasi: '16-noyabr', chiqish_yili: '2026', ishga_chiqish_sanasi: '14-dekabr',
     };
-    const on = text(svc.render('buyruq-tatil', { ...data, moddiy_yordam: true }));
+    const on = text(svc.render('buyruq-tatil', { ...data, moddiy_yordam: true, asos_matni: 'Mehnat kodeksining 217-moddasi hamda xodimning arizasi', imzolovchi: "Bosh direktor o'rinbosari" }));
     const off = text(svc.render('buyruq-tatil', { ...data, moddiy_yordam: false }));
     expect(on).toContain('moddiy yordam');
     expect(off).not.toContain('moddiy yordam');
     expect(on).toContain('jami 27 kalendar kun');
+    expect(on).toContain('Asos: Mehnat kodeksining 217-moddasi hamda xodimning arizasi.');
+    expect(on).toContain("Bosh direktor o'rinbosari: _");
     expect(on).toContain('2026-yil 14-dekabr');
     expect(off).not.toMatch(/\{\{|\}\}/);
   });

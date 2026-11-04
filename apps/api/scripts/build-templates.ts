@@ -107,7 +107,7 @@ const templates: Record<string, Document> = {
     p('2. Ish haqi shtatlar jadvaliga asosan belgilansin.', { indent: true }),
     p('Asos: {{asos_matni}}.', { indent: true }),
     p('', { after: 240 }),
-    p('Bosh direktor: _________________ {{bosh_direktor_fish}}', { align: AlignmentType.LEFT }),
+    p('{{imzolovchi}}: _________________ {{bosh_direktor_fish}}', { align: AlignmentType.LEFT }),
   ]),
 
   'buyruq-tatil': doc([
@@ -119,9 +119,9 @@ const templates: Record<string, Document> = {
     p("2. Xodimning ta'tildan ishga chiqish sanasi {{chiqish_yili}}-yil {{ishga_chiqish_sanasi}} deb belgilansin.", { indent: true }),
     p('3. Buxgalteriya bo\'limi tegishli to\'lovlarni amalga oshirsin.', { indent: true }),
     p("{{#moddiy_yordam}}4. Xodimga ta'til uchun moddiy yordam sifatida bir oylik ish haqi miqdorida qo'shimcha to'lov to'lansin.{{/moddiy_yordam}}", { indent: true }),
-    p("Asos: {{xodim_fish}}ning arizasi va O'zR Mehnat kodeksining 216, 217, 221-moddalari.", { indent: true }),
+    p('Asos: {{asos_matni}}.', { indent: true }),
     p('', { after: 240 }),
-    p('Bosh direktor: _________________ {{bosh_direktor_fish}}', { align: AlignmentType.LEFT }),
+    p('{{imzolovchi}}: _________________ {{bosh_direktor_fish}}', { align: AlignmentType.LEFT }),
   ]),
 };
 

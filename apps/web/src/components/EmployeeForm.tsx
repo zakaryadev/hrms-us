@@ -66,7 +66,7 @@ export default function EmployeeForm({ employee, onClose }: { employee?: any; on
         {inp('probationMonths', 'Sinov muddati (oy)', 'number')}{inp('salary', "Oylik maosh (so'm)", 'number')}
         {inp('annualLeaveBasicDays', "Asosiy ta'til (kun)", 'number')}{inp('annualLeaveExtraDays', "Qo'shimcha ta'til (kun)", 'number')}
         <Field label="Holat"><select className="input" value={f.status} onChange={set('status')}><option value="ishlamoqda">Ishlamoqda</option><option value="tatilda">Ta'tilda</option><option value="ishdan_boshagan">Ishdan bo'shagan</option></select></Field>
-        {save.error && <p className="text-sm text-brand sm:col-span-3">{(save.error as Error).message}</p>}
+        {save.error && <p className="text-sm text-red-600 sm:col-span-3">{(save.error as Error).message}</p>}
         <div className="flex justify-end gap-2 sm:col-span-3">
           <button type="button" className="btn-secondary" onClick={onClose}>Bekor qilish</button>
           <button className="btn-primary" disabled={save.isPending}>Saqlash</button>

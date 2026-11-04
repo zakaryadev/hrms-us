@@ -68,6 +68,7 @@ export class ListEmployeesQuery {
   @IsOptional() @IsString() q?: string;
   @IsOptional() @IsUUID() departmentId?: string;
   @IsOptional() @IsString() status?: string;
+  @IsOptional() @IsString() archived?: string;
   @IsOptional() @Type(() => Number) @IsInt() page?: number;
   @IsOptional() @Type(() => Number) @IsInt() pageSize?: number;
 }

@@ -33,8 +33,8 @@ export default function Structure() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-semibold text-navy">Bo'limlar va lavozimlar</h1>
-      {err && <p className="card border-brand/30 p-3 text-sm text-brand">{err}</p>}
+      <h1 className="text-2xl font-semibold text-navy">Штат ва сон</h1>
+      {err && <p className="card border-red-300 p-3 text-sm text-red-600">{err}</p>}
       <div className="grid gap-4 lg:grid-cols-[320px_1fr]">
         <div className="card p-4">
           <ul className="mb-4 space-y-1">
@@ -61,7 +61,7 @@ export default function Structure() {
             <tbody className="divide-y">
               {positions.data?.map((p) => (
                 <tr key={p.id}><td className="td">{p.rankOrder}</td><td className="td font-medium">{p.title}</td><td className="td">{fmtMoney(p.baseSalary)}</td><td className="td">{p.staffCount}</td>
-                  <td className="td text-right"><button aria-label="O'chirish" className="text-slate-400 hover:text-brand" onClick={() => confirm(`"${p.title}" o'chirilsinmi?`) && delPos.mutate(p.id)}><Trash2 size={16} /></button></td></tr>
+                  <td className="td text-right"><button aria-label="O'chirish" className="text-slate-400 hover:text-red-600" onClick={() => confirm(`"${p.title}" o'chirilsinmi?`) && delPos.mutate(p.id)}><Trash2 size={16} /></button></td></tr>
               ))}
               {positions.data?.length === 0 && <tr><td colSpan={5} className="td text-slate-500">Bu bo'limda lavozim yo'q</td></tr>}
             </tbody>

@@ -4,7 +4,7 @@ import type { ReactNode } from 'react';
 export function Modal({ title, onClose, children, wide }: { title: string; onClose: () => void; children: ReactNode; wide?: boolean }) {
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-navy/50 p-4" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
-      <div className={`card my-8 w-full ${wide ? 'max-w-3xl' : 'max-w-lg'}`}>
+      <div className={`card my-8 w-full ${wide ? 'max-w-4xl' : 'max-w-lg'}`}>
         <div className="flex items-center justify-between border-b px-5 py-4">
           <h2 className="font-semibold">{title}</h2>
           <button onClick={onClose} aria-label="Yopish" className="text-slate-400 hover:text-slate-700"><X size={18} /></button>

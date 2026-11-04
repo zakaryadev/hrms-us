@@ -19,7 +19,7 @@ export default function Employees() {
   const departments = useQuery({ queryKey: ['departments'], queryFn: () => api<any[]>('/departments') });
   const list = useQuery({
     queryKey: ['employees', q, departmentId, page],
-    queryFn: () => api(`/employees?${new URLSearchParams({ ...(q && { q }), ...(departmentId && { departmentId }), page: String(page), pageSize: String(pageSize) })}`),
+    queryFn: () => api(`/employees?${new URLSearchParams({ archived: 'false', ...(q && { q }), ...(departmentId && { departmentId }), page: String(page), pageSize: String(pageSize) })}`),
   });
 
   const importExcel = useMutation({
@@ -35,7 +35,7 @@ export default function Employees() {
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-2xl font-semibold text-navy">Xodimlar</h1>
+        <h1 className="text-2xl font-semibold text-navy">Ходимлар</h1>
         <div className="flex gap-2">
           <input ref={fileRef} type="file" accept=".xlsx,.xls" hidden onChange={(e) => { const f = e.target.files?.[0]; if (f) importExcel.mutate(f); e.target.value = ''; }} />
           <button className="btn-secondary" onClick={() => fileRef.current?.click()} disabled={importExcel.isPending}><Upload size={16} /> Excel import</button>

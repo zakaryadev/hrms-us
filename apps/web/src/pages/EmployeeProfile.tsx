@@ -26,7 +26,7 @@ export default function EmployeeProfile() {
   const refresh = () => qc.invalidateQueries({ queryKey: ['employee', id] });
 
   if (isLoading) return <p className="text-slate-500">Yuklanmoqda…</p>;
-  if (error) return <p className="text-brand">{(error as Error).message}</p>;
+  if (error) return <p className="text-red-600">{(error as Error).message}</p>;
 
   return (
     <div className="space-y-5">
@@ -111,7 +111,7 @@ function WorkHistory({ e, onSaved }: { e: any; onSaved: () => void }) {
         <tbody className="divide-y">
           {e.workHistory.map((w: any) => (
             <tr key={w.id}><td className="td">{fmtDate(w.startDate)} — {w.endDate ? fmtDate(w.endDate) : 'hozirgacha'}</td><td className="td">{w.organizationName}</td><td className="td">{w.positionTitle}</td>
-              <td className="td text-right"><button aria-label="O'chirish" className="text-slate-400 hover:text-brand" onClick={() => save.mutate(e.workHistory.filter((x: any) => x.id !== w.id).map(clean))}><Trash2 size={16} /></button></td></tr>
+              <td className="td text-right"><button aria-label="O'chirish" className="text-slate-400 hover:text-red-600" onClick={() => save.mutate(e.workHistory.filter((x: any) => x.id !== w.id).map(clean))}><Trash2 size={16} /></button></td></tr>
           ))}
           {e.workHistory.length === 0 && <tr><td colSpan={4} className="td text-slate-500">Ma'lumot yo'q</td></tr>}
         </tbody>
@@ -139,7 +139,7 @@ function Relatives({ e, onSaved }: { e: any; onSaved: () => void }) {
         <tbody className="divide-y">
           {e.relatives.map((r: any) => (
             <tr key={r.id}><td className="td">{r.relativeType}</td><td className="td">{r.fullName}</td><td className="td">{r.birthYearPlace}</td><td className="td">{r.workPlacePosition}</td><td className="td">{r.livingAddress}</td>
-              <td className="td text-right"><button aria-label="O'chirish" className="text-slate-400 hover:text-brand" onClick={() => save.mutate(e.relatives.filter((x: any) => x.id !== r.id).map(clean))}><Trash2 size={16} /></button></td></tr>
+              <td className="td text-right"><button aria-label="O'chirish" className="text-slate-400 hover:text-red-600" onClick={() => save.mutate(e.relatives.filter((x: any) => x.id !== r.id).map(clean))}><Trash2 size={16} /></button></td></tr>
           ))}
           {e.relatives.length === 0 && <tr><td colSpan={6} className="td text-slate-500">Ma'lumot yo'q</td></tr>}
         </tbody>
@@ -171,14 +171,14 @@ function Documents({ e, onSaved }: { e: any; onSaved: () => void }) {
         <button className="btn-primary" onClick={() => ref.current?.click()} disabled={up.isPending}><Upload size={16} /> Fayl yuklash</button>
         <span className="text-xs text-slate-500">PDF, JPG, PNG · 10 MB gacha</span>
       </div>
-      {up.error && <p className="mb-3 text-sm text-brand">{(up.error as Error).message}</p>}
+      {up.error && <p className="mb-3 text-sm text-red-600">{(up.error as Error).message}</p>}
       <ul className="divide-y">
         {e.documents.map((d: any) => (
           <li key={d.id} className="flex items-center gap-3 py-3 text-sm">
             <FileText size={18} className="text-navy/60" />
             <a href={`/api/files/${d.filePath}`} target="_blank" rel="noreferrer" className="font-medium text-navy hover:text-brand">{label(d.documentType)}</a>
             <span className="text-slate-500">{fmtDate(d.uploadDate)}</span>
-            <button aria-label="O'chirish" className="ml-auto text-slate-400 hover:text-brand" onClick={() => confirm("Hujjat o'chirilsinmi?") && del.mutate(d.id)}><Trash2 size={16} /></button>
+            <button aria-label="O'chirish" className="ml-auto text-slate-400 hover:text-red-600" onClick={() => confirm("Hujjat o'chirilsinmi?") && del.mutate(d.id)}><Trash2 size={16} /></button>
           </li>
         ))}
         {e.documents.length === 0 && <li className="py-3 text-sm text-slate-500">Hujjatlar yuklanmagan</li>}

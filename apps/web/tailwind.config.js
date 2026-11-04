@@ -3,8 +3,10 @@ export default {
   theme: {
     extend: {
       colors: {
-        navy: { DEFAULT: '#0F1542', 700: '#1a2260', 800: '#141a52', 900: '#0F1542' },
-        brand: { DEFAULT: '#E50019', 600: '#c40016' },
+        // To'q ko'k sidebar va sarlavhalar
+        navy: { DEFAULT: '#0f172a', 700: '#1e293b', 800: '#172033', 900: '#0f172a' },
+        // Moviy aksent (tugmalar, faol holat, progress)
+        brand: { DEFAULT: '#1d4ed8', 600: '#1e40af', soft: '#eff6ff' },
       },
     },
   },

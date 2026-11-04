@@ -85,7 +85,7 @@ export default function Timesheet() {
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-2xl font-semibold text-navy">Ish vaqti tabeli</h1>
+        <h1 className="text-2xl font-semibold text-navy">Табель</h1>
         <div className="flex flex-wrap items-center gap-2">
           <div className="flex items-center rounded-lg border border-slate-300 bg-white">
             <button className="px-2 py-2 hover:bg-slate-50" onClick={() => shift(-1)} aria-label="Oldingi oy"><ChevronLeft size={16} /></button>
@@ -109,14 +109,14 @@ export default function Timesheet() {
       </div>
 
       {q.isLoading && <p className="text-slate-500">Yuklanmoqda…</p>}
-      {q.error && <p className="text-brand">{(q.error as Error).message}</p>}
+      {q.error && <p className="text-red-600">{(q.error as Error).message}</p>}
       {t && (
         <div className="card overflow-x-auto">
           <table className="w-full border-separate border-spacing-0 text-xs">
             <thead>
               <tr>
                 <th className="th sticky left-0 z-20 min-w-[210px] border-b bg-slate-50" rowSpan={2}>Xodim</th>
-                {t.days.map((d: any) => <th key={d.day} className={`border-b px-0 pt-1.5 text-center font-semibold ${d.off ? 'bg-slate-200 text-brand' : 'bg-slate-50'}`}>{d.day}</th>)}
+                {t.days.map((d: any) => <th key={d.day} className={`border-b px-0 pt-1.5 text-center font-semibold ${d.off ? 'bg-slate-200 text-red-600' : 'bg-slate-50'}`}>{d.day}</th>)}
                 <th className="th sticky right-0 z-20 min-w-[150px] border-b border-l bg-slate-50 text-right" rowSpan={2}>Jami / oylik</th>
               </tr>
               <tr>{t.days.map((d: any) => <th key={d.day} className={`border-b pb-1.5 text-center font-normal text-slate-500 ${d.off ? 'bg-slate-200' : 'bg-slate-50'}`}>{WD[d.weekday]}</th>)}</tr>

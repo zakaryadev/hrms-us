@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Download, FilePlus2 } from 'lucide-react';
+import { Download, FilePlus2, Plus } from 'lucide-react';
 import { useState } from 'react';
 import { api, fmtDate } from '../lib/api';
 import { Field, Modal } from './ui';
@@ -23,7 +23,7 @@ export default function GenerateDocs({ employee }: { employee: any }) {
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {DOCS.map((d) => (
           <button key={d.type} onClick={() => setOpen(d.type)} className="card flex items-start gap-3 p-4 text-left transition hover:border-navy">
-            <FilePlus2 className="mt-0.5 shrink-0 text-brand" size={20} />
+            <FilePlus2 className="mt-0.5 shrink-0 text-red-600" size={20} />
             <span><span className="block text-sm font-semibold">{d.title}</span><span className="text-xs text-slate-500">{d.desc}</span></span>
           </button>
         ))}
@@ -42,12 +42,14 @@ export default function GenerateDocs({ employee }: { employee: any }) {
           {history.data?.length === 0 && <li className="py-2 text-sm text-slate-500">Hali hujjat yaratilmagan</li>}
         </ul>
       </div>
-      {open && <DocModal type={open} employee={employee} onClose={() => setOpen(null)} />}
+      {open === 'buyruq-tatil'
+        ? <LeaveModal employee={employee} onClose={() => setOpen(null)} />
+        : open && <DocModal type={open} employee={employee} onClose={() => setOpen(null)} />}
     </div>
   );
 }
 
-function DocModal({ type, employee, onClose }: { type: DocType; employee: any; onClose: () => void }) {
+export function DocModal({ type, employee, onClose }: { type: DocType; employee: any; onClose: () => void }) {
   const qc = useQueryClient();
   const [f, setF] = useState<any>({
     newDepartmentId: '', newPositionId: '', transferDate: '', applicationDate: today(), agreementDate: today(),
@@ -61,27 +63,17 @@ function DocModal({ type, employee, onClose }: { type: DocType; employee: any; o
   const departments = useQuery({ queryKey: ['departments'], queryFn: () => api<any[]>('/departments') });
   const positions = useQuery({ queryKey: ['positions', f.newDepartmentId], enabled: !!f.newDepartmentId, queryFn: () => api<any[]>(`/positions?departmentId=${f.newDepartmentId}`) });
   const settings = useQuery({ queryKey: ['settings'], queryFn: () => api<any>('/settings'), enabled: type === 'kelishuv' });
-  const days = Number(f.basicDays) + Number(f.extraDays);
-  const calc = useQuery({
-    queryKey: ['leave', f.startDate, days, employee.hireDate],
-    enabled: type === 'buyruq-tatil' && !!f.startDate && days > 0,
-    queryFn: () => api<any>(`/leave/calc?start=${f.startDate}&days=${days}${employee.hireDate ? `&hireDate=${employee.hireDate.slice(0, 10)}` : ''}`),
-    retry: false,
-  });
 
-  const submit = useMutation({
-    mutationFn: () => {
-      const params: any = {};
-      const copy = (...keys: string[]) => keys.forEach((k) => f[k] !== '' && (params[k] = f[k]));
-      if (needsTarget) copy('newDepartmentId', 'newPositionId', 'transferDate');
-      if (type === 'ariza') copy('applicationDate');
-      if (type === 'kelishuv') { copy('agreementDate', 'poaText'); params.newSalary = Number(f.newSalary); }
-      if (type === 'buyruq-otkazish') copy('orderNumber', 'orderDate', 'basis');
-      if (type === 'buyruq-tatil') { copy('startDate', 'orderDate', 'orderNumber'); params.basicDays = Number(f.basicDays); params.extraDays = Number(f.extraDays); params.materialAid = f.materialAid; }
-      if (type === 'obyektivka') copy('malumoti', 'harbiyUnvoni');
-      return api<{ downloadUrl: string }>(`/documents/generate/${type}`, { method: 'POST', body: JSON.stringify({ employeeId: employee.id, params }) });
-    },
-    onSuccess: (r) => { qc.invalidateQueries({ queryKey: ['generated', employee.id] }); window.location.href = r.downloadUrl; onClose(); },
+  const [save, setSave] = useState(true);
+  const submit = useGenerate(type, employee, onClose, save, () => {
+    const params: any = {};
+    const copy = (...keys: string[]) => keys.forEach((k) => f[k] !== '' && (params[k] = f[k]));
+    if (needsTarget) copy('newDepartmentId', 'newPositionId', 'transferDate');
+    if (type === 'ariza') copy('applicationDate');
+    if (type === 'kelishuv') { copy('agreementDate', 'poaText'); params.newSalary = Number(f.newSalary); }
+    if (type === 'buyruq-otkazish') copy('orderNumber', 'orderDate', 'basis');
+    if (type === 'obyektivka') copy('malumoti', 'harbiyUnvoni');
+    return params;
   });
 
   const cur = `${employee.department.name}, ${employee.position.title}`;
@@ -114,33 +106,141 @@ function DocModal({ type, employee, onClose }: { type: DocType; employee: any; o
           <div className="sm:col-span-2"><Field label="Asos *"><textarea required rows={3} className="input" placeholder="Xodimning arizasi, qo'shimcha kelishuv hamda O'zR Mehnat kodeksining 138, 140-moddalari" value={f.basis} onChange={set('basis')} /></Field></div>
         </>}
 
-        {type === 'buyruq-tatil' && <>
-          <Field label="Ta'til boshlanish sanasi *"><input required type="date" className="input" value={f.startDate} onChange={set('startDate')} /></Field>
-          <Field label="Buyruq sanasi *"><input required type="date" className="input" value={f.orderDate} onChange={set('orderDate')} /></Field>
-          <Field label="Asosiy ta'til (kun)"><input type="number" min={0} className="input" value={f.basicDays} onChange={set('basicDays')} /></Field>
-          <Field label="Qo'shimcha ta'til (kun)"><input type="number" min={0} className="input" value={f.extraDays} onChange={set('extraDays')} /></Field>
-          <Field label="Jami kun"><input className="input bg-slate-50" readOnly value={days} /></Field>
-          <Field label="Buyruq raqami"><input className="input" placeholder="Bo'sh qolsa avtomatik" value={f.orderNumber} onChange={set('orderNumber')} /></Field>
-          <div className="rounded-lg bg-navy/5 p-3 text-sm sm:col-span-2">
-            {calc.data ? (<>
-              {calc.data.workYear && <p>Ish yili: <b>{fmtDate(calc.data.workYear.start)} — {fmtDate(calc.data.workYear.end)}</b></p>}
-              <p>Ta'til tugashi: <b>{fmtDate(calc.data.endDate)}</b> · Ishga chiqish: <b>{fmtDate(calc.data.returnDate)}</b></p>
-              {calc.data.holidaysInRange.length > 0 && <p className="text-brand">Bayram kunlari sababli uzaytirildi: {calc.data.holidaysInRange.map((d: string) => fmtDate(d)).join(', ')}</p>}
-            </>) : <span className="text-slate-500">Boshlanish sanasini tanlang — tugash va ishga chiqish sanasi avtomatik hisoblanadi.</span>}
-          </div>
-          <label className="flex items-center gap-2 text-sm sm:col-span-2"><input type="checkbox" checked={f.materialAid} onChange={set('materialAid')} /> Moddiy yordam (qo'shimcha oylik to'lash bandi)</label>
-        </>}
-
         {type === 'obyektivka' && <>
           <Field label="Ma'lumoti"><input className="input" placeholder="Oliy" value={f.malumoti} onChange={set('malumoti')} /></Field>
           <Field label="Harbiy unvoni"><input className="input" placeholder="yo'q" value={f.harbiyUnvoni} onChange={set('harbiyUnvoni')} /></Field>
         </>}
 
-        {submit.error && <p className="text-sm text-brand sm:col-span-2">{(submit.error as Error).message}</p>}
-        <div className="flex justify-end gap-2 sm:col-span-2">
-          <button type="button" className="btn-secondary" onClick={onClose}>Bekor qilish</button>
-          <button className="btn-primary" disabled={submit.isPending}><Download size={16} /> Yaratish va yuklab olish</button>
+        <div className="sm:col-span-2"><ModalFooter cyr={false} save={save} setSave={setSave} pending={submit.isPending} error={submit.error as Error | null} onClose={onClose} /></div>
+      </form>
+    </Modal>
+  );
+}
+
+/** Umumiy: generatsiya so'rovi. save=false bo'lsa hujjat bazaga yozilmaydi, fayl shu zahoti yuklanadi. */
+function useGenerate(type: DocType, employee: any, onClose: () => void, save: boolean, build: () => Record<string, any>) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async () => {
+      const params = { ...build(), ...(save ? {} : { save: false }) };
+      const res = await fetch(`/api/documents/generate/${type}`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ employeeId: employee.id, params }),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error((Array.isArray(body.message) ? body.message.join(', ') : body.message) || `Xatolik (${res.status})`);
+      }
+      if (save) return (await res.json()) as { downloadUrl: string };
+      const name = /filename="([^"]+)"/.exec(res.headers.get('Content-Disposition') ?? '')?.[1] ?? `${type}.docx`;
+      const url = URL.createObjectURL(await res.blob());
+      Object.assign(document.createElement('a'), { href: url, download: name }).click();
+      setTimeout(() => URL.revokeObjectURL(url), 5000);
+      return null;
+    },
+    onSuccess: (r) => {
+      qc.invalidateQueries({ queryKey: ['generated'] }); qc.invalidateQueries({ queryKey: ['orders'] });
+      if (r) window.location.href = r.downloadUrl;
+      onClose();
+    },
+  });
+}
+
+function ModalFooter({ cyr, save, setSave, pending, error, onClose }: {
+  cyr: boolean; save: boolean; setSave: (v: boolean) => void; pending: boolean; error: Error | null; onClose: () => void;
+}) {
+  return (
+    <div className="mt-2 space-y-3 border-t pt-4">
+      {error && <p className="text-sm text-red-600">{error.message}</p>}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <label className="flex items-center gap-2 text-sm text-slate-700">
+          <input type="checkbox" className="h-4 w-4 rounded border-slate-300 accent-blue-700" checked={save} onChange={(e) => setSave(e.target.checked)} />
+          {cyr ? 'Ҳужжатни сақлаш ҳамда юклаб олинган ҳужжатлар рўйхатига қўшиш' : "Hujjatni saqlash va yaratilgan hujjatlar ro'yxatiga qo'shish"}
+        </label>
+        <div className="flex gap-2">
+          <button type="button" className="btn-secondary" onClick={onClose}>{cyr ? 'Бекор қилиш' : 'Bekor qilish'}</button>
+          <button className="btn-primary" disabled={pending}><Plus size={16} /> {cyr ? 'Докх шаклида олиш' : 'DOCX shaklida olish'}</button>
         </div>
+      </div>
+    </div>
+  );
+}
+
+const DEFAULT_BASIS = "O'zR Mehnat kodeksining 216, 217, 221-moddalari hamda xodimning arizasi";
+const DEFAULT_SIGNER = "Bosh direktorning kadrlar faoliyatini muvofiqlashtirish bo'yicha o'rinbosari";
+
+/** "Меҳнат таътили бериш ҳақида буйруқ" */
+export function LeaveModal({ employee, onClose }: { employee: any; onClose: () => void }) {
+  const [f, setF] = useState({
+    workYearStart: '', workYearEnd: '', startDate: '', basicDays: String(employee.annualLeaveBasicDays), extraDays: String(employee.annualLeaveExtraDays),
+    basis: '', signer: '', orderDate: today(),
+  });
+  const [save, setSave] = useState(true);
+  const set = (k: keyof typeof f) => (e: React.ChangeEvent<any>) => setF({ ...f, [k]: e.target.value });
+  const settings = useQuery({ queryKey: ['settings'], queryFn: () => api<any>('/settings') });
+  const days = (Number(f.basicDays) || 0) + (Number(f.extraDays) || 0);
+  const calc = useQuery({
+    queryKey: ['leave', f.startDate, days, employee.hireDate],
+    enabled: !!f.startDate && days > 0,
+    queryFn: () => api<any>(`/leave/calc?start=${f.startDate}&days=${days}${employee.hireDate ? `&hireDate=${employee.hireDate.slice(0, 10)}` : ''}`),
+    retry: false,
+  });
+  // Ish yili: foydalanuvchi o'zgartirmaguncha — avtomatik (qabul sanasi va ta'til boshlanishidan)
+  const wyStart = f.workYearStart || calc.data?.workYear?.start || '';
+  const wyEnd = f.workYearEnd || calc.data?.workYear?.end || '';
+
+  const submit = useGenerate('buyruq-tatil', employee, onClose, save, () => ({
+    startDate: f.startDate, orderDate: f.orderDate, basicDays: Number(f.basicDays) || 0, extraDays: Number(f.extraDays) || 0,
+    ...(wyStart && { workYearStart: wyStart }), ...(wyEnd && { workYearEnd: wyEnd }),
+    ...(f.basis && { basis: f.basis }), signer: f.signer || undefined,
+  }));
+
+  const s = settings.data;
+  const fullName = [employee.lastName, employee.firstName, employee.middleName].filter(Boolean).join(' ');
+  const unit = [employee.department.parent?.name, employee.department.name].filter(Boolean).join(', ');
+  const ro = 'input bg-slate-50 text-slate-700';
+  const H = ({ children }: { children: React.ReactNode }) => <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">{children}</h3>;
+
+  return (
+    <Modal title="Меҳнат таътили бериш ҳақида буйруқ" onClose={onClose} wide>
+      <form className="space-y-5" onSubmit={(e) => { e.preventDefault(); submit.mutate(); }}>
+        <section className="grid gap-4 md:grid-cols-2">
+          <Field label="Кимга"><textarea rows={2} className={ro} readOnly value={s ? `"${s.tashkilot_nomi}" бош директори ${s.bosh_direktor_fish}га` : ''} /></Field>
+          <Field label="Кимдан"><textarea rows={2} className={ro} readOnly value={`${fullName} — ${unit}, ${employee.position.title}`} /></Field>
+        </section>
+
+        <section>
+          <H>Саналар ва муддатлар</H>
+          <div className="grid gap-4 md:grid-cols-3">
+            <Field label="Иш йили бошланиши"><input type="date" className="input" value={wyStart} onChange={set('workYearStart')} /></Field>
+            <Field label="Иш йили тугаши"><input type="date" className="input" value={wyEnd} onChange={set('workYearEnd')} /></Field>
+            <Field label="Бошланиши *"><input required type="date" className="input" value={f.startDate} onChange={set('startDate')} /></Field>
+          </div>
+        </section>
+
+        <section className="grid gap-4 md:grid-cols-3">
+          <Field label="Асосий таътил куни"><input type="number" min={0} className="input" value={f.basicDays} onChange={set('basicDays')} /></Field>
+          <Field label="Қўшимча таътил куни"><input type="number" min={0} className="input" value={f.extraDays} onChange={set('extraDays')} /></Field>
+          <Field label="Жами календар кун"><input className={ro} readOnly value={days} /></Field>
+        </section>
+
+        <section className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+          <div className="grid gap-4 md:grid-cols-2">
+            <Field label="Тугаши"><div className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold">{calc.data ? fmtDate(calc.data.endDate) : '—'}</div></Field>
+            <Field label="Ишга чиқиш куни"><div className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold">{calc.data ? fmtDate(calc.data.returnDate) : '—'}</div></Field>
+          </div>
+          {calc.data?.holidaysInRange.length > 0 && (
+            <p className="mt-2 text-xs font-medium text-red-600">Байрам кунлари сабабли узайтирилди: {calc.data.holidaysInRange.map((d: string) => fmtDate(d)).join(', ')}</p>
+          )}
+          {!f.startDate && <p className="mt-2 text-xs text-slate-500">Бошланиш санасини танланг — тугаш ва ишга чиқиш санаси автоматик ҳисобланади.</p>}
+        </section>
+
+        <section className="grid gap-4 md:grid-cols-2">
+          <div className="md:col-span-2"><Field label="Асос"><textarea rows={2} className="input" placeholder="Меҳнат кодексининг 217, 219... моддалари ҳамда ходим аризаси" value={f.basis || DEFAULT_BASIS} onChange={set('basis')} /></Field></div>
+          <Field label="Имзоловчи"><textarea rows={2} className="input" value={f.signer || DEFAULT_SIGNER} onChange={set('signer')} /></Field>
+          <Field label="Буйруқ санаси"><input required type="date" className="input" value={f.orderDate} onChange={set('orderDate')} /></Field>
+        </section>
+
+        <ModalFooter cyr save={save} setSave={setSave} pending={submit.isPending} error={submit.error as Error | null} onClose={onClose} />
       </form>
     </Modal>
   );

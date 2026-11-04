@@ -6,7 +6,7 @@ import { api } from '../lib/api';
 export default function Dashboard() {
   const { data, isLoading, error } = useQuery({ queryKey: ['stats'], queryFn: () => api('/dashboard/stats') });
   if (isLoading) return <p className="text-slate-500">Yuklanmoqda…</p>;
-  if (error) return <p className="text-brand">{(error as Error).message}</p>;
+  if (error) return <p className="text-red-600">{(error as Error).message}</p>;
 
   const cards = [
     { label: 'Umumiy shtat', value: data.totalStaff, icon: Briefcase },
@@ -16,7 +16,7 @@ export default function Dashboard() {
   ];
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-semibold text-navy">Bosh sahifa</h1>
+      <h1 className="text-2xl font-semibold text-navy">Бош саҳифа</h1>
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         {cards.map(({ label, value, icon: Icon }) => (
           <div key={label} className="card flex items-center gap-4 p-5">
