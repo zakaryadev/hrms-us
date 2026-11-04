@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { RotateCcw } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { PageHeader } from '../components/ui';
 import { api, fmtDate, fullName } from '../lib/api';
 import { Button } from '../components/kit';
 
@@ -13,12 +14,11 @@ export default function Archive() {
   });
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-semibold text-navy">Архив</h1>
-      <p className="text-sm text-slate-500">Ишдан бўшаган ходимлар. Ходим ҳолатини «Ишдан бўшаган» қилиб қўйсангиз, у шу ерга ўтади.</p>
+      <PageHeader eyebrow="Кадрлар" title="Архив" hint="Ишдан бўшаган ходимлар. Ходим ҳолатини «Ишдан бўшаган» қилиб қўйсангиз, у шу ерга ўтади." />
       <div className="card overflow-x-auto">
         <table className="w-full">
-          <thead className="border-b bg-slate-50"><tr><th className="th">Табель</th><th className="th">Ф.И.Ш.</th><th className="th">Лавозим</th><th className="th">Бўлим</th><th className="th">Ишга қабул</th><th /></tr></thead>
-          <tbody className="divide-y">
+          <thead className="border-b border-slate-200"><tr><th className="th">Табель</th><th className="th">Ф.И.Ш.</th><th className="th">Лавозим</th><th className="th">Бўлим</th><th className="th">Ишга қабул</th><th /></tr></thead>
+          <tbody className="divide-y divide-slate-100">
             {q.data?.items.map((e: any) => (
               <tr key={e.id} className="hover:bg-slate-50">
                 <td className="td font-mono">{e.tabNumber}</td>

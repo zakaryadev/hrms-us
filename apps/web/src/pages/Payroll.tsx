@@ -1,7 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useState } from 'react';
+import { PeriodSwitch } from '../components/PeriodSwitch';
 import { api, EMP_TYPE_LABEL, fmtMoney } from '../lib/api';
+import { PageHeader } from '../components/ui';
 
 const MONTHS = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
 
@@ -14,21 +15,15 @@ export default function Payroll() {
   const total = q.data?.rows.reduce((s: number, r: any) => s + r.result.salary, 0) ?? 0;
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-2xl font-semibold text-navy">Иш ҳақи</h1>
-        <div className="flex items-center rounded-lg border border-slate-300 bg-white">
-          <button className="px-2 py-2 hover:bg-slate-50" onClick={() => shift(-1)} aria-label="Олдинги ой"><ChevronLeft size={16} /></button>
-          <span className="min-w-[150px] text-center text-sm font-medium">{MONTHS[month - 1]} {year}</span>
-          <button className="px-2 py-2 hover:bg-slate-50" onClick={() => shift(1)} aria-label="Кейинги ой"><ChevronRight size={16} /></button>
-        </div>
-      </div>
-      <p className="text-sm text-slate-500">Табель асосида ҳисобланган ойлик. Табелни ўзгартирсангиз, бу ерда ҳам янгиланади.</p>
+      <PageHeader eyebrow="Ҳисоб-китоб" title="Иш ҳақи" hint="Табель асосида ҳисобланган ойлик. Табелни ўзгартирсангиз, бу ерда ҳам янгиланади.">
+        <PeriodSwitch label={`${MONTHS[month - 1]} ${year}`} onPrev={() => shift(-1)} onNext={() => shift(1)} prevLabel="Олдинги ой" nextLabel="Кейинги ой" />
+      </PageHeader>
       <div className="card overflow-x-auto">
         <table className="w-full">
-          <thead className="border-b bg-slate-50"><tr>
+          <thead className="border-b border-slate-200"><tr>
             <th className="th">Ходим</th><th className="th">Тури</th><th className="th text-right">Оклад</th><th className="th text-right">Иш куни</th>
             <th className="th text-right">КВ</th><th className="th text-right">СК</th><th className="th text-right">Ҳисобланган</th></tr></thead>
-          <tbody className="divide-y">
+          <tbody className="divide-y divide-slate-100">
             {q.data?.rows.map((r: any) => (
               <tr key={r.employeeId} className="hover:bg-slate-50">
                 <td className="td"><div className="font-medium">{r.fullName}</div><div className="text-xs text-slate-500">{r.tabNumber} · {r.position}</div></td>

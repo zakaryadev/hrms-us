@@ -1,7 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ChevronLeft, ChevronRight, Download, Wand2 } from 'lucide-react';
+import { Download, Wand2 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
-import { Loading } from '../components/ui';
+import { PeriodSwitch } from '../components/PeriodSwitch';
+import { Loading, PageHeader } from '../components/ui';
 import { api, fmtMoney } from '../lib/api';
 import { Button, Select, buttonStyles, cn } from '../components/kit';
 
@@ -88,21 +89,14 @@ export default function Timesheet() {
   const t = q.data;
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-2xl font-semibold text-navy">Табель</h1>
-        <div className="flex flex-wrap items-center gap-2">
-          <div className="flex items-center rounded-lg border border-slate-300 bg-white">
-            <button className="px-2 py-2 hover:bg-slate-50" onClick={() => shift(-1)} aria-label="Олдинги ой"><ChevronLeft size={16} /></button>
-            <span className="min-w-[130px] text-center text-sm font-medium">{MONTHS[month - 1]} {year}</span>
-            <button className="px-2 py-2 hover:bg-slate-50" onClick={() => shift(1)} aria-label="Кейинги ой"><ChevronRight size={16} /></button>
-          </div>
-          <Select className="!w-auto" value={departmentId} onChange={(v) => setDepartmentId(v)}>
+      <PageHeader eyebrow="Ҳисоб-китоб" title="Табель" hint="Ишга келиш белгилари. Ойлик ҳар ўзгаришда қайта ҳисобланади.">
+        <PeriodSwitch label={`${MONTHS[month - 1]} ${year}`} onPrev={() => shift(-1)} onNext={() => shift(1)} prevLabel="Олдинги ой" nextLabel="Кейинги ой" />
+          <Select plain className="!w-auto" value={departmentId} onChange={(v) => setDepartmentId(v)}>
             <option value="">Барча бўлимлар</option>{departments.data?.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
           </Select>
           <Button variant="secondary"  onClick={() => autofill.mutate()} disabled={autofill.isPending}><Wand2 size={16} /> Авто тўлдириш</Button>
           <a className={cn(buttonStyles({ variant: 'primary' }))} href={`/api/timesheet/export?year=${year}&month=${month}${departmentId ? `&departmentId=${departmentId}` : ''}`}><Download size={16} /> Excel</a>
-        </div>
-      </div>
+        </PageHeader>
 
       {t?.holidaysWarning && <p className="card border-amber-300 bg-amber-50 p-3 text-sm text-amber-800">{year}-йил учун ҳайит кунлари киритилмаган (<a className="underline" href="/calendar">Иш календари</a>): иш кунлари ва ойлик нотўғри ҳисобланиши мумкин.</p>}
       {msg && <p className="card p-3 text-sm">{msg}</p>}

@@ -91,7 +91,7 @@ export function DatePicker({ value, onChange, min, max, required, disabled, inva
             onChange={(e) => onType(e.target.value)}
             onKeyDown={(e) => { if (e.key === 'ArrowDown') { e.preventDefault(); setOpen(true); } }}
             onBlur={() => { if (!typedDate || !inRange(typedDate)) setText(show(value)); }}
-            className={cn(inputBase, inputState(invalid || typedBad), 'h-10 px-3 pr-[4.5rem]')} />
+            className={cn(inputBase, inputState(invalid || typedBad), 'h-9 px-3 pr-[4.5rem]')} />
           <div className="absolute right-1 top-1/2 flex -translate-y-1/2 items-center">
             {value && !required && !disabled && (
               <button type="button" aria-label="Санани тозалаш" onClick={() => { onChange(''); setText(''); }} className="rounded-md p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"><X size={14} /></button>
@@ -104,7 +104,7 @@ export function DatePicker({ value, onChange, min, max, required, disabled, inva
       </Popover.Anchor>
       <Popover.Portal>
         <Popover.Content align="start" sideOffset={6} collisionPadding={12} onOpenAutoFocus={(e) => e.preventDefault()}
-          className="z-[70] w-[300px] rounded-xl border border-slate-200 bg-white p-3 shadow-xl">
+          className="z-[70] w-[300px] rounded-lg border border-slate-200 bg-white p-3 shadow-lg">
           <div className="mb-2 flex items-center gap-1.5">
             <Button type="button" variant="ghost" size="icon" aria-label="Олдинги ой" onClick={() => setMonth(new Date(month.getFullYear(), month.getMonth() - 1, 1))}><ChevronLeft size={16} /></Button>
             <div className="min-w-0 flex-1"><Select aria-label="Ой" className="!h-8 !px-2 text-xs" value={String(month.getMonth())} onChange={(v) => setMonth(new Date(month.getFullYear(), Number(v), 1))} options={MONTHS.map((m, i) => ({ value: String(i), label: m }))} /></div>
@@ -116,7 +116,7 @@ export function DatePicker({ value, onChange, min, max, required, disabled, inva
             classNames={{
               root: 'text-slate-800', month_caption: 'hidden', month_grid: 'w-full border-collapse',
               weekday: 'h-8 w-[38px] text-center text-[11px] font-medium text-slate-400', day: 'p-0 text-center',
-              day_button: 'h-[38px] w-[38px] rounded-lg text-sm transition hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40',
+              day_button: 'h-[38px] w-[38px] rounded-md text-sm transition hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40',
               selected: '[&>button]:bg-brand [&>button]:font-semibold [&>button]:text-white [&>button:hover]:bg-brand-600',
               today: '[&>button]:font-bold [&>button]:text-brand', outside: '[&>button]:text-slate-300',
               disabled: '[&>button]:pointer-events-none [&>button]:opacity-30',

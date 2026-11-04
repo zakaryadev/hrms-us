@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useState } from 'react';
+import { PeriodSwitch } from '../components/PeriodSwitch';
 import { ErrorNote, Loading, PageHeader } from '../components/ui';
 import { api, fmtDate } from '../lib/api';
 import { Button, Input } from '../components/kit';
@@ -39,12 +39,8 @@ export default function Calendar() {
 
   return (
     <div className="space-y-4">
-      <PageHeader title="Иш календари" hint="Байрамлар, кўчирилган дам олиш кунлари ва ишчи шанбалар. Бу ерда белгиланган кунлар таътил, табель ва ойлик ҳисобига таъсир қилади.">
-        <div className="flex items-center rounded-lg border border-slate-300 bg-white">
-          <button className="px-2 py-2 hover:bg-slate-50" onClick={() => setYear(year - 1)} aria-label="Олдинги йил"><ChevronLeft size={16} /></button>
-          <span className="min-w-[80px] text-center text-sm font-medium">{year}</span>
-          <button className="px-2 py-2 hover:bg-slate-50" onClick={() => setYear(year + 1)} aria-label="Кейинги йил"><ChevronRight size={16} /></button>
-        </div>
+      <PageHeader eyebrow="Ҳисоб-китоб" title="Иш календари" hint="Байрамлар, кўчирилган дам олиш кунлари ва ишчи шанбалар. Бу ерда белгиланган кунлар таътил, табель ва ойлик ҳисобига таъсир қилади.">
+        <PeriodSwitch label={String(year)} onPrev={() => setYear(year - 1)} onNext={() => setYear(year + 1)} prevLabel="Олдинги йил" nextLabel="Кейинги йил" />
       </PageHeader>
 
       {q.data && !q.data.configured && (

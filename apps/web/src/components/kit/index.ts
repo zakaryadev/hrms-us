@@ -8,4 +8,5 @@ export { ImageUploader } from './ImageUploader';
 export { Input, Textarea } from './Input';
 export { Modal } from './Modal';
 export { Select } from './Select';
+export { Tabs } from './Tabs';
 export { cn } from './cn';

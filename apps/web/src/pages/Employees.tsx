@@ -3,7 +3,7 @@ import { Plus, Search, Upload } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import EmployeeForm from '../components/EmployeeForm';
-import { StatusBadge } from '../components/ui';
+import { PageHeader, StatusBadge } from '../components/ui';
 import { api, EMP_TYPE_LABEL, fullName, photoSrc } from '../lib/api';
 import { Avatar, Button, Input, Select, buttonStyles, cn } from '../components/kit';
 
@@ -25,29 +25,26 @@ export default function Employees() {
   const totalPages = Math.max(1, Math.ceil((list.data?.total ?? 0) / pageSize));
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-2xl font-semibold text-navy">Ходимлар</h1>
-        <div className="flex gap-2">
+      <PageHeader eyebrow="Кадрлар" title="Ходимлар" hint="Ишлаётган ходимлар рўйхати: қидирув, бўлим бўйича фильтр, янги ходим қўшиш">
           <Link to="/import" className={cn(buttonStyles({ variant: 'secondary' }))}><Upload size={16} /> Excel’дан юклаш</Link>
           <Button variant="primary"  onClick={() => setCreating(true)}><Plus size={16} /> Янги ходим</Button>
-        </div>
-      </div>
-      <div className="flex flex-wrap gap-3">
+        </PageHeader>
+      <div className="card flex flex-wrap items-center gap-3 p-3">
         <div className="relative min-w-[220px] flex-1">
-          <Search size={16} className="absolute left-3 top-2.5 text-slate-400" />
+          <Search size={16} className="pointer-events-none absolute left-3 top-[10px] text-slate-400" />
           <Input className="pl-9" placeholder="Ф.И.Ш., табель рақами ёки ЖШШИР" value={q} onChange={(e) => { setQ(e.target.value); setPage(1); }} />
         </div>
-        <Select className="!w-auto" value={departmentId} onChange={(v) => { setDepartmentId(v); setPage(1); }}>
+        <Select plain className="!w-auto" value={departmentId} onChange={(v) => { setDepartmentId(v); setPage(1); }}>
           <option value="">Барча бўлимлар</option>
           {departments.data?.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
         </Select>
       </div>
       <div className="card overflow-x-auto">
         <table className="w-full">
-          <thead className="border-b bg-slate-50"><tr>
+          <thead className="border-b border-slate-200"><tr>
             <th className="th">Табель</th><th className="th">Ф.И.Ш.</th><th className="th">Лавозим</th><th className="th">Бўлим</th><th className="th">Тури</th><th className="th">Ҳолат</th>
           </tr></thead>
-          <tbody className="divide-y">
+          <tbody className="divide-y divide-slate-100">
             {list.data?.items.map((e: any) => (
               <tr key={e.id} className="hover:bg-slate-50">
                 <td className="td font-mono">{e.tabNumber}</td>

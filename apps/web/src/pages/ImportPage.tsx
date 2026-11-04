@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { FileSpreadsheet } from 'lucide-react';
+import { PageHeader } from '../components/ui';
 import { api } from '../lib/api';
 import { FileDropzone } from '../components/kit';
 
@@ -14,7 +15,7 @@ export default function ImportPage() {
   const r = run.data;
   return (
     <div className="max-w-4xl space-y-4">
-      <h1 className="text-2xl font-semibold text-navy">Excel’дан юклаш</h1>
+      <PageHeader eyebrow="Кадрлар" title="Excel’дан юклаш" />
       <div className="card space-y-4 p-5">
         <p className="text-sm text-slate-600">Ходимлар рўйхатини .xlsx файлдан юкланг. Биринчи қатор — устун номлари. Мавжуд табель рақами бўйича ходим янгиланади, янгиси қўшилади.</p>
         <div className="flex flex-wrap gap-1.5">{COLS.map((c) => <span key={c} className="rounded bg-slate-100 px-2 py-1 text-xs text-slate-700">{c}</span>)}</div>
@@ -27,7 +28,7 @@ export default function ImportPage() {
           <p className="text-sm">Қўшилди: <b>{r.created}</b> · Янгиланди: <b>{r.updated}</b> · Хато: <b className={r.errors.length ? 'text-red-600' : ''}>{r.errors.length}</b></p>
           {r.errors.length > 0 && (
             <table className="mt-3 w-full text-sm"><thead><tr><th className="th">Қатор</th><th className="th">Хато</th></tr></thead>
-              <tbody className="divide-y">{r.errors.map((e) => <tr key={e.row}><td className="td">{e.row}</td><td className="td text-red-600">{e.message}</td></tr>)}</tbody></table>
+              <tbody className="divide-y divide-slate-100">{r.errors.map((e) => <tr key={e.row}><td className="td">{e.row}</td><td className="td text-red-600">{e.message}</td></tr>)}</tbody></table>
           )}
         </div>
       )}

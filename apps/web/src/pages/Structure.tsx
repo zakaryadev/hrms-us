@@ -38,16 +38,16 @@ export default function Structure() {
 
   return (
     <div className="space-y-4">
-      <PageHeader title="Штат ва сон" hint="Бўлимлар (филиаллар) ва лавозимлар. «Штат сони» — шу лавозимдаги штат бирликлари, «Банд» — ишлаётган ходимлар." />
+      <PageHeader eyebrow="Кадрлар" title="Штат ва сон" hint="Бўлимлар (филиаллар) ва лавозимлар. «Штат сони» — шу лавозимдаги штат бирликлари, «Банд» — ишлаётган ходимлар." />
       {err && <ErrorNote error={new Error(err)} />}
       <div className="grid gap-4 lg:grid-cols-[340px_1fr]">
         <div className="card p-4">
           <ul className="mb-4 space-y-1">
             {departments.data?.map((d) => (
-              <li key={d.id} className={`flex items-center gap-1 rounded-lg px-3 py-2 text-sm ${d.id === current ? 'bg-navy text-white' : 'hover:bg-slate-100'}`}>
+              <li key={d.id} className={`flex items-center gap-1 rounded-md px-3 py-2 text-[13.5px] ${d.id === current ? 'bg-brand-soft font-medium text-navy ring-1 ring-inset ring-brand/25' : 'hover:bg-slate-100'}`}>
                 <button className="min-w-0 flex-1 text-left" onClick={() => setSelected(d.id)}>
                   <span className="block truncate">{d.name}</span>
-                  {d.parentId && <span className={`block truncate text-[11px] ${d.id === current ? 'text-slate-300' : 'text-slate-400'}`}>↳ {parentName(d.parentId)}</span>}
+                  {d.parentId && <span className={`block truncate text-[11px] text-slate-500`}>↳ {parentName(d.parentId)}</span>}
                 </button>
                 <button aria-label="Таҳрирлаш" className="opacity-60 hover:opacity-100" onClick={() => setEditDept(d)}><Pencil size={15} /></button>
                 <button aria-label="Ўчириш" className="opacity-60 hover:opacity-100" onClick={() => confirm(`«${d.name}» ўчирилсинми?`) && delDept.mutate(d.id)}><Trash2 size={15} /></button>
@@ -68,7 +68,7 @@ export default function Structure() {
         <div className="card p-4">
           <div className="mb-4 overflow-x-auto"><table className="w-full">
             <thead className="border-b"><tr><th className="th">Тартиб</th><th className="th">Лавозим</th><th className="th">Оклад</th><th className="th">Банд / Штат</th><th /></tr></thead>
-            <tbody className="divide-y">
+            <tbody className="divide-y divide-slate-100">
               {positions.data?.map((p) => (
                 <tr key={p.id}>
                   <td className="td">{p.rankOrder}</td><td className="td font-medium">{p.title}</td><td className="td">{fmtMoney(p.baseSalary)}</td>

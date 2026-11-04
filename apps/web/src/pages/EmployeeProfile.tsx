@@ -4,9 +4,9 @@ import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import EmployeeForm from '../components/EmployeeForm';
 import GenerateDocs from '../components/GenerateDocs';
-import { Field, Loading, StatusBadge } from '../components/ui';
+import { ErrorNote, Field, Loading, StatusBadge } from '../components/ui';
 import { api, photoSrc, CONTRACT_LABEL, EMP_TYPE_LABEL, fmtDate, fmtMoney, fullName, GENDER_LABEL } from '../lib/api';
-import { Avatar, Button, DatePicker, FileDropzone, Input, Select } from '../components/kit';
+import { Avatar, Button, DatePicker, FileDropzone, Input, Select, Tabs } from '../components/kit';
 
 const TABS = ['Шахсий маълумотлар', 'Меҳнат фаолияти', 'Қариндошлари', 'Ҳужжатлар', 'Ҳужжат яратиш'] as const;
 const DOC_TYPES = [
@@ -15,7 +15,7 @@ const DOC_TYPES = [
 ];
 
 function Row({ k, v }: { k: string; v: React.ReactNode }) {
-  return <div className="flex justify-between gap-4 border-b py-2 text-sm last:border-0"><span className="text-slate-500">{k}</span><span className="text-right font-medium">{v || '—'}</span></div>;
+  return <div className="flex justify-between gap-6 border-b border-slate-100 py-2.5 text-[13.5px] last:border-0"><dt className="text-slate-500">{k}</dt><dd className="text-right font-medium text-slate-900">{v || '—'}</dd></div>;
 }
 
 export default function EmployeeProfile() {
@@ -27,39 +27,38 @@ export default function EmployeeProfile() {
   const refresh = () => qc.invalidateQueries({ queryKey: ['employee', id] });
 
   if (isLoading) return <Loading />;
-  if (error) return <p className="text-red-600">{(error as Error).message}</p>;
+  if (error) return <ErrorNote error={error} />;
 
   return (
-    <div className="space-y-5">
-      <Link to="/employees" className="inline-flex items-center gap-1 text-sm text-slate-500 hover:text-navy"><ArrowLeft size={16} /> Ходимлар</Link>
-      <div className="card flex flex-wrap items-center gap-5 p-5">
-        <Avatar size={88} src={photoSrc(e.photoUrl)} name={fullName(e)} />
-        <div className="min-w-0 flex-1">
-          <h1 className="text-xl font-semibold text-navy">{fullName(e)}</h1>
-          <p className="text-sm text-slate-500">{e.position.title} · {e.department.name}</p>
-          <div className="mt-2 flex items-center gap-3 text-sm"><StatusBadge status={e.status} /><span className="font-mono text-slate-500">Табель: {e.tabNumber}</span></div>
+    <div>
+      <nav className="mb-4 flex items-center gap-2 text-[13px] text-slate-500" aria-label="Йўл">
+        <Link to="/employees" className="inline-flex items-center gap-1 hover:text-navy"><ArrowLeft size={14} /> Ходимлар</Link>
+        <span aria-hidden>/</span><span className="truncate text-slate-800">{fullName(e)}</span>
+      </nav>
+      <header className="mb-8 flex flex-wrap items-center gap-x-5 gap-y-4 border-b border-slate-200 pb-6">
+        <Avatar size={72} src={photoSrc(e.photoUrl)} name={fullName(e)} />
+        <div className="min-w-[220px] flex-1">
+          <p className="eyebrow mb-1.5">Табель № <span className="tnum">{e.tabNumber}</span></p>
+          <h1 className="text-[22px] font-semibold leading-tight tracking-tight text-navy sm:text-[26px]">{fullName(e)}</h1>
+          <p className="mt-1 text-[13.5px] text-slate-500">{e.position.title} · {e.department.name}</p>
         </div>
-        <Button variant="secondary"  onClick={() => setEditing(true)}><Pencil size={16} /> Таҳрирлаш</Button>
-      </div>
+        <div className="flex items-center gap-5"><StatusBadge status={e.status} /><Button variant="secondary" onClick={() => setEditing(true)}><Pencil size={15} /> Таҳрирлаш</Button></div>
+      </header>
 
-      <div className="flex gap-1 overflow-x-auto border-b">
-        {TABS.map((t) => (
-          <button key={t} onClick={() => setTab(t)} className={`whitespace-nowrap border-b-2 px-4 py-2.5 text-sm ${tab === t ? 'border-brand font-medium text-navy' : 'border-transparent text-slate-500 hover:text-slate-800'}`}>{t}</button>
-        ))}
-      </div>
-
+      <Tabs aria-label="Ходим маълумотлари" items={TABS.map((t) => ({ value: t, label: t }))} value={tab} onChange={setTab} />
+      <div className="min-h-[220px] rounded-b-lg border border-t-0 border-slate-200 bg-white p-6">
       {tab === TABS[0] && (
-        <div className="grid gap-4 md:grid-cols-2">
-          <div className="card p-5">
-            <h3 className="mb-2 font-semibold">Шахсий</h3>
+        <dl className="grid gap-x-14 gap-y-8 md:grid-cols-2">
+          <div>
+            <h3 className="eyebrow mb-2">Шахсий</h3>
             <Row k="Туғилган санаси" v={fmtDate(e.birthDate)} /><Row k="Туғилган жойи" v={e.birthPlace} />
             <Row k="Жинси" v={GENDER_LABEL[e.gender]} /><Row k="Миллати" v={e.nationality} /><Row k="Партиявийлиги" v={e.partyMembership} />
             <Row k="Телефон" v={e.phone} /><Row k="Манзил" v={e.addressResidential} />
             <Row k="ЖШШИР" v={e.pinfl} /><Row k="Паспорт" v={e.passportSeriesNumber} />
             <Row k="Берилган санаси" v={fmtDate(e.passportGivenDate)} /><Row k="Ким томонидан" v={e.passportGivenBy} />
           </div>
-          <div className="card p-5">
-            <h3 className="mb-2 font-semibold">Иш</h3>
+          <div>
+            <h3 className="eyebrow mb-2">Иш</h3>
             <Row k="Иш тури" v={EMP_TYPE_LABEL[e.employmentType]} />
             <Row k="Ишга қабул санаси" v={fmtDate(e.hireDate)} />
             <Row k="Шартнома" v={e.contractNumber && `${e.contractNumber} (${fmtDate(e.contractDate)})`} />
@@ -67,12 +66,13 @@ export default function EmployeeProfile() {
             <Row k="Ойлик маош" v={fmtMoney(e.salary)} />
             <Row k="Меҳнат таътили" v={`${e.annualLeaveBasicDays} + ${e.annualLeaveExtraDays} кун`} />
           </div>
-        </div>
+        </dl>
       )}
       {tab === TABS[1] && <WorkHistory e={e} onSaved={refresh} />}
       {tab === TABS[2] && <Relatives e={e} onSaved={refresh} />}
       {tab === TABS[3] && <Documents e={e} onSaved={refresh} />}
       {tab === TABS[4] && <GenerateDocs employee={e} />}
+      </div>
       {editing && <EmployeeForm employee={e} onClose={() => setEditing(false)} />}
     </div>
   );
@@ -92,10 +92,10 @@ function WorkHistory({ e, onSaved }: { e: any; onSaved: () => void }) {
   const [n, setN] = useState({ startDate: '', endDate: '', organizationName: '', positionTitle: '' });
   const clean = (w: any) => Object.fromEntries(Object.entries(strip(w)).filter(([, v]) => v));
   return (
-    <div className="card p-5">
+    <div>
       <table className="mb-4 w-full text-sm">
         <thead><tr><th className="th">Давр</th><th className="th">Ташкилот</th><th className="th">Лавозим</th><th /></tr></thead>
-        <tbody className="divide-y">
+        <tbody className="divide-y divide-slate-100">
           {e.workHistory.map((w: any) => (
             <tr key={w.id}><td className="td">{fmtDate(w.startDate)} — {w.endDate ? fmtDate(w.endDate) : 'ҳозиргача'}</td><td className="td">{w.organizationName}</td><td className="td">{w.positionTitle}</td>
               <td className="td text-right"><button aria-label="Ўчириш" className="text-slate-400 hover:text-red-600" onClick={() => save.mutate(e.workHistory.filter((x: any) => x.id !== w.id).map(clean))}><Trash2 size={16} /></button></td></tr>
@@ -120,10 +120,10 @@ function Relatives({ e, onSaved }: { e: any; onSaved: () => void }) {
   const [n, setN] = useState(empty);
   const clean = (r: any) => Object.fromEntries(Object.entries(strip(r)).filter(([, v]) => v));
   return (
-    <div className="card p-5">
+    <div>
       <div className="mb-4 overflow-x-auto"><table className="w-full text-sm">
         <thead><tr><th className="th">Қариндошлиги</th><th className="th">Ф.И.Ш.</th><th className="th">Туғилган йил, жой</th><th className="th">Иш жойи</th><th className="th">Манзил</th><th /></tr></thead>
-        <tbody className="divide-y">
+        <tbody className="divide-y divide-slate-100">
           {e.relatives.map((r: any) => (
             <tr key={r.id}><td className="td">{r.relativeType}</td><td className="td">{r.fullName}</td><td className="td">{r.birthYearPlace}</td><td className="td">{r.workPlacePosition}</td><td className="td">{r.livingAddress}</td>
               <td className="td text-right"><button aria-label="Ўчириш" className="text-slate-400 hover:text-red-600" onClick={() => save.mutate(e.relatives.filter((x: any) => x.id !== r.id).map(clean))}><Trash2 size={16} /></button></td></tr>
@@ -150,7 +150,7 @@ function Documents({ e, onSaved }: { e: any; onSaved: () => void }) {
   const del = useMutation({ mutationFn: (id: string) => api(`/documents/${id}`, { method: 'DELETE' }), onSuccess: onSaved });
   const label = (t: string) => DOC_TYPES.find(([k]) => k === t)?.[1] ?? t;
   return (
-    <div className="card p-5">
+    <div>
       <div className="mb-4 flex flex-wrap items-center gap-3">
         <Select className="!w-auto" value={type} onChange={(v) => setType(v)}>{DOC_TYPES.map(([k, l]) => <option key={k} value={k}>{l}</option>)}</Select>
         <span className="text-xs text-slate-500">Ҳужжат турини танлаб, файлни пастдаги майдонга ташланг</span>

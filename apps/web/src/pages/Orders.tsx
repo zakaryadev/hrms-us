@@ -3,6 +3,7 @@ import { Download } from 'lucide-react';
 import { useState } from 'react';
 import { api, fmtDate, fullName } from '../lib/api';
 import { Select, buttonStyles, cn } from '../components/kit';
+import { PageHeader } from '../components/ui';
 
 export const ORDER_LABEL: Record<string, string> = {
   ishga_qabul: 'Ишга қабул', lavozim_otkazish: 'Лавозимга ўтказиш', tatil_berish: 'Меҳнат таътили',
@@ -14,16 +15,15 @@ export default function Orders() {
   const q = useQuery({ queryKey: ['orders', type], queryFn: () => api<any[]>(`/orders${type ? `?type=${type}` : ''}`) });
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-2xl font-semibold text-navy">Буйруқлар</h1>
-        <Select className="!w-auto" value={type} onChange={(v) => setType(v)}>
+      <PageHeader eyebrow="Ҳужжатлар" title="Буйруқлар" hint="Яратилган кадрлар буйруқлари (таътил, ўтказиш). DOCX файлни қайта юклаб олиш мумкин.">
+        <Select plain className="!w-auto" value={type} onChange={(v) => setType(v)}>
           <option value="">Барча турлар</option>{Object.entries(ORDER_LABEL).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
         </Select>
-      </div>
+      </PageHeader>
       <div className="card overflow-x-auto">
         <table className="w-full">
-          <thead className="border-b bg-slate-50"><tr><th className="th">№</th><th className="th">Сана</th><th className="th">Тури</th><th className="th">Ходим</th><th /></tr></thead>
-          <tbody className="divide-y">
+          <thead className="border-b border-slate-200"><tr><th className="th">№</th><th className="th">Сана</th><th className="th">Тури</th><th className="th">Ходим</th><th /></tr></thead>
+          <tbody className="divide-y divide-slate-100">
             {q.data?.map((o) => (
               <tr key={o.id} className="hover:bg-slate-50">
                 <td className="td font-medium">{o.orderNumber}</td><td className="td">{fmtDate(o.orderDate)}</td>

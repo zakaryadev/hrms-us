@@ -3,6 +3,7 @@ import { Download } from 'lucide-react';
 import { useState } from 'react';
 import EmployeePicker from '../components/EmployeePicker';
 import { LeaveModal } from '../components/GenerateDocs';
+import { PageHeader } from '../components/ui';
 import { api, fmtDate, fullName } from '../lib/api';
 import { buttonStyles, cn } from '../components/kit';
 
@@ -17,15 +18,15 @@ export default function Leaves() {
   const badge = { on: ['Таътилда', 'bg-amber-50 text-amber-700'], soon: ['Режалаштирилган', 'bg-blue-50 text-blue-700'], done: ['Тугаган', 'bg-slate-100 text-slate-600'] } as const;
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-semibold text-navy">Таътиллар</h1>
+      <PageHeader eyebrow="Ҳужжатлар" title="Таътиллар" hint="Меҳнат таътили буйруқлари ва ходимларнинг таътил ҳолати" />
       <div className="card flex flex-wrap items-center gap-3 p-4">
         <span className="text-sm text-slate-600">Таътил буйруғи яратиш:</span>
         <EmployeePicker onPick={setEmp} />
       </div>
       <div className="card overflow-x-auto">
         <table className="w-full">
-          <thead className="border-b bg-slate-50"><tr><th className="th">Ходим</th><th className="th">Бошланиши</th><th className="th">Тугаши</th><th className="th">Ишга чиқиш</th><th className="th">Кун</th><th className="th">Ҳолат</th><th /></tr></thead>
-          <tbody className="divide-y">
+          <thead className="border-b border-slate-200"><tr><th className="th">Ходим</th><th className="th">Бошланиши</th><th className="th">Тугаши</th><th className="th">Ишга чиқиш</th><th className="th">Кун</th><th className="th">Ҳолат</th><th /></tr></thead>
+          <tbody className="divide-y divide-slate-100">
             {q.data?.map((o) => {
               const p = o.payloadJson ?? {}, st = state(o), [label, cls] = badge[st];
               return (

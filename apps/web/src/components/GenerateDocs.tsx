@@ -25,14 +25,14 @@ export default function GenerateDocs({ employee }: { employee: any }) {
     <div className="space-y-4">
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {DOCS.map((d) => (
-          <button key={d.type} onClick={() => setOpen(d.type)} className="card flex items-start gap-3 p-4 text-left transition hover:border-brand">
+          <button key={d.type} onClick={() => setOpen(d.type)} className="card flex items-start gap-3 p-4 text-left transition-colors hover:border-brand hover:bg-brand-soft/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40">
             <FilePlus2 className="mt-0.5 shrink-0 text-brand" size={20} />
             <span><span className="block text-sm font-semibold">{d.title}</span><span className="text-xs text-slate-500">{d.desc}</span></span>
           </button>
         ))}
       </div>
-      <div className="card p-5">
-        <h3 className="mb-2 font-semibold">Яратилган ҳужжатлар</h3>
+      <div className="mt-8">
+        <h3 className="eyebrow mb-2">Яратилган ҳужжатлар</h3>
         <ul className="divide-y">
           {history.data?.map((g) => (
             <li key={g.id} className="flex items-center gap-3 py-2.5 text-sm">

@@ -14,7 +14,7 @@ export default function Users() {
   const [edit, setEdit] = useState<any | 'new' | null>(null);
   return (
     <div className="space-y-4">
-      <PageHeader title="Фойдаланувчилар" hint="Тизимга кирувчи ҳисоблар. Кадрлар ходими ва Бухгалтер бир хил ҳуқуқда; фақат Суперадмин фойдаланувчиларни бошқаради.">
+      <PageHeader eyebrow="Тизим" title="Фойдаланувчилар" hint="Тизимга кирувчи ҳисоблар. Кадрлар ходими ва Бухгалтер бир хил ҳуқуқда; фақат Суперадмин фойдаланувчиларни бошқаради.">
         <Button variant="primary"  onClick={() => setEdit('new')}><Plus size={16} /> Янги фойдаланувчи</Button>
       </PageHeader>
       {q.isLoading && <Loading />}
@@ -22,8 +22,8 @@ export default function Users() {
       {q.data && (
         <div className="card overflow-x-auto">
           <table className="w-full">
-            <thead className="border-b bg-slate-50"><tr><th className="th">Ф.И.Ш.</th><th className="th">Логин</th><th className="th">Роль</th><th className="th">Ҳолат</th><th className="th">Яратилган</th><th /></tr></thead>
-            <tbody className="divide-y">
+            <thead className="border-b border-slate-200"><tr><th className="th">Ф.И.Ш.</th><th className="th">Логин</th><th className="th">Роль</th><th className="th">Ҳолат</th><th className="th">Яратилган</th><th /></tr></thead>
+            <tbody className="divide-y divide-slate-100">
               {q.data.map((u) => (
                 <tr key={u.id} className="hover:bg-slate-50">
                   <td className="td font-medium">{u.fullName}{u.id === me?.id && <span className="ml-2 text-xs text-slate-400">(сиз)</span>}</td>

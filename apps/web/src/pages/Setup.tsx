@@ -3,6 +3,7 @@ import { Check } from 'lucide-react';
 import { useState } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
+import AuthLayout from '../components/AuthLayout';
 import { Field } from '../components/ui';
 import { api } from '../lib/api';
 import { Button, Input } from '../components/kit';
@@ -39,13 +40,12 @@ export default function Setup() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[#f8fafc] p-4">
-      <div className="card w-full max-w-lg p-6">
-        <img src="/logo.svg" alt="Logo" className="mx-auto mb-5 h-9" />
-        <ol className="mb-6 flex items-center justify-center gap-2 text-xs">
+    <AuthLayout wide>
+      <div>
+        <ol className="mb-8 flex flex-wrap items-center gap-2 text-xs">
           {STEPS.map((s, i) => (
             <li key={s} className="flex items-center gap-2">
-              <span className={`flex h-6 w-6 items-center justify-center rounded-full font-semibold ${i < step ? 'bg-emerald-600 text-white' : i === step ? 'bg-brand text-white' : 'bg-slate-200 text-slate-500'}`}>{i < step ? <Check size={14} /> : i + 1}</span>
+              <span className={`flex h-6 w-6 items-center justify-center rounded font-semibold ${i < step ? 'bg-emerald-600 text-white' : i === step ? 'bg-brand text-white' : 'bg-slate-200 text-slate-500'}`}>{i < step ? <Check size={14} /> : i + 1}</span>
               <span className={i === step ? 'font-medium text-slate-800' : 'text-slate-500'}>{s}</span>
               {i < STEPS.length - 1 && <span className="h-px w-6 bg-slate-300" />}
             </li>
@@ -54,7 +54,7 @@ export default function Setup() {
 
         {step === 0 && (
           <div className="space-y-4">
-            <h1 className="text-xl font-semibold text-navy">Тизимни дастлабки созлаш</h1>
+            <h1 className="text-[26px] font-semibold leading-tight tracking-tight text-navy">Тизимни дастлабки созлаш</h1>
             <p className="text-sm text-slate-600">Тизимда ҳали фойдаланувчи йўқ. Аввал биринчи <b>Суперадмин</b> ҳисобини яратамиз — у бошқа ходимларни (Кадрлар, Бухгалтер) қўшади ва ҳамма нарсани бошқаради. Сўнг ташкилот маълумотларини киритасиз (улар ҳужжатларга автоматик қўйилади).</p>
             <Button variant="primary"  onClick={() => setStep(1)}>Бошлаш</Button>
           </div>
@@ -62,7 +62,7 @@ export default function Setup() {
 
         {step === 1 && (
           <form className="space-y-4" onSubmit={submitAdmin}>
-            <h1 className="text-xl font-semibold text-navy">Суперадмин ҳисоби</h1>
+            <h1 className="text-[26px] font-semibold leading-tight tracking-tight text-navy">Суперадмин ҳисоби</h1>
             <Field label="Ф.И.Ш. *"><Input required minLength={2} value={admin.fullName} onChange={(e) => setAdmin({ ...admin, fullName: e.target.value })} /></Field>
             <Field label="Логин * (лотин ҳарфлари, рақам, . _ -)"><Input required minLength={2} pattern="[a-zA-Z0-9._\-]+" autoComplete="username" value={admin.login} onChange={(e) => setAdmin({ ...admin, login: e.target.value })} /></Field>
             <Field label="Парол * (камида 8 белги)"><Input required type="password" autoComplete="new-password" value={admin.password} onChange={(e) => setAdmin({ ...admin, password: e.target.value })} /></Field>
@@ -77,7 +77,7 @@ export default function Setup() {
 
         {step === 2 && (
           <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); saveOrg.mutate(); }}>
-            <h1 className="text-xl font-semibold text-navy">Ташкилот маълумотлари</h1>
+            <h1 className="text-[26px] font-semibold leading-tight tracking-tight text-navy">Ташкилот маълумотлари</h1>
             <p className="text-sm text-slate-500">Суперадмин ҳисоби яратилди ва сиз тизимга кирдингиз. Бу маълумотларни кейин «Справочниклар» бўлимида ўзгартириш мумкин.</p>
             <Field label="Ташкилот номи"><Input value={org.tashkilot_nomi} onChange={(e) => setOrg({ ...org, tashkilot_nomi: e.target.value })} /></Field>
             <Field label="Бош директор Ф.И.Ш."><Input value={org.bosh_direktor_fish} onChange={(e) => setOrg({ ...org, bosh_direktor_fish: e.target.value })} /></Field>
@@ -90,6 +90,6 @@ export default function Setup() {
           </form>
         )}
       </div>
-    </div>
+    </AuthLayout>
   );
 }

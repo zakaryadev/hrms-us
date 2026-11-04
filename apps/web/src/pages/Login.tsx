@@ -3,6 +3,7 @@ import { LogIn } from 'lucide-react';
 import { useState } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
+import AuthLayout from '../components/AuthLayout';
 import { Field } from '../components/ui';
 import { api } from '../lib/api';
 import { Button, Input } from '../components/kit';
@@ -18,18 +19,17 @@ export default function Login() {
   if (needsSetup) return <Navigate to="/setup" replace />;
   if (user) return <Navigate to="/" replace />;
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[#f8fafc] p-4">
-      <form className="card w-full max-w-sm space-y-4 p-6" onSubmit={(e) => { e.preventDefault(); login.mutate(); }}>
-        <img src="/logo.svg" alt="Logo" className="mx-auto h-9" />
-        <div className="text-center">
-          <h1 className="text-xl font-semibold text-navy">Тизимга кириш</h1>
-          <p className="mt-1 text-sm text-slate-500">Кадрлар бўлими бошқаруви тизими</p>
+    <AuthLayout>
+      <form className="space-y-5" onSubmit={(e) => { e.preventDefault(); login.mutate(); }}>
+        <div>
+          <h1 className="text-[26px] font-semibold leading-tight tracking-tight text-navy">Тизимга кириш</h1>
+          <p className="mt-1.5 text-[13.5px] text-slate-500">Логин ва паролингизни киритинг</p>
         </div>
         <Field label="Логин"><Input required autoFocus autoComplete="username" value={f.login} onChange={(e) => setF({ ...f, login: e.target.value })} /></Field>
         <Field label="Парол"><Input required type="password" autoComplete="current-password" value={f.password} onChange={(e) => setF({ ...f, password: e.target.value })} /></Field>
         {login.error && <p className="text-sm text-red-600" role="alert">{(login.error as Error).message}</p>}
-        <Button variant="primary" className="w-full justify-center"  disabled={login.isPending}><LogIn size={16} /> Кириш</Button>
+        <Button variant="primary" className="w-full justify-center" disabled={login.isPending} loading={login.isPending}>{!login.isPending && <LogIn size={16} />} Кириш</Button>
       </form>
-    </div>
+    </AuthLayout>
   );
 }
