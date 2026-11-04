@@ -3,10 +3,11 @@ import { ArrowLeft, FileText, Pencil, Trash2, Upload, UserRound } from 'lucide-r
 import { useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import EmployeeForm from '../components/EmployeeForm';
+import GenerateDocs from '../components/GenerateDocs';
 import { Field, StatusBadge } from '../components/ui';
 import { api, fmtDate, fmtMoney, fullName } from '../lib/api';
 
-const TABS = ['Shaxsiy ma\'lumotlar', 'Mehnat faoliyati', 'Qarindoshlar', 'Hujjatlar'] as const;
+const TABS = ['Shaxsiy ma\'lumotlar', 'Mehnat faoliyati', 'Qarindoshlar', 'Hujjatlar', 'Hujjat yaratish'] as const;
 const DOC_TYPES = [
   ['pasport', 'Pasport'], ['diplom', 'Diplom'], ['mehnat_daftarchasi', 'Mehnat daftarchasi'],
   ['sudlanmaganlik', 'Sudlanmaganlik haqida ma\'lumotnoma'], ['boshqa', 'Boshqa'],
@@ -70,6 +71,7 @@ export default function EmployeeProfile() {
       {tab === TABS[1] && <WorkHistory e={e} onSaved={refresh} />}
       {tab === TABS[2] && <Relatives e={e} onSaved={refresh} />}
       {tab === TABS[3] && <Documents e={e} onSaved={refresh} />}
+      {tab === TABS[4] && <GenerateDocs employee={e} />}
       {editing && <EmployeeForm employee={e} onClose={() => setEditing(false)} />}
     </div>
   );

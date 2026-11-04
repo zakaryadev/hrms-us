@@ -1,10 +1,11 @@
-import { LayoutDashboard, Network, Users } from 'lucide-react';
+import { LayoutDashboard, Network, Settings, Users } from 'lucide-react';
 import { NavLink, Outlet } from 'react-router-dom';
 
 const links = [
   { to: '/', label: 'Bosh sahifa', icon: LayoutDashboard, end: true },
   { to: '/employees', label: 'Xodimlar', icon: Users },
   { to: '/structure', label: 'Tuzilma', icon: Network },
+  { to: '/settings', label: 'Sozlamalar', icon: Settings },
 ];
 
 export default function Layout() {
@@ -32,7 +33,7 @@ export default function Layout() {
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="flex items-center gap-3 border-b bg-white px-4 py-3 md:hidden">
           <img src="/logo.svg" alt="Logo" className="h-5 shrink-0" />
-          <nav className="ml-auto flex gap-3 whitespace-nowrap text-xs">
+          <nav className="ml-auto flex min-w-0 gap-3 overflow-x-auto whitespace-nowrap text-xs">
             {links.map((l) => <NavLink key={l.to} to={l.to} end={l.end} className={({ isActive }) => (isActive ? 'font-semibold text-brand' : 'text-slate-600')}>{l.label}</NavLink>)}
           </nav>
         </header>

@@ -97,12 +97,13 @@ model Employee {
   createdAt            DateTime             @default(now()) @map("created_at")
   updatedAt            DateTime             @updatedAt @map("updated_at")
 
-  education   EmployeeEducation[]
-  workHistory EmployeeWorkHistory[]
-  relatives   EmployeeRelative[]
-  documents   EmployeeDocument[]
-  orders      Order[]
-  timesheets  Timesheet[]
+  education          EmployeeEducation[]
+  workHistory        EmployeeWorkHistory[]
+  relatives          EmployeeRelative[]
+  documents          EmployeeDocument[]
+  orders             Order[]
+  timesheets         Timesheet[]
+  generatedDocuments GeneratedDocument[]
 
   @@index([departmentId])
   @@index([positionId])
@@ -192,4 +193,18 @@ model Setting {
   value String
 
   @@map("settings")
+}
+
+model GeneratedDocument {
+  id         String   @id @default(uuid())
+  type       String
+  employeeId String   @map("employee_id")
+  employee   Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  number     String?
+  payload    Json     @default("{}")
+  filePath   String   @map("file_path")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@index([employeeId, type])
+  @@map("generated_documents")
 }
