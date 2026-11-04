@@ -1,12 +1,13 @@
-import { IsOptional, IsString, IsUUID } from 'class-validator';
+import { IsOptional, IsString, IsUUID, Length } from 'class-validator';
 
 export class CreateDepartmentDto {
-  @IsString() name: string;
-  @IsOptional() @IsString() code?: string;
+  @IsString() @Length(1, 200) name: string;
+  @IsOptional() @IsString() @Length(0, 50) code?: string;
   @IsOptional() @IsUUID() parentId?: string;
 }
 export class UpdateDepartmentDto {
-  @IsOptional() @IsString() name?: string;
-  @IsOptional() @IsString() code?: string;
-  @IsOptional() @IsUUID() parentId?: string;
+  @IsOptional() @IsString() @Length(1, 200) name?: string;
+  @IsOptional() @IsString() @Length(0, 50) code?: string;
+  /** null — юқори бўлимдан чиқариш */
+  @IsOptional() @IsUUID() parentId?: string | null;
 }
