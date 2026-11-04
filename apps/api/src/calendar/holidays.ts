@@ -32,7 +32,18 @@ export function addDays(d: Date, n: number): Date {
   return new Date(d.getTime() + n * 86_400_000);
 }
 
-export function isHoliday(d: Date): boolean {
+/**
+ * Қўлда белгиланган кунлар (база: calendar_days). Ҳар бир кун учун ҳолат:
+ *  - holiday  — расмий байрам (таътил оралиғига тушса таътилни узайтиради, иш куни эмас);
+ *  - dayoff   — кўчирилган дам олиш куни (иш куни эмас, лекин таътилни узайтирмайди);
+ *  - workday  — иш куни (масалан, ишчи шанба ёки ишчи куни деб белгиланган байрам).
+ * Белгиланмаган кунлар: ўрнатилган байрамлар, шанба/якшанба — дам олиш, қолгани — иш куни.
+ */
+export type DayKind = 'holiday' | 'dayoff' | 'workday';
+export type CalendarOverrides = Record<string, DayKind>;
+export type DayStatus = 'holiday' | 'dayoff' | 'weekend' | 'work';
+
+export function isBuiltinHoliday(d: Date): boolean {
   const m = d.getUTCMonth() + 1;
   const day = d.getUTCDate();
   if (FIXED_HOLIDAYS.some(([hm, hd]) => hm === m && hd === day)) return true;
@@ -44,13 +55,24 @@ export function isWeekend(d: Date): boolean {
   return w === 0 || w === 6;
 }
 
-export const isWorkingDay = (d: Date) => !isWeekend(d) && !isHoliday(d);
+/** Кун ҳолати: қўлда белгиланган > ўрнатилган байрам > ҳафта охири > иш куни */
+export function dayStatus(d: Date, ov: CalendarOverrides = {}): DayStatus {
+  const o = ov[ymd(d)];
+  if (o === 'holiday') return 'holiday';
+  if (o === 'dayoff') return 'dayoff';
+  if (o === 'workday') return 'work';
+  if (isBuiltinHoliday(d)) return 'holiday';
+  return isWeekend(d) ? 'weekend' : 'work';
+}
 
-/** Oydagi rasmiy ish kunlari soni (tabel/oylik uchun ham ishlatiladi). */
-export function workingDaysInMonth(year: number, month: number): number {
+export const isHoliday = (d: Date, ov: CalendarOverrides = {}) => dayStatus(d, ov) === 'holiday';
+export const isWorkingDay = (d: Date, ov: CalendarOverrides = {}) => dayStatus(d, ov) === 'work';
+
+/** Ойдаги расмий иш кунлари сони (табель/ойлик учун ҳам ишлатилади). */
+export function workingDaysInMonth(year: number, month: number, ov: CalendarOverrides = {}): number {
   let count = 0;
   for (let d = utcDate(`${year}-${pad(month)}-01`); d.getUTCMonth() === month - 1; d = addDays(d, 1)) {
-    if (isWorkingDay(d)) count++;
+    if (isWorkingDay(d, ov)) count++;
   }
   return count;
 }

@@ -1,4 +1,4 @@
-import { workingDaysInMonth } from './holidays';
+import { dayStatus, workingDaysInMonth } from './holidays';
 import { calcLeave, workYear } from './leave';
 
 describe('calcLeave', () => {
@@ -81,5 +81,49 @@ describe('taqvim: qo\'shimcha holatlar', () => {
 
   it('hayit jadvali yo\'q yilda faqat doimiy bayramlar hisobga olinadi', () => {
     expect(workingDaysInMonth(2027, 3)).toBe(22); // 23 ish kuni − 8-mart (dushanba); 21-mart yakshanba; hayit sanalari kiritilmagan
+  });
+});
+
+describe('qo\'lda belgilangan kunlar (overrides)', () => {
+  const D = (iso: string) => new Date(iso + 'T00:00:00Z');
+
+  it('dayStatus: ustuvorlik — qo\'lda > o\'rnatilgan bayram > hafta oxiri', () => {
+    expect(dayStatus(D('2026-12-08'))).toBe('holiday');                          // o'rnatilgan
+    expect(dayStatus(D('2026-12-08'), { '2026-12-08': 'workday' })).toBe('work'); // ishchi kun deb belgilangan
+    expect(dayStatus(D('2026-12-05'))).toBe('weekend');                           // shanba
+    expect(dayStatus(D('2026-12-05'), { '2026-12-05': 'workday' })).toBe('work'); // ishchi shanba
+    expect(dayStatus(D('2026-12-14'), { '2026-12-14': 'dayoff' })).toBe('dayoff');
+    expect(dayStatus(D('2026-12-14'), { '2026-12-14': 'holiday' })).toBe('holiday');
+  });
+
+  it('workingDaysInMonth: ishchi shanba qo\'shadi, ko\'chirilgan dam olish va yangi bayram kamaytiradi', () => {
+    expect(workingDaysInMonth(2026, 12)).toBe(22);
+    expect(workingDaysInMonth(2026, 12, { '2026-12-05': 'workday' })).toBe(23);
+    expect(workingDaysInMonth(2026, 12, { '2026-12-14': 'dayoff' })).toBe(21);
+    expect(workingDaysInMonth(2026, 12, { '2026-12-14': 'holiday' })).toBe(21);
+    expect(workingDaysInMonth(2026, 12, { '2026-12-08': 'workday' })).toBe(23);
+  });
+
+  it("ko'chirilgan dam olish ta'tilni uzaytirmaydi, qo'shimcha bayram uzaytiradi", () => {
+    const base = calcLeave('2026-06-01', 10); // 1..10-iyun, bayram yo'q
+    expect(base.endDate).toBe('2026-06-10');
+    const dayoff = calcLeave('2026-06-01', 10, { '2026-06-03': 'dayoff' });
+    expect(dayoff.endDate).toBe('2026-06-10');
+    expect(dayoff.holidaysInRange).toEqual([]);
+    const hol = calcLeave('2026-06-01', 10, { '2026-06-03': 'holiday' });
+    expect(hol.endDate).toBe('2026-06-11');
+    expect(hol.holidaysInRange).toEqual(['2026-06-03']);
+  });
+
+  it("8-dekabr ishchi kun deb belgilansa, ta'til uzaymaydi", () => {
+    const r = calcLeave('2026-11-16', 27, { '2026-12-08': 'workday' });
+    expect(r.holidaysInRange).toEqual([]);
+    expect(r.endDate).toBe('2026-12-12');
+    expect(r.returnDate).toBe('2026-12-14'); // 12-shanba, 13-yakshanba
+  });
+
+  it("qaytish sanasi ko'chirilgan dam olish kuniga to'g'ri kelsa — keyingi ish kuni", () => {
+    const r = calcLeave('2026-06-01', 5, { '2026-06-08': 'dayoff' }); // 1..5-iyun, 6-7 hafta oxiri, 8 ko'chirilgan
+    expect(r.returnDate).toBe('2026-06-09');
   });
 });

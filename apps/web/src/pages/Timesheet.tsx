@@ -17,6 +17,8 @@ const CODES: { code: string; label: string; cls: string; key: string }[] = [
   { code: 'TSH', label: 'Ўз ҳисобидан таътил', cls: 'bg-slate-200 text-slate-700', key: 't' },
   { code: 'TK', label: 'Тушунтириш хати олинган', cls: 'bg-orange-100 text-orange-800', key: 'x' },
 ];
+const hdr = (d: any) => d.status === 'holiday' ? 'bg-red-100 text-red-700' : d.status === 'dayoff' ? 'bg-amber-100 text-amber-800' : d.off ? 'bg-slate-200 text-red-600' : 'bg-slate-50';
+const sub = (d: any) => d.status === 'holiday' ? 'bg-red-100' : d.status === 'dayoff' ? 'bg-amber-100' : d.off ? 'bg-slate-200' : 'bg-slate-50';
 const cls = (c?: string) => CODES.find((x) => x.code === c)?.cls ?? '';
 
 export default function Timesheet() {
@@ -101,7 +103,7 @@ export default function Timesheet() {
         </div>
       </div>
 
-      {t?.holidaysWarning && <p className="card border-amber-300 bg-amber-50 p-3 text-sm text-amber-800">{year}-йил учун ҳайит кунлари киритилмаган (<code>holidays.ts</code>): иш кунлари ва ойлик нотўғри ҳисобланиши мумкин.</p>}
+      {t?.holidaysWarning && <p className="card border-amber-300 bg-amber-50 p-3 text-sm text-amber-800">{year}-йил учун ҳайит кунлари киритилмаган (<a className="underline" href="/calendar">Иш календари</a>): иш кунлари ва ойлик нотўғри ҳисобланиши мумкин.</p>}
       {msg && <p className="card p-3 text-sm">{msg}</p>}
 
       <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-600">
@@ -117,10 +119,10 @@ export default function Timesheet() {
             <thead>
               <tr>
                 <th className="th sticky left-0 z-20 min-w-[210px] border-b bg-slate-50" rowSpan={2}>Ходим</th>
-                {t.days.map((d: any) => <th key={d.day} className={`border-b px-0 pt-1.5 text-center font-semibold ${d.off ? 'bg-slate-200 text-red-600' : 'bg-slate-50'}`}>{d.day}</th>)}
+                {t.days.map((d: any) => <th key={d.day} className={`border-b px-0 pt-1.5 text-center font-semibold ${hdr(d)}`}>{d.day}</th>)}
                 <th className="th sticky right-0 z-20 min-w-[150px] border-b border-l bg-slate-50 text-right" rowSpan={2}>Жами / ойлик</th>
               </tr>
-              <tr>{t.days.map((d: any) => <th key={d.day} className={`border-b pb-1.5 text-center font-normal text-slate-500 ${d.off ? 'bg-slate-200' : 'bg-slate-50'}`}>{WD[d.weekday]}</th>)}</tr>
+              <tr>{t.days.map((d: any) => <th key={d.day} className={`border-b pb-1.5 text-center font-normal text-slate-500 ${sub(d)}`}>{WD[d.weekday]}</th>)}</tr>
             </thead>
             <tbody>
               {t.rows.map((r: any, ri: number) => (

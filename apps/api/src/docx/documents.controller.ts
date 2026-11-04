@@ -3,6 +3,7 @@ import { IsObject, IsOptional, IsUUID } from 'class-validator';
 import type { Response } from 'express';
 import { existsSync } from 'fs';
 import { calcLeave, workYear } from '../calendar/leave';
+import { CalendarService } from '../calendar/calendar.service';
 import { DOC_TYPES, DocType, DocumentsService } from './documents.service';
 
 class GenerateDto {
@@ -12,7 +13,7 @@ class GenerateDto {
 
 @Controller()
 export class DocumentsGenController {
-  constructor(private svc: DocumentsService) {}
+  constructor(private svc: DocumentsService, private calendar: CalendarService) {}
 
   @Post('documents/generate/:type')
   async generate(@Param('type') type: string, @Body() dto: GenerateDto, @Res({ passthrough: true }) res: Response) {
@@ -52,10 +53,10 @@ export class DocumentsGenController {
   }
 
   @Get('leave/calc')
-  calc(@Query('start') start: string, @Query('days') days: string, @Query('hireDate') hireDate?: string) {
+  async calc(@Query('start') start: string, @Query('days') days: string, @Query('hireDate') hireDate?: string) {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(start ?? '')) throw new BadRequestException('start: ЙЙЙЙ-ОО-КК');
     try {
-      const r = calcLeave(start, Number(days));
+      const r = calcLeave(start, Number(days), await this.calendar.overridesAround(start));
       return { ...r, workYear: hireDate && /^\d{4}-\d{2}-\d{2}/.test(hireDate) ? workYear(hireDate.slice(0, 10), start) : null };
     } catch (e) {
       throw new BadRequestException((e as Error).message);

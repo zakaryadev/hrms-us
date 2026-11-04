@@ -88,3 +88,15 @@ describe('validateDaysData', () => {
     expect(() => validateDaysData(2026, 12, [] as any)).toThrow();
   });
 });
+
+describe('calcTimesheet — taqvim overrides', () => {
+  it('ishchi shanba kunlik okladni kamaytiradi (ish kunlari ko\'payadi)', () => {
+    const daysData = days({ '8': 22 });
+    const plain = calcTimesheet({ ...base, employmentType: 'shtat', daysData });
+    const withSat = calcTimesheet({ ...base, employmentType: 'shtat', daysData, overrides: { '2026-12-05': 'workday' } });
+    expect(plain.workingDays).toBe(22);
+    expect(withSat.workingDays).toBe(23);
+    expect(withSat.dailyRate).toBeLessThan(plain.dailyRate);
+    expect(withSat.salary).toBe(Math.round(22 * (6_500_000 / 23)));
+  });
+});

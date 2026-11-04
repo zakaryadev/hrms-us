@@ -5,6 +5,7 @@ import { mkdirSync, writeFileSync } from 'fs';
 import { join, resolve } from 'path';
 import { workYear, calcLeave } from '../calendar/leave';
 import { PrismaService } from '../prisma/prisma.service';
+import { CalendarService } from '../calendar/calendar.service';
 import { SettingsService } from '../settings/settings.service';
 import { DocxService } from './docx.service';
 import { dayOf, fmtDate, fmtDayMonth, fmtMoney, fmtYear, monthName, toLang } from './format';
@@ -27,7 +28,7 @@ function needDates(params: Params, ...keys: string[]) {
 
 @Injectable()
 export class DocumentsService {
-  constructor(private prisma: PrismaService, private docx: DocxService, private settings: SettingsService) {}
+  constructor(private prisma: PrismaService, private docx: DocxService, private settings: SettingsService, private calendar: CalendarService) {}
 
   private async employee(id: string) {
     const e = await this.prisma.employee.findUnique({
@@ -145,7 +146,7 @@ export class DocumentsService {
         if (!e.hireDate) throw new BadRequestException('Ходимнинг ишга қабул санаси киритилмаган');
         const basic = Number(params.basicDays ?? e.annualLeaveBasicDays);
         const extra = Number(params.extraDays ?? e.annualLeaveExtraDays);
-        const leave = calcLeave(params.startDate, basic + extra);
+        const leave = calcLeave(params.startDate, basic + extra, await this.calendar.overridesAround(params.startDate));
         const auto = workYear(e.hireDate.toISOString().slice(0, 10), params.startDate);
         const wy = {
           start: ISO.test(String(params.workYearStart ?? '')) ? params.workYearStart : auto.start,

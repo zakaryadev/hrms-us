@@ -1,4 +1,4 @@
-import { workingDaysInMonth } from '../calendar/holidays';
+import { CalendarOverrides, workingDaysInMonth } from '../calendar/holidays';
 
 /** Tabel kodlari */
 export const TIMESHEET_CODES = ['8', '7.2', 'MT', 'KV', 'BPT', 'SK', 'TSH', 'TK'] as const;
@@ -14,6 +14,8 @@ export interface PayrollInput {
   year: number;
   month: number;
   daysData: Record<string, string>;
+  /** Қўлда белгиланган тақвим кунлари (бўлмаса — ўрнатилган қоидалар) */
+  overrides?: CalendarOverrides;
 }
 
 export interface PayrollResult {
@@ -51,7 +53,7 @@ export function validateDaysData(year: number, month: number, daysData: unknown)
 }
 
 export function calcTimesheet(input: PayrollInput): PayrollResult {
-  const workingDays = workingDaysInMonth(input.year, input.month);
+  const workingDays = workingDaysInMonth(input.year, input.month, input.overrides);
   const count = (codes: TimesheetCode[]) => Object.values(input.daysData).filter((c) => (codes as string[]).includes(c)).length;
 
   const workedDays = count(WORKED);

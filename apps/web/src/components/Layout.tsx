@@ -1,5 +1,5 @@
 import {
-  KeyRound, LogOut, UserCog,
+  CalendarRange, KeyRound, LogOut, UserCog,
   Archive, BookMarked, CalendarDays, FileSpreadsheet, FileText, LayoutDashboard, Palmtree, ScrollText, Users, Wallet, Network,
 } from 'lucide-react';
 import { useState } from 'react';
@@ -21,6 +21,7 @@ const links = [
   { to: '/structure', label: 'Штат ва сон', icon: Network },
 ];
 const bottom = { to: '/settings', label: 'Справочниклар', icon: BookMarked };
+const calendarLink = { to: '/calendar', label: 'Иш календари', icon: CalendarRange };
 
 const item = ({ isActive }: { isActive: boolean }) =>
   `flex items-center gap-3 rounded-lg border-l-4 px-3 py-2.5 text-sm transition ${
@@ -33,7 +34,7 @@ export default function Layout() {
   const isAdmin = user?.role === 'superadmin';
   return (
     <div className="flex min-h-screen">
-      <aside className="hidden w-64 shrink-0 flex-col bg-navy text-white md:flex">
+      <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col overflow-y-auto bg-navy text-white md:flex">
         <div className="rounded-br-3xl bg-white p-5">
           <img src="/logo.svg" alt="Logo" className="h-8" />
         </div>
@@ -43,6 +44,7 @@ export default function Layout() {
           ))}
           <div className="mt-auto space-y-0.5 border-t border-white/10 pt-3">
             {isAdmin && <NavLink to="/users" className={item}><UserCog size={18} /> Фойдаланувчилар</NavLink>}
+            <NavLink to={calendarLink.to} className={item}><calendarLink.icon size={18} /> {calendarLink.label}</NavLink>
             <NavLink to={bottom.to} className={item}><bottom.icon size={18} /> {bottom.label}</NavLink>
           </div>
           <div className="mb-3 mt-2 rounded-lg bg-white/5 p-3">
@@ -59,7 +61,7 @@ export default function Layout() {
         <header className="flex items-center gap-3 border-b bg-white px-4 py-3 md:hidden">
           <img src="/logo.svg" alt="Logo" className="h-5 shrink-0" />
           <nav className="ml-auto flex min-w-0 gap-3 overflow-x-auto whitespace-nowrap text-xs">
-            {[...links, ...(isAdmin ? [{ to: '/users', label: 'Фойдаланувчилар', icon: UserCog }] : []), bottom].map((l) => (
+            {[...links, ...(isAdmin ? [{ to: '/users', label: 'Фойдаланувчилар', icon: UserCog }] : []), calendarLink, bottom].map((l) => (
               <NavLink key={l.to} to={l.to} end={(l as any).end} className={({ isActive }) => (isActive ? 'font-semibold text-blue-600' : 'text-slate-600')}>{l.label}</NavLink>
             ))}
           </nav>

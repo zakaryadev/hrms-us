@@ -1,7 +1,8 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import ExcelJS from 'exceljs';
-import { MOVABLE_HOLIDAYS, isWorkingDay, utcDate, ymd } from '../calendar/holidays';
+import { CalendarService } from '../calendar/calendar.service';
+import { CalendarOverrides, dayStatus, utcDate, ymd } from '../calendar/holidays';
 import { PrismaService } from '../prisma/prisma.service';
 import { PayrollResult, calcTimesheet, daysInMonth, validateDaysData } from '../payroll/payroll';
 
@@ -29,7 +30,7 @@ export function parsePeriod(year: unknown, month: unknown) {
 
 @Injectable()
 export class TimesheetService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService, private calendar: CalendarService) {}
 
   private employees(departmentId?: string) {
     return this.prisma.employee.findMany({
@@ -41,6 +42,7 @@ export class TimesheetService {
 
   async list(year: number, month: number, departmentId?: string) {
     const emps = await this.employees(departmentId);
+    const ov = await this.calendar.overrides(year);
     const sheets = await this.prisma.timesheet.findMany({ where: { year, month, employeeId: { in: emps.map((e) => e.id) } } });
     const byEmp = new Map(sheets.map((s) => [s.employeeId, s]));
     const rows: TimesheetRow[] = emps.map((e) => {
@@ -49,17 +51,18 @@ export class TimesheetService {
       return {
         employeeId: e.id, tabNumber: e.tabNumber, fullName: [e.lastName, e.firstName, e.middleName].filter(Boolean).join(' '),
         position: e.position.title, department: e.department.name, employmentType: e.employmentType, salary, daysData,
-        result: calcTimesheet({ employmentType: e.employmentType, salary, year, month, daysData }),
+        result: calcTimesheet({ employmentType: e.employmentType, salary, year, month, daysData, overrides: ov }),
       };
     });
-    return { year, month, daysInMonth: daysInMonth(year, month), holidaysWarning: !(year in MOVABLE_HOLIDAYS), days: this.dayInfo(year, month), rows };
+    return { year, month, daysInMonth: daysInMonth(year, month), holidaysWarning: !(await this.calendar.isYearConfigured(year)), days: this.dayInfo(year, month, ov), rows };
   }
 
   /** Har bir kun uchun: hafta kuni va dam olish/bayram belgisi (UI bo'yash uchun) */
-  dayInfo(year: number, month: number) {
+  dayInfo(year: number, month: number, ov: CalendarOverrides) {
     return Array.from({ length: daysInMonth(year, month) }, (_, i) => {
       const d = utcDate(`${year}-${String(month).padStart(2, '0')}-${String(i + 1).padStart(2, '0')}`);
-      return { day: i + 1, weekday: d.getUTCDay(), off: !isWorkingDay(d) };
+      const status = dayStatus(d, ov);
+      return { day: i + 1, weekday: d.getUTCDay(), off: status !== 'work', status };
     });
   }
 
@@ -68,11 +71,11 @@ export class TimesheetService {
     if (!emp) throw new NotFoundException('Ходим топилмади');
     let daysData: Record<string, string>;
     try { daysData = validateDaysData(year, month, rawDays); } catch (e) { throw new BadRequestException((e as Error).message); }
-    return this.persist(emp, year, month, daysData);
+    return this.persist(emp, year, month, daysData, await this.calendar.overrides(year));
   }
 
-  private async persist(emp: { id: string; employmentType: 'shtat' | 'gpx'; salary: Prisma.Decimal }, year: number, month: number, daysData: Record<string, string>) {
-    const result = calcTimesheet({ employmentType: emp.employmentType, salary: Number(emp.salary), year, month, daysData });
+  private async persist(emp: { id: string; employmentType: 'shtat' | 'gpx'; salary: Prisma.Decimal }, year: number, month: number, daysData: Record<string, string>, ov: CalendarOverrides) {
+    const result = calcTimesheet({ employmentType: emp.employmentType, salary: Number(emp.salary), year, month, daysData, overrides: ov });
     await this.prisma.timesheet.upsert({
       where: { employeeId_year_month: { employeeId: emp.id, year, month } },
       update: { daysData, totalWorkedDays: result.workedDays, totalWorkedHours: result.totalHours, calculatedSalary: result.salary },
@@ -86,7 +89,8 @@ export class TimesheetService {
     const emps = await this.employees(departmentId);
     const existing = await this.prisma.timesheet.findMany({ where: { year, month, employeeId: { in: emps.map((e) => e.id) } } });
     const byEmp = new Map(existing.map((s) => [s.employeeId, (s.daysData ?? {}) as Record<string, string>]));
-    const info = this.dayInfo(year, month);
+    const ov = await this.calendar.overrides(year);
+    const info = this.dayInfo(year, month, ov);
     let updated = 0;
     for (const e of emps) {
       const data = { ...(byEmp.get(e.id) ?? {}) };
@@ -99,7 +103,7 @@ export class TimesheetService {
         data[String(d.day)] = '8';
         changed = true;
       }
-      if (changed || !byEmp.has(e.id)) { await this.persist(e, year, month, data); updated++; }
+      if (changed || !byEmp.has(e.id)) { await this.persist(e, year, month, data, ov); updated++; }
     }
     return { updated };
   }

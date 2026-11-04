@@ -1,4 +1,4 @@
-import { addDays, isHoliday, isWorkingDay, utcDate, ymd } from './holidays';
+import { addDays, CalendarOverrides, isHoliday, isWorkingDay, utcDate, ymd } from './holidays';
 
 export interface LeaveResult {
   endDate: string;
@@ -13,7 +13,7 @@ export interface LeaveResult {
  * ta'tilni shuncha kunga uzaytiradi (uzaytirilgan kunlar ichidagi bayramlar ham hisobga olinadi).
  * Ishga chiqish sanasi — tugashdan keyingi birinchi ish kuni.
  */
-export function calcLeave(startDate: string, days: number): LeaveResult {
+export function calcLeave(startDate: string, days: number, ov: CalendarOverrides = {}): LeaveResult {
   if (!Number.isInteger(days) || days < 1) throw new Error('Таътил кунлари мусбат бутун сон бўлиши керак');
   const start = utcDate(startDate);
   const holidays: string[] = [];
@@ -22,13 +22,13 @@ export function calcLeave(startDate: string, days: number): LeaveResult {
   let last = start;
   while (remaining > 0) {
     last = cursor;
-    if (isHoliday(cursor)) holidays.push(ymd(cursor)); // bayram kuni ta'til kunidan sanalmaydi
+    if (isHoliday(cursor, ov)) holidays.push(ymd(cursor)); // bayram kuni ta'til kunidan sanalmaydi
     else remaining--;
     cursor = addDays(cursor, 1);
   }
   // Bayram kuni oxirgi kun bo'lib qolmasligi uchun: oxirgi sanalgan kun — `last`
   let ret = addDays(last, 1);
-  while (!isWorkingDay(ret)) ret = addDays(ret, 1);
+  while (!isWorkingDay(ret, ov)) ret = addDays(ret, 1);
   return { endDate: ymd(last), returnDate: ymd(ret), totalDays: days, holidaysInRange: holidays };
 }
 

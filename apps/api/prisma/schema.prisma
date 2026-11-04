@@ -28,6 +28,12 @@ enum EmployeeStatus {
   ishdan_boshagan
 }
 
+enum CalendarKind {
+  holiday
+  dayoff
+  workday
+}
+
 enum UserRole {
   superadmin
   kadrlar
@@ -225,4 +231,12 @@ model User {
   createdAt    DateTime @default(now()) @map("created_at")
 
   @@map("users")
+}
+
+model CalendarDay {
+  date DateTime     @id @db.Date
+  kind CalendarKind
+  note String?
+
+  @@map("calendar_days")
 }

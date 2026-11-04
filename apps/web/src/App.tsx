@@ -4,6 +4,7 @@ import { AuthProvider, RequireAuth } from './auth/AuthContext';
 import Login from './pages/Login';
 import Setup from './pages/Setup';
 import Users from './pages/Users';
+import Calendar from './pages/Calendar';
 import Archive from './pages/Archive';
 import Certificates from './pages/Certificates';
 import ImportPage from './pages/ImportPage';
@@ -34,6 +35,7 @@ export default function App() {
           <Route path="certificates" element={<Certificates />} />
           <Route path="payroll" element={<Payroll />} />
           <Route path="leaves" element={<Leaves />} />
+          <Route path="calendar" element={<Calendar />} />
           <Route path="timesheet" element={<Timesheet />} />
           <Route path="structure" element={<Structure />} />
           <Route path="settings" element={<Settings />} />
