@@ -4,13 +4,13 @@ import { useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import EmployeeForm from '../components/EmployeeForm';
 import GenerateDocs from '../components/GenerateDocs';
-import { Field, StatusBadge } from '../components/ui';
-import { api, fmtDate, fmtMoney, fullName } from '../lib/api';
+import { Field, Loading, StatusBadge } from '../components/ui';
+import { api, CONTRACT_LABEL, EMP_TYPE_LABEL, fmtDate, fmtMoney, fullName, GENDER_LABEL } from '../lib/api';
 
-const TABS = ['Shaxsiy ma\'lumotlar', 'Mehnat faoliyati', 'Qarindoshlar', 'Hujjatlar', 'Hujjat yaratish'] as const;
+const TABS = ['Шахсий маълумотлар', 'Меҳнат фаолияти', 'Қариндошлари', 'Ҳужжатлар', 'Ҳужжат яратиш'] as const;
 const DOC_TYPES = [
-  ['pasport', 'Pasport'], ['diplom', 'Diplom'], ['mehnat_daftarchasi', 'Mehnat daftarchasi'],
-  ['sudlanmaganlik', 'Sudlanmaganlik haqida ma\'lumotnoma'], ['boshqa', 'Boshqa'],
+  ['pasport', 'Паспорт'], ['diplom', 'Диплом'], ['mehnat_daftarchasi', 'Меҳнат дафтарчаси'],
+  ['sudlanmaganlik', 'Судланмаганлик ҳақида маълумотнома'], ['boshqa', 'Бошқа'],
 ];
 
 function Row({ k, v }: { k: string; v: React.ReactNode }) {
@@ -25,20 +25,20 @@ export default function EmployeeProfile() {
   const { data: e, isLoading, error } = useQuery({ queryKey: ['employee', id], queryFn: () => api(`/employees/${id}`) });
   const refresh = () => qc.invalidateQueries({ queryKey: ['employee', id] });
 
-  if (isLoading) return <p className="text-slate-500">Yuklanmoqda…</p>;
+  if (isLoading) return <Loading />;
   if (error) return <p className="text-red-600">{(error as Error).message}</p>;
 
   return (
     <div className="space-y-5">
-      <Link to="/employees" className="inline-flex items-center gap-1 text-sm text-slate-500 hover:text-navy"><ArrowLeft size={16} /> Xodimlar</Link>
+      <Link to="/employees" className="inline-flex items-center gap-1 text-sm text-slate-500 hover:text-navy"><ArrowLeft size={16} /> Ходимлар</Link>
       <div className="card flex flex-wrap items-center gap-5 p-5">
         <PhotoBox e={e} onDone={refresh} />
         <div className="min-w-0 flex-1">
           <h1 className="text-xl font-semibold text-navy">{fullName(e)}</h1>
           <p className="text-sm text-slate-500">{e.position.title} · {e.department.name}</p>
-          <div className="mt-2 flex items-center gap-3 text-sm"><StatusBadge status={e.status} /><span className="font-mono text-slate-500">Tabel: {e.tabNumber}</span></div>
+          <div className="mt-2 flex items-center gap-3 text-sm"><StatusBadge status={e.status} /><span className="font-mono text-slate-500">Табель: {e.tabNumber}</span></div>
         </div>
-        <button className="btn-secondary" onClick={() => setEditing(true)}><Pencil size={16} /> Tahrirlash</button>
+        <button className="btn-secondary" onClick={() => setEditing(true)}><Pencil size={16} /> Таҳрирлаш</button>
       </div>
 
       <div className="flex gap-1 overflow-x-auto border-b">
@@ -50,21 +50,21 @@ export default function EmployeeProfile() {
       {tab === TABS[0] && (
         <div className="grid gap-4 md:grid-cols-2">
           <div className="card p-5">
-            <h3 className="mb-2 font-semibold">Shaxsiy</h3>
-            <Row k="Tug'ilgan sana" v={fmtDate(e.birthDate)} /><Row k="Tug'ilgan joy" v={e.birthPlace} />
-            <Row k="Jinsi" v={e.gender} /><Row k="Millati" v={e.nationality} /><Row k="Partiyaviyligi" v={e.partyMembership} />
-            <Row k="Telefon" v={e.phone} /><Row k="Manzil" v={e.addressResidential} />
-            <Row k="JSHSHIR" v={e.pinfl} /><Row k="Pasport" v={e.passportSeriesNumber} />
-            <Row k="Berilgan sana" v={fmtDate(e.passportGivenDate)} /><Row k="Kim tomonidan" v={e.passportGivenBy} />
+            <h3 className="mb-2 font-semibold">Шахсий</h3>
+            <Row k="Туғилган санаси" v={fmtDate(e.birthDate)} /><Row k="Туғилган жойи" v={e.birthPlace} />
+            <Row k="Жинси" v={GENDER_LABEL[e.gender]} /><Row k="Миллати" v={e.nationality} /><Row k="Партиявийлиги" v={e.partyMembership} />
+            <Row k="Телефон" v={e.phone} /><Row k="Манзил" v={e.addressResidential} />
+            <Row k="ЖШШИР" v={e.pinfl} /><Row k="Паспорт" v={e.passportSeriesNumber} />
+            <Row k="Берилган санаси" v={fmtDate(e.passportGivenDate)} /><Row k="Ким томонидан" v={e.passportGivenBy} />
           </div>
           <div className="card p-5">
-            <h3 className="mb-2 font-semibold">Ish</h3>
-            <Row k="Ish turi" v={e.employmentType === 'gpx' ? 'GPX (shartnoma)' : 'Shtat'} />
-            <Row k="Ishga qabul sanasi" v={fmtDate(e.hireDate)} />
-            <Row k="Shartnoma" v={e.contractNumber && `${e.contractNumber} (${fmtDate(e.contractDate)})`} />
-            <Row k="Shartnoma muddati" v={e.contractDurationType} /><Row k="Sinov muddati" v={`${e.probationMonths} oy`} />
-            <Row k="Oylik maosh" v={fmtMoney(e.salary)} />
-            <Row k="Mehnat ta'tili" v={`${e.annualLeaveBasicDays} + ${e.annualLeaveExtraDays} kun`} />
+            <h3 className="mb-2 font-semibold">Иш</h3>
+            <Row k="Иш тури" v={EMP_TYPE_LABEL[e.employmentType]} />
+            <Row k="Ишга қабул санаси" v={fmtDate(e.hireDate)} />
+            <Row k="Шартнома" v={e.contractNumber && `${e.contractNumber} (${fmtDate(e.contractDate)})`} />
+            <Row k="Шартнома муддати" v={CONTRACT_LABEL[e.contractDurationType]} /><Row k="Синов муддати" v={`${e.probationMonths} ой`} />
+            <Row k="Ойлик маош" v={fmtMoney(e.salary)} />
+            <Row k="Меҳнат таътили" v={`${e.annualLeaveBasicDays} + ${e.annualLeaveExtraDays} кун`} />
           </div>
         </div>
       )}
@@ -84,7 +84,7 @@ function PhotoBox({ e, onDone }: { e: any; onDone: () => void }) {
     onSuccess: onDone,
   });
   return (
-    <button onClick={() => ref.current?.click()} title="Rasm yuklash" className="relative h-24 w-24 shrink-0 overflow-hidden rounded-full bg-navy/5 text-navy/40">
+    <button onClick={() => ref.current?.click()} title="Расм юклаш" className="relative h-24 w-24 shrink-0 overflow-hidden rounded-full bg-navy/5 text-navy/40">
       {e.photoUrl ? <img src={`/api/files/${e.photoUrl}`} className="h-full w-full object-cover" alt="" /> : <UserRound className="mx-auto" size={48} />}
       <input ref={ref} type="file" accept=".jpg,.jpeg,.png" hidden onChange={(ev) => ev.target.files?.[0] && up.mutate(ev.target.files[0])} />
     </button>
@@ -107,21 +107,21 @@ function WorkHistory({ e, onSaved }: { e: any; onSaved: () => void }) {
   return (
     <div className="card p-5">
       <table className="mb-4 w-full text-sm">
-        <thead><tr><th className="th">Davr</th><th className="th">Tashkilot</th><th className="th">Lavozim</th><th /></tr></thead>
+        <thead><tr><th className="th">Давр</th><th className="th">Ташкилот</th><th className="th">Лавозим</th><th /></tr></thead>
         <tbody className="divide-y">
           {e.workHistory.map((w: any) => (
-            <tr key={w.id}><td className="td">{fmtDate(w.startDate)} — {w.endDate ? fmtDate(w.endDate) : 'hozirgacha'}</td><td className="td">{w.organizationName}</td><td className="td">{w.positionTitle}</td>
-              <td className="td text-right"><button aria-label="O'chirish" className="text-slate-400 hover:text-red-600" onClick={() => save.mutate(e.workHistory.filter((x: any) => x.id !== w.id).map(clean))}><Trash2 size={16} /></button></td></tr>
+            <tr key={w.id}><td className="td">{fmtDate(w.startDate)} — {w.endDate ? fmtDate(w.endDate) : 'ҳозиргача'}</td><td className="td">{w.organizationName}</td><td className="td">{w.positionTitle}</td>
+              <td className="td text-right"><button aria-label="Ўчириш" className="text-slate-400 hover:text-red-600" onClick={() => save.mutate(e.workHistory.filter((x: any) => x.id !== w.id).map(clean))}><Trash2 size={16} /></button></td></tr>
           ))}
-          {e.workHistory.length === 0 && <tr><td colSpan={4} className="td text-slate-500">Ma'lumot yo'q</td></tr>}
+          {e.workHistory.length === 0 && <tr><td colSpan={4} className="td text-slate-500">Маълумот йўқ</td></tr>}
         </tbody>
       </table>
       <form className="grid items-end gap-3 sm:grid-cols-5" onSubmit={(ev) => { ev.preventDefault(); save.mutate([...e.workHistory.map(clean), clean(n)]); setN({ startDate: '', endDate: '', organizationName: '', positionTitle: '' }); }}>
-        <Field label="Boshlanish"><input type="date" className="input" value={n.startDate} onChange={(x) => setN({ ...n, startDate: x.target.value })} /></Field>
-        <Field label="Tugash"><input type="date" className="input" value={n.endDate} onChange={(x) => setN({ ...n, endDate: x.target.value })} /></Field>
-        <Field label="Tashkilot *"><input required className="input" value={n.organizationName} onChange={(x) => setN({ ...n, organizationName: x.target.value })} /></Field>
-        <Field label="Lavozim"><input className="input" value={n.positionTitle} onChange={(x) => setN({ ...n, positionTitle: x.target.value })} /></Field>
-        <button className="btn-primary justify-center" disabled={save.isPending}>Qo'shish</button>
+        <Field label="Бошланиши"><input type="date" className="input" value={n.startDate} onChange={(x) => setN({ ...n, startDate: x.target.value })} /></Field>
+        <Field label="Тугаши"><input type="date" className="input" value={n.endDate} onChange={(x) => setN({ ...n, endDate: x.target.value })} /></Field>
+        <Field label="Ташкилот *"><input required className="input" value={n.organizationName} onChange={(x) => setN({ ...n, organizationName: x.target.value })} /></Field>
+        <Field label="Лавозим"><input className="input" value={n.positionTitle} onChange={(x) => setN({ ...n, positionTitle: x.target.value })} /></Field>
+        <button className="btn-primary justify-center" disabled={save.isPending}>Қўшиш</button>
       </form>
     </div>
   );
@@ -135,20 +135,20 @@ function Relatives({ e, onSaved }: { e: any; onSaved: () => void }) {
   return (
     <div className="card p-5">
       <div className="mb-4 overflow-x-auto"><table className="w-full text-sm">
-        <thead><tr><th className="th">Qarindoshligi</th><th className="th">F.I.Sh.</th><th className="th">Tug'ilgan yil, joy</th><th className="th">Ish joyi</th><th className="th">Manzil</th><th /></tr></thead>
+        <thead><tr><th className="th">Қариндошлиги</th><th className="th">Ф.И.Ш.</th><th className="th">Туғилган йил, жой</th><th className="th">Иш жойи</th><th className="th">Манзил</th><th /></tr></thead>
         <tbody className="divide-y">
           {e.relatives.map((r: any) => (
             <tr key={r.id}><td className="td">{r.relativeType}</td><td className="td">{r.fullName}</td><td className="td">{r.birthYearPlace}</td><td className="td">{r.workPlacePosition}</td><td className="td">{r.livingAddress}</td>
-              <td className="td text-right"><button aria-label="O'chirish" className="text-slate-400 hover:text-red-600" onClick={() => save.mutate(e.relatives.filter((x: any) => x.id !== r.id).map(clean))}><Trash2 size={16} /></button></td></tr>
+              <td className="td text-right"><button aria-label="Ўчириш" className="text-slate-400 hover:text-red-600" onClick={() => save.mutate(e.relatives.filter((x: any) => x.id !== r.id).map(clean))}><Trash2 size={16} /></button></td></tr>
           ))}
-          {e.relatives.length === 0 && <tr><td colSpan={6} className="td text-slate-500">Ma'lumot yo'q</td></tr>}
+          {e.relatives.length === 0 && <tr><td colSpan={6} className="td text-slate-500">Маълумот йўқ</td></tr>}
         </tbody>
       </table></div>
       <form className="grid items-end gap-3 sm:grid-cols-6" onSubmit={(ev) => { ev.preventDefault(); save.mutate([...e.relatives.map(clean), clean(n)]); setN(empty); }}>
-        {([['relativeType', 'Qarindoshligi *', true], ['fullName', 'F.I.Sh. *', true], ['birthYearPlace', "Tug'ilgan yil, joy"], ['workPlacePosition', 'Ish joyi'], ['livingAddress', 'Manzil']] as const).map(([k, label, req]) => (
+        {([['relativeType', 'Қариндошлиги *', true], ['fullName', 'Ф.И.Ш. *', true], ['birthYearPlace', 'Туғилган йил, жой'], ['workPlacePosition', 'Иш жойи'], ['livingAddress', 'Манзил']] as const).map(([k, label, req]) => (
           <Field key={k} label={label}><input required={!!req} className="input" value={(n as any)[k]} onChange={(x) => setN({ ...n, [k]: x.target.value })} /></Field>
         ))}
-        <button className="btn-primary justify-center" disabled={save.isPending}>Qo'shish</button>
+        <button className="btn-primary justify-center" disabled={save.isPending}>Қўшиш</button>
       </form>
     </div>
   );
@@ -168,8 +168,8 @@ function Documents({ e, onSaved }: { e: any; onSaved: () => void }) {
       <div className="mb-4 flex flex-wrap items-center gap-3">
         <select className="input w-auto" value={type} onChange={(x) => setType(x.target.value)}>{DOC_TYPES.map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select>
         <input ref={ref} type="file" accept=".pdf,.jpg,.jpeg,.png" hidden onChange={(x) => { if (x.target.files?.[0]) up.mutate(x.target.files[0]); x.target.value = ''; }} />
-        <button className="btn-primary" onClick={() => ref.current?.click()} disabled={up.isPending}><Upload size={16} /> Fayl yuklash</button>
-        <span className="text-xs text-slate-500">PDF, JPG, PNG · 10 MB gacha</span>
+        <button className="btn-primary" onClick={() => ref.current?.click()} disabled={up.isPending}><Upload size={16} /> Файл юклаш</button>
+        <span className="text-xs text-slate-500">PDF, JPG, PNG · 10 МБ гача</span>
       </div>
       {up.error && <p className="mb-3 text-sm text-red-600">{(up.error as Error).message}</p>}
       <ul className="divide-y">
@@ -178,10 +178,10 @@ function Documents({ e, onSaved }: { e: any; onSaved: () => void }) {
             <FileText size={18} className="text-navy/60" />
             <a href={`/api/files/${d.filePath}`} target="_blank" rel="noreferrer" className="font-medium text-navy hover:text-brand">{label(d.documentType)}</a>
             <span className="text-slate-500">{fmtDate(d.uploadDate)}</span>
-            <button aria-label="O'chirish" className="ml-auto text-slate-400 hover:text-red-600" onClick={() => confirm("Hujjat o'chirilsinmi?") && del.mutate(d.id)}><Trash2 size={16} /></button>
+            <button aria-label="Ўчириш" className="ml-auto text-slate-400 hover:text-red-600" onClick={() => confirm('Ҳужжат ўчирилсинми?') && del.mutate(d.id)}><Trash2 size={16} /></button>
           </li>
         ))}
-        {e.documents.length === 0 && <li className="py-3 text-sm text-slate-500">Hujjatlar yuklanmagan</li>}
+        {e.documents.length === 0 && <li className="py-3 text-sm text-slate-500">Ҳужжатлар юкланмаган</li>}
       </ul>
     </div>
   );

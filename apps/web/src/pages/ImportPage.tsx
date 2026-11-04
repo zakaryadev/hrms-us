@@ -3,7 +3,7 @@ import { FileSpreadsheet, Upload } from 'lucide-react';
 import { useRef } from 'react';
 import { api } from '../lib/api';
 
-const COLS = ['Tabel raqami*', 'Familiya*', 'Ism*', 'Otasining ismi', "Tug'ilgan sana", 'Jinsi', 'Millati', 'Telefon', 'Manzil', 'JSHSHIR', 'Pasport', "Bo'lim*", 'Lavozim*', 'Turi', 'Ishga qabul sanasi', 'Oylik'];
+const COLS = ['Табель рақами*', 'Фамилия*', 'Исм*', 'Отасининг исми', 'Туғилган сана', 'Жинси', 'Миллати', 'Телефон', 'Манзил', 'ЖШШИР', 'Паспорт', 'Бўлим*', 'Лавозим*', 'Тури', 'Ишга қабул санаси', 'Ойлик'];
 
 export default function ImportPage() {
   const qc = useQueryClient();

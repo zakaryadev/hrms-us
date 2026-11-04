@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useState } from 'react';
-import { api, fmtMoney } from '../lib/api';
+import { api, EMP_TYPE_LABEL, fmtMoney } from '../lib/api';
 
 const MONTHS = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
 
@@ -32,7 +32,7 @@ export default function Payroll() {
             {q.data?.rows.map((r: any) => (
               <tr key={r.employeeId} className="hover:bg-slate-50">
                 <td className="td"><div className="font-medium">{r.fullName}</div><div className="text-xs text-slate-500">{r.tabNumber} · {r.position}</div></td>
-                <td className="td uppercase text-slate-500">{r.employmentType}</td><td className="td text-right">{fmtMoney(r.salary)}</td>
+                <td className="td text-slate-500">{EMP_TYPE_LABEL[r.employmentType]}</td><td className="td text-right">{fmtMoney(r.salary)}</td>
                 <td className="td text-right">{r.result.workedDays} / {r.result.workingDays}</td><td className="td text-right">{r.result.sickDays}</td><td className="td text-right">{r.result.absentDays}</td>
                 <td className="td text-right font-semibold text-navy">{fmtMoney(r.result.salary)}</td>
               </tr>

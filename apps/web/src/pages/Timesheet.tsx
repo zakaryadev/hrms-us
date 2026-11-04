@@ -1,20 +1,21 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ChevronLeft, ChevronRight, Download, Wand2 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
+import { Loading } from '../components/ui';
 import { api, fmtMoney } from '../lib/api';
 
-const MONTHS = ['Yanvar', 'Fevral', 'Mart', 'Aprel', 'May', 'Iyun', 'Iyul', 'Avgust', 'Sentabr', 'Oktabr', 'Noyabr', 'Dekabr'];
-const WD = ['Ya', 'Du', 'Se', 'Ch', 'Pa', 'Ju', 'Sh'];
+const MONTHS = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
+const WD = ['Як', 'Ду', 'Се', 'Чо', 'Па', 'Жу', 'Ша'];
 
 const CODES: { code: string; label: string; cls: string; key: string }[] = [
-  { code: '8', label: 'Ishlagan (8 soat)', cls: 'bg-emerald-50 text-emerald-800', key: '8' },
-  { code: '7.2', label: 'Ishlagan (7.2 soat)', cls: 'bg-emerald-50 text-emerald-800', key: '7' },
-  { code: 'MT', label: "Mehnat ta'tili", cls: 'bg-blue-100 text-blue-800', key: 'm' },
-  { code: 'KV', label: 'Kasallik varaqasi', cls: 'bg-amber-100 text-amber-800', key: 'k' },
-  { code: 'BPT', label: "Bola parvarishlash ta'tili", cls: 'bg-purple-100 text-purple-800', key: 'b' },
-  { code: 'SK', label: 'Sababsiz kelmagan', cls: 'bg-red-100 text-red-700', key: 's' },
-  { code: 'TSH', label: "O'z hisobidan ta'til", cls: 'bg-slate-200 text-slate-700', key: 't' },
-  { code: 'TK', label: 'Tushuntirish xati olingan', cls: 'bg-orange-100 text-orange-800', key: 'x' },
+  { code: '8', label: 'Ишлаган (8 соат)', cls: 'bg-emerald-50 text-emerald-800', key: '8' },
+  { code: '7.2', label: 'Ишлаган (7.2 соат)', cls: 'bg-emerald-50 text-emerald-800', key: '7' },
+  { code: 'MT', label: 'Меҳнат таътили', cls: 'bg-blue-100 text-blue-800', key: 'm' },
+  { code: 'KV', label: 'Касаллик варақаси', cls: 'bg-amber-100 text-amber-800', key: 'k' },
+  { code: 'BPT', label: 'Бола парваришлаш таътили', cls: 'bg-purple-100 text-purple-800', key: 'b' },
+  { code: 'SK', label: 'Сабабсиз келмаган', cls: 'bg-red-100 text-red-700', key: 's' },
+  { code: 'TSH', label: 'Ўз ҳисобидан таътил', cls: 'bg-slate-200 text-slate-700', key: 't' },
+  { code: 'TK', label: 'Тушунтириш хати олинган', cls: 'bg-orange-100 text-orange-800', key: 'x' },
 ];
 const cls = (c?: string) => CODES.find((x) => x.code === c)?.cls ?? '';
 
@@ -54,7 +55,7 @@ export default function Timesheet() {
 
   const autofill = useMutation({
     mutationFn: () => api<{ updated: number }>('/timesheet/autofill', { method: 'POST', body: JSON.stringify({ year, month, ...(departmentId && { departmentId }) }) }),
-    onSuccess: (r) => { setMsg(`Ish kunlari to'ldirildi (${r.updated} ta xodim)`); qc.invalidateQueries({ queryKey: key }); },
+    onSuccess: (r) => { setMsg(`Иш кунлари тўлдирилди (${r.updated} та ходим)`); qc.invalidateQueries({ queryKey: key }); },
   });
 
   const shift = (d: number) => {
@@ -88,36 +89,36 @@ export default function Timesheet() {
         <h1 className="text-2xl font-semibold text-navy">Табель</h1>
         <div className="flex flex-wrap items-center gap-2">
           <div className="flex items-center rounded-lg border border-slate-300 bg-white">
-            <button className="px-2 py-2 hover:bg-slate-50" onClick={() => shift(-1)} aria-label="Oldingi oy"><ChevronLeft size={16} /></button>
+            <button className="px-2 py-2 hover:bg-slate-50" onClick={() => shift(-1)} aria-label="Олдинги ой"><ChevronLeft size={16} /></button>
             <span className="min-w-[130px] text-center text-sm font-medium">{MONTHS[month - 1]} {year}</span>
-            <button className="px-2 py-2 hover:bg-slate-50" onClick={() => shift(1)} aria-label="Keyingi oy"><ChevronRight size={16} /></button>
+            <button className="px-2 py-2 hover:bg-slate-50" onClick={() => shift(1)} aria-label="Кейинги ой"><ChevronRight size={16} /></button>
           </div>
           <select className="input w-auto" value={departmentId} onChange={(e) => setDepartmentId(e.target.value)}>
-            <option value="">Barcha bo'limlar</option>{departments.data?.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
+            <option value="">Барча бўлимлар</option>{departments.data?.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
           </select>
-          <button className="btn-secondary" onClick={() => autofill.mutate()} disabled={autofill.isPending}><Wand2 size={16} /> Avto to'ldirish</button>
+          <button className="btn-secondary" onClick={() => autofill.mutate()} disabled={autofill.isPending}><Wand2 size={16} /> Авто тўлдириш</button>
           <a className="btn-primary" href={`/api/timesheet/export?year=${year}&month=${month}${departmentId ? `&departmentId=${departmentId}` : ''}`}><Download size={16} /> Excel</a>
         </div>
       </div>
 
-      {t?.holidaysWarning && <p className="card border-amber-300 bg-amber-50 p-3 text-sm text-amber-800">{year}-yil uchun hayit kunlari kiritilmagan (<code>holidays.ts</code>): ish kunlari va oylik noto'g'ri hisoblanishi mumkin.</p>}
+      {t?.holidaysWarning && <p className="card border-amber-300 bg-amber-50 p-3 text-sm text-amber-800">{year}-йил учун ҳайит кунлари киритилмаган (<code>holidays.ts</code>): иш кунлари ва ойлик нотўғри ҳисобланиши мумкин.</p>}
       {msg && <p className="card p-3 text-sm">{msg}</p>}
 
       <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-600">
         {CODES.filter((c) => c.code !== '7.2').map((c) => <span key={c.code} className="flex items-center gap-1.5"><span className={`rounded px-1.5 py-0.5 font-semibold ${c.cls}`}>{c.code}</span>{c.label}</span>)}
-        <span className="text-slate-400">· Katakni tanlab 8, 7, M, K, B, S, T, X tugmalari yoki strelkalar bilan ishlang</span>
+        <span className="text-slate-400">· Катакни танлаб 8, 7, M, K, B, S, T, X тугмалари ёки стрелкалар билан ишланг</span>
       </div>
 
-      {q.isLoading && <p className="text-slate-500">Yuklanmoqda…</p>}
+      {q.isLoading && <Loading />}
       {q.error && <p className="text-red-600">{(q.error as Error).message}</p>}
       {t && (
         <div className="card overflow-x-auto">
           <table className="w-full border-separate border-spacing-0 text-xs">
             <thead>
               <tr>
-                <th className="th sticky left-0 z-20 min-w-[210px] border-b bg-slate-50" rowSpan={2}>Xodim</th>
+                <th className="th sticky left-0 z-20 min-w-[210px] border-b bg-slate-50" rowSpan={2}>Ходим</th>
                 {t.days.map((d: any) => <th key={d.day} className={`border-b px-0 pt-1.5 text-center font-semibold ${d.off ? 'bg-slate-200 text-red-600' : 'bg-slate-50'}`}>{d.day}</th>)}
-                <th className="th sticky right-0 z-20 min-w-[150px] border-b border-l bg-slate-50 text-right" rowSpan={2}>Jami / oylik</th>
+                <th className="th sticky right-0 z-20 min-w-[150px] border-b border-l bg-slate-50 text-right" rowSpan={2}>Жами / ойлик</th>
               </tr>
               <tr>{t.days.map((d: any) => <th key={d.day} className={`border-b pb-1.5 text-center font-normal text-slate-500 ${d.off ? 'bg-slate-200' : 'bg-slate-50'}`}>{WD[d.weekday]}</th>)}</tr>
             </thead>
@@ -126,7 +127,7 @@ export default function Timesheet() {
                 <tr key={r.employeeId} className="group">
                   <td className="sticky left-0 z-10 border-b bg-white px-3 py-1.5 group-hover:bg-slate-50">
                     <div className="font-medium text-slate-800">{r.fullName}</div>
-                    <div className="text-[11px] text-slate-500">{r.tabNumber} · {r.position}{r.employmentType === 'gpx' && ' · GPX'}</div>
+                    <div className="text-[11px] text-slate-500">{r.tabNumber} · {r.position}{r.employmentType === 'gpx' && ' · ГПХ'}</div>
                   </td>
                   {t.days.map((d: any) => {
                     const v = r.daysData[String(d.day)];
@@ -141,18 +142,18 @@ export default function Timesheet() {
                       </td>
                     );
                   })}
-                  <td className="sticky right-0 z-10 border-b border-l bg-white px-3 py-1.5 text-right group-hover:bg-slate-50" title={`Kunlik oklad: ${fmtMoney(r.result.dailyRate)} · ${r.result.workingDays} ish kuni`}>
+                  <td className="sticky right-0 z-10 border-b border-l bg-white px-3 py-1.5 text-right group-hover:bg-slate-50" title={`Кунлик оклад: ${fmtMoney(r.result.dailyRate)} · ${r.result.workingDays} иш куни`}>
                     <div className="text-sm font-semibold text-navy">{fmtMoney(r.result.salary)}</div>
-                    <div className="text-[11px] text-slate-500">{r.result.workedDays} kun · {r.result.totalHours} soat</div>
+                    <div className="text-[11px] text-slate-500">{r.result.workedDays} кун · {r.result.totalHours} соат</div>
                   </td>
                 </tr>
               ))}
-              {t.rows.length === 0 && <tr><td colSpan={t.daysInMonth + 2} className="td py-10 text-center text-slate-500">Xodimlar topilmadi</td></tr>}
+              {t.rows.length === 0 && <tr><td colSpan={t.daysInMonth + 2} className="td py-10 text-center text-slate-500">Ходимлар топилмади</td></tr>}
             </tbody>
           </table>
         </div>
       )}
-      {t && <p className="text-xs text-slate-500">Oydagi ish kunlari: {t.rows[0]?.result.workingDays ?? '—'}. Oylik = ishlangan kunlar × kunlik oklad + kasallik × kunlik × 50%.</p>}
+      {t && <p className="text-xs text-slate-500">Ойдаги иш кунлари: {t.rows[0]?.result.workingDays ?? '—'}. Ойлик = ишланган кунлар × кунлик оклад + касаллик × кунлик × 50%.</p>}
 
       {menu && (
         <div ref={menuRef} className="card fixed z-50 w-56 p-1 shadow-lg" style={{ left: Math.min(menu.x, window.innerWidth - 240), top: Math.min(menu.y + 4, window.innerHeight - 330) }}>
@@ -161,7 +162,7 @@ export default function Timesheet() {
               <span className={`w-9 rounded px-1 py-0.5 text-center font-semibold ${c.cls}`}>{c.code}</span>{c.label}
             </button>
           ))}
-          <button className="mt-1 w-full rounded border-t px-2 py-1.5 text-left text-xs text-slate-500 hover:bg-slate-100" onClick={() => { setCell(menu.emp, menu.day, null); setMenu(null); }}>Tozalash</button>
+          <button className="mt-1 w-full rounded border-t px-2 py-1.5 text-left text-xs text-slate-500 hover:bg-slate-100" onClick={() => { setCell(menu.emp, menu.day, null); setMenu(null); }}>Тозалаш</button>
         </div>
       )}
     </div>

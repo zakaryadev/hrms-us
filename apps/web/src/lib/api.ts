@@ -7,16 +7,19 @@ export async function api<T = any>(path: string, init?: RequestInit): Promise<T>
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
     const msg = Array.isArray(body.message) ? body.message.join(', ') : body.message;
-    throw new Error(msg || `Xatolik (${res.status})`);
+    throw new Error(msg || `Хатолик (${res.status})`);
   }
   return res.status === 204 ? (undefined as T) : res.json();
 }
 
 export const fmtDate = (d?: string | null) => (d ? new Date(d).toLocaleDateString('ru-RU') : '—');
-export const fmtMoney = (v: unknown) => Number(v ?? 0).toLocaleString('ru-RU').replace(/,/g, ' ') + " so'm";
+export const fmtMoney = (v: unknown) => Number(v ?? 0).toLocaleString('ru-RU').replace(/,/g, ' ') + ' сўм';
 export const fullName = (e: { lastName: string; firstName: string; middleName?: string | null }) =>
   [e.lastName, e.firstName, e.middleName].filter(Boolean).join(' ');
 
 export const STATUS_LABEL: Record<string, string> = {
-  ishlamoqda: 'Ishlamoqda', tatilda: "Ta'tilda", ishdan_boshagan: 'Ishdan bo\'shagan',
+  ishlamoqda: 'Ишлаяпти', tatilda: 'Таътилда', ishdan_boshagan: 'Ишдан бўшаган',
 };
+export const GENDER_LABEL: Record<string, string> = { erkak: 'Эркак', ayol: 'Аёл' };
+export const EMP_TYPE_LABEL: Record<string, string> = { shtat: 'Штат', gpx: 'ГПХ (шартнома)' };
+export const CONTRACT_LABEL: Record<string, string> = { muddatsiz: 'Муддатсиз', muddatli: 'Муддатли' };

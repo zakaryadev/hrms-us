@@ -32,3 +32,6 @@ Tashkilot rekvizitlari: UI → Sozlamalar. Bayramlar: `apps/api/src/calendar/hol
 UI → Tabel. Kodlar: `8`, `7.2` (ishlangan), `MT`, `KV` (50%), `BPT`, `SK`, `TSH`, `TK` (ogohlantirish, kun ishlangan hisoblanadi).
 Hisob: `apps/api/src/payroll/payroll.ts` (yagona manba). Shtat: ishlangan × kunlik + KV × kunlik × 0.5 (oikladdan oshmaydi);
 GPX: ishlangan × kunlik, 100 so'mgacha yaxlitlanadi. `GET /api/timesheet/export?year=&month=` — Excel.
+
+## Til
+Интерфейс — ўзбек кирилл. DOCX ҳужжатлар икки тилда: `templates/cyr` ва `templates/lat` (ҳужжат яратишда тил танланади, API: `params.lang = 'cyr' | 'lat'`).

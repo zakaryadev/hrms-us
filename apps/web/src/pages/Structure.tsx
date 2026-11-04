@@ -41,38 +41,38 @@ export default function Structure() {
             {departments.data?.map((d) => (
               <li key={d.id} className={`flex items-center rounded-lg px-3 py-2 text-sm ${d.id === current ? 'bg-navy text-white' : 'hover:bg-slate-100'}`}>
                 <button className="flex-1 text-left" onClick={() => setSelected(d.id)}>{d.name}</button>
-                <button aria-label="O'chirish" className="opacity-60 hover:opacity-100" onClick={() => confirm(`"${d.name}" o'chirilsinmi?`) && delDept.mutate(d.id)}><Trash2 size={15} /></button>
+                <button aria-label="Ўчириш" className="opacity-60 hover:opacity-100" onClick={() => confirm(`«${d.name}» ўчирилсинми?`) && delDept.mutate(d.id)}><Trash2 size={15} /></button>
               </li>
             ))}
           </ul>
           <form className="space-y-3 border-t pt-4" onSubmit={(e) => { e.preventDefault(); addDept.mutate(); }}>
-            <Field label="Yangi bo'lim nomi *"><input required className="input" value={dn.name} onChange={(e) => setDn({ ...dn, name: e.target.value })} /></Field>
+            <Field label="Янги бўлим номи *"><input required className="input" value={dn.name} onChange={(e) => setDn({ ...dn, name: e.target.value })} /></Field>
             <div className="grid grid-cols-2 gap-3">
-              <Field label="Kod"><input className="input" value={dn.code} onChange={(e) => setDn({ ...dn, code: e.target.value })} /></Field>
-              <Field label="Yuqori bo'lim"><select className="input" value={dn.parentId} onChange={(e) => setDn({ ...dn, parentId: e.target.value })}><option value="">—</option>{departments.data?.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}</select></Field>
+              <Field label="Код"><input className="input" value={dn.code} onChange={(e) => setDn({ ...dn, code: e.target.value })} /></Field>
+              <Field label="Юқори бўлим"><select className="input" value={dn.parentId} onChange={(e) => setDn({ ...dn, parentId: e.target.value })}><option value="">—</option>{departments.data?.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}</select></Field>
             </div>
-            <button className="btn-primary w-full justify-center" disabled={addDept.isPending}><Plus size={16} /> Bo'lim qo'shish</button>
+            <button className="btn-primary w-full justify-center" disabled={addDept.isPending}><Plus size={16} /> Бўлим қўшиш</button>
           </form>
         </div>
 
         <div className="card p-4">
           <div className="mb-4 overflow-x-auto"><table className="w-full">
-            <thead className="border-b"><tr><th className="th">Tartib</th><th className="th">Lavozim</th><th className="th">Oklad</th><th className="th">Shtat soni</th><th /></tr></thead>
+            <thead className="border-b"><tr><th className="th">Тартиб</th><th className="th">Лавозим</th><th className="th">Оклад</th><th className="th">Штат сони</th><th /></tr></thead>
             <tbody className="divide-y">
               {positions.data?.map((p) => (
                 <tr key={p.id}><td className="td">{p.rankOrder}</td><td className="td font-medium">{p.title}</td><td className="td">{fmtMoney(p.baseSalary)}</td><td className="td">{p.staffCount}</td>
-                  <td className="td text-right"><button aria-label="O'chirish" className="text-slate-400 hover:text-red-600" onClick={() => confirm(`"${p.title}" o'chirilsinmi?`) && delPos.mutate(p.id)}><Trash2 size={16} /></button></td></tr>
+                  <td className="td text-right"><button aria-label="Ўчириш" className="text-slate-400 hover:text-red-600" onClick={() => confirm(`«${p.title}» ўчирилсинми?`) && delPos.mutate(p.id)}><Trash2 size={16} /></button></td></tr>
               ))}
-              {positions.data?.length === 0 && <tr><td colSpan={5} className="td text-slate-500">Bu bo'limda lavozim yo'q</td></tr>}
+              {positions.data?.length === 0 && <tr><td colSpan={5} className="td text-slate-500">Бу бўлимда лавозим йўқ</td></tr>}
             </tbody>
           </table></div>
           {current && (
             <form className="grid items-end gap-3 border-t pt-4 sm:grid-cols-5" onSubmit={(e) => { e.preventDefault(); addPos.mutate(); }}>
-              <div className="sm:col-span-2"><Field label="Yangi lavozim *"><input required className="input" value={pn.title} onChange={(e) => setPn({ ...pn, title: e.target.value })} /></Field></div>
-              <Field label="Tartib"><input type="number" className="input" value={pn.rankOrder} onChange={(e) => setPn({ ...pn, rankOrder: e.target.value })} /></Field>
-              <Field label="Oklad"><input type="number" className="input" value={pn.baseSalary} onChange={(e) => setPn({ ...pn, baseSalary: e.target.value })} /></Field>
-              <Field label="Shtat soni"><input type="number" min={1} className="input" value={pn.staffCount} onChange={(e) => setPn({ ...pn, staffCount: e.target.value })} /></Field>
-              <button className="btn-primary justify-center sm:col-span-5" disabled={addPos.isPending}><Plus size={16} /> Lavozim qo'shish</button>
+              <div className="sm:col-span-2"><Field label="Янги лавозим *"><input required className="input" value={pn.title} onChange={(e) => setPn({ ...pn, title: e.target.value })} /></Field></div>
+              <Field label="Тартиб"><input type="number" className="input" value={pn.rankOrder} onChange={(e) => setPn({ ...pn, rankOrder: e.target.value })} /></Field>
+              <Field label="Оклад"><input type="number" className="input" value={pn.baseSalary} onChange={(e) => setPn({ ...pn, baseSalary: e.target.value })} /></Field>
+              <Field label="Штат сони"><input type="number" min={1} className="input" value={pn.staffCount} onChange={(e) => setPn({ ...pn, staffCount: e.target.value })} /></Field>
+              <button className="btn-primary justify-center sm:col-span-5" disabled={addPos.isPending}><Plus size={16} /> Лавозим қўшиш</button>
             </form>
           )}
         </div>

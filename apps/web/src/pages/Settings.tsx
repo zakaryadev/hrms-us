@@ -4,9 +4,9 @@ import { Field } from '../components/ui';
 import { api } from '../lib/api';
 
 const FIELDS: [string, string][] = [
-  ['tashkilot_nomi', 'Tashkilot nomi'], ['bosh_direktor_fish', 'Bosh direktor F.I.Sh.'], ['shahar', 'Shahar'],
-  ['vakil_fish', 'Ish beruvchi vakili F.I.Sh.'], ['ishonchnoma_matni', 'Ishonchnoma rekvizitlari (raqam va sana)'],
-  ['ish_beruvchi_rekvizitlari', 'Ish beruvchi rekvizitlari (manzil, STIR, h/r, bank, MFO)'],
+  ['tashkilot_nomi', 'Ташкилот номи'], ['bosh_direktor_fish', 'Бош директор Ф.И.Ш.'], ['shahar', 'Шаҳар'],
+  ['vakil_fish', 'Иш берувчи вакили Ф.И.Ш.'], ['ishonchnoma_matni', 'Ишончнома реквизитлари (рақам ва сана)'],
+  ['ish_beruvchi_rekvizitlari', 'Иш берувчи реквизитлари (манзил, СТИР, ҳ/р, банк, МФО)'],
 ];
 
 export default function Settings() {
@@ -22,13 +22,13 @@ export default function Settings() {
     <div className="max-w-2xl space-y-4">
       <h1 className="text-2xl font-semibold text-navy">Справочниклар</h1>
       <form className="card space-y-4 p-5" onSubmit={(e) => { e.preventDefault(); save.mutate(); }}>
-        <p className="text-sm text-slate-500">Bu ma'lumotlar barcha hujjatlarga (ariza, kelishuv, buyruqlar) avtomatik qo'yiladi.</p>
+        <p className="text-sm text-slate-500">Бу маълумотлар барча ҳужжатларга (ариза, келишув, буйруқлар) автоматик қўйилади.</p>
         {FIELDS.map(([k, label]) => (
           <Field key={k} label={label}><input className="input" value={f[k] ?? ''} onChange={(e) => setF({ ...f, [k]: e.target.value })} /></Field>
         ))}
-        {save.isSuccess && <p className="text-sm text-emerald-700">Saqlandi</p>}
+        {save.isSuccess && <p className="text-sm text-emerald-700">Сақланди</p>}
         {save.error && <p className="text-sm text-red-600">{(save.error as Error).message}</p>}
-        <button className="btn-primary" disabled={save.isPending}>Saqlash</button>
+        <button className="btn-primary" disabled={save.isPending}>Сақлаш</button>
       </form>
     </div>
   );
