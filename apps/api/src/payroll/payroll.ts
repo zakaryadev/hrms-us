@@ -37,14 +37,14 @@ export function isValidCode(v: unknown): v is TimesheetCode {
 
 /** daysData ni tekshiradi: kun kalitlari 1..oy kunlari, kodlar ruxsat etilganlardan. */
 export function validateDaysData(year: number, month: number, daysData: unknown): Record<string, TimesheetCode> {
-  if (typeof daysData !== 'object' || daysData === null || Array.isArray(daysData)) throw new Error("daysData obyekt bo'lishi kerak");
+  if (typeof daysData !== 'object' || daysData === null || Array.isArray(daysData)) throw new Error('daysData объект бўлиши керак');
   const max = daysInMonth(year, month);
   const out: Record<string, TimesheetCode> = {};
   for (const [k, v] of Object.entries(daysData)) {
     const day = Number(k);
-    if (!Number.isInteger(day) || day < 1 || day > max) throw new Error(`Noto'g'ri kun: ${k} (oyda ${max} kun bor)`);
+    if (!Number.isInteger(day) || day < 1 || day > max) throw new Error(`Нотўғри кун: ${k} (ойда ${max} кун бор)`);
     if (v === '' || v === null) continue; // bo'sh katak
-    if (!isValidCode(v)) throw new Error(`Noto'g'ri tabel kodi: ${String(v)}`);
+    if (!isValidCode(v)) throw new Error(`Нотўғри табель коди: ${String(v)}`);
     out[String(day)] = v;
   }
   return out;

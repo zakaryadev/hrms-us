@@ -5,7 +5,7 @@ import { MOVABLE_HOLIDAYS, isWorkingDay, utcDate, ymd } from '../calendar/holida
 import { PrismaService } from '../prisma/prisma.service';
 import { PayrollResult, calcTimesheet, daysInMonth, validateDaysData } from '../payroll/payroll';
 
-const MONTHS = ['Yanvar', 'Fevral', 'Mart', 'Aprel', 'May', 'Iyun', 'Iyul', 'Avgust', 'Sentabr', 'Oktabr', 'Noyabr', 'Dekabr'];
+const MONTHS = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
 
 export interface TimesheetRow {
   employeeId: string;
@@ -22,7 +22,7 @@ export interface TimesheetRow {
 export function parsePeriod(year: unknown, month: unknown) {
   const y = Number(year), m = Number(month);
   if (!Number.isInteger(y) || y < 2000 || y > 2100 || !Number.isInteger(m) || m < 1 || m > 12) {
-    throw new BadRequestException("year va month to'g'ri bo'lishi kerak (month 1..12)");
+    throw new BadRequestException('year ва month тўғри бўлиши керак (month 1..12)');
   }
   return { year: y, month: m };
 }
@@ -65,7 +65,7 @@ export class TimesheetService {
 
   async save(employeeId: string, year: number, month: number, rawDays: unknown) {
     const emp = await this.prisma.employee.findUnique({ where: { id: employeeId } });
-    if (!emp) throw new NotFoundException('Xodim topilmadi');
+    if (!emp) throw new NotFoundException('Ходим топилмади');
     let daysData: Record<string, string>;
     try { daysData = validateDaysData(year, month, rawDays); } catch (e) { throw new BadRequestException((e as Error).message); }
     return this.persist(emp, year, month, daysData);
@@ -112,13 +112,13 @@ export class TimesheetService {
     const lastCol = 3 + n + 3;
 
     ws.mergeCells(1, 1, 1, lastCol);
-    ws.getCell(1, 1).value = `Ish vaqtini hisobga olish tabeli — ${MONTHS[month - 1]} ${year}`;
+    ws.getCell(1, 1).value = `Иш вақтини ҳисобга олиш табели — ${MONTHS[month - 1]} ${year}`;
     ws.getCell(1, 1).font = { bold: true, size: 14 };
     ws.getCell(1, 1).alignment = { horizontal: 'center' };
 
-    const header = ['Tabel №', 'F.I.Sh.', 'Lavozim', ...t.days.map((d) => d.day), 'Ish kunlari', 'Soat', 'Hisoblangan oylik'];
+    const header = ['Табель №', 'Ф.И.Ш.', 'Лавозим', ...t.days.map((d) => d.day), 'Иш кунлари', 'Соат', 'Ҳисобланган ойлик'];
     ws.getRow(3).values = header;
-    ws.getRow(2).values = ['', '', '', ...t.days.map((d) => ['Ya', 'Du', 'Se', 'Ch', 'Pa', 'Ju', 'Sh'][d.weekday])];
+    ws.getRow(2).values = ['', '', '', ...t.days.map((d) => ['Як', 'Ду', 'Се', 'Чо', 'Па', 'Жу', 'Ша'][d.weekday])];
     for (const r of [2, 3]) {
       ws.getRow(r).font = { bold: true };
       ws.getRow(r).alignment = { horizontal: 'center', vertical: 'middle' };
@@ -146,7 +146,7 @@ export class TimesheetService {
     ws.getColumn(lastCol - 2).width = 11; ws.getColumn(lastCol - 1).width = 8; ws.getColumn(lastCol).width = 18;
 
     const legend = 5 + t.rows.length;
-    ws.getCell(legend, 2).value = "Kodlar: 8 / 7.2 — ishlangan; MT — mehnat ta'tili; KV — kasallik varaqasi; BPT — bola parvarishi; SK — sababsiz kelmagan; TSH — o'z hisobidan ta'til; TK — tushuntirish xati";
+    ws.getCell(legend, 2).value = 'Кодлар: 8 / 7.2 — ишланган; MT — меҳнат таътили; KV — касаллик варақаси; BPT — бола парвариши; SK — сабабсиз келмаган; TSH — ўз ҳисобидан таътил; TK — тушунтириш хати';
     ws.getCell(legend, 2).font = { italic: true, size: 9 };
     return Buffer.from(await wb.xlsx.writeBuffer());
   }

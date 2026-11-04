@@ -8,11 +8,11 @@ export class PrismaExceptionFilter implements ExceptionFilter {
     const res = ctx.getResponse();
     const isDelete = ctx.getRequest().method === 'DELETE';
     const map: Record<string, [number, string]> = {
-      P2002: [HttpStatus.CONFLICT, 'Bunday yozuv allaqachon mavjud'],
-      P2025: [HttpStatus.NOT_FOUND, 'Yozuv topilmadi'],
-      P2003: [HttpStatus.BAD_REQUEST, isDelete ? 'Bu yozuvga bog\'liq ma\'lumotlar (xodimlar yoki quyi bo\'limlar) bor, o\'chirib bo\'lmaydi' : 'Bog\'liq yozuv topilmadi'],
+      P2002: [HttpStatus.CONFLICT, 'Бундай ёзув аллақачон мавжуд'],
+      P2025: [HttpStatus.NOT_FOUND, 'Ёзув топилмади'],
+      P2003: [HttpStatus.BAD_REQUEST, isDelete ? 'Бу ёзувга боғлиқ маълумотлар (ходимлар ёки қуйи бўлимлар) бор, ўчириб бўлмайди' : 'Боғлиқ ёзув топилмади'],
     };
-    const [status, message] = map[e.code] ?? [HttpStatus.INTERNAL_SERVER_ERROR, 'Server xatosi'];
+    const [status, message] = map[e.code] ?? [HttpStatus.INTERNAL_SERVER_ERROR, 'Сервер хатоси'];
     res.status(status).json({ statusCode: status, message });
   }
 }

@@ -23,7 +23,7 @@ const storage = diskStorage({
 const fileFilter = (_req: unknown, file: Express.Multer.File, cb: (e: Error | null, ok: boolean) => void) =>
   ALLOWED.has(extname(file.originalname).toLowerCase())
     ? cb(null, true)
-    : cb(new BadRequestException('Faqat PDF, JPG va PNG fayllar ruxsat etiladi'), false);
+    : cb(new BadRequestException('Фақат PDF, JPG ва PNG файллар рухсат этилади'), false);
 const upload = FileInterceptor('file', { storage, fileFilter, limits: { fileSize: 10 * 1024 * 1024 } });
 
 @Controller()
@@ -33,7 +33,7 @@ export class DocumentsController {
   @Post('employees/:id/documents')
   @UseInterceptors(upload)
   async add(@Param('id') id: string, @Body('documentType') documentType: string, @UploadedFile() file?: Express.Multer.File) {
-    if (!file) throw new BadRequestException('"file" maydonida fayl yuboring');
+    if (!file) throw new BadRequestException('«file» майдонида файл юборинг');
     return this.prisma.employeeDocument.create({
       data: { employeeId: id, documentType: documentType || 'boshqa', filePath: file.filename },
     });
@@ -42,7 +42,7 @@ export class DocumentsController {
   @Post('employees/:id/photo')
   @UseInterceptors(upload)
   async photo(@Param('id') id: string, @UploadedFile() file?: Express.Multer.File) {
-    if (!file || !/\.(jpe?g|png)$/i.test(file.filename)) throw new BadRequestException('Rasm JPG yoki PNG bo\'lishi kerak');
+    if (!file || !/\.(jpe?g|png)$/i.test(file.filename)) throw new BadRequestException('Расм JPG ёки PNG бўлиши керак');
     return this.prisma.employee.update({ where: { id }, data: { photoUrl: file.filename } });
   }
 

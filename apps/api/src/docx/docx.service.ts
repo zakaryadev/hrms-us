@@ -3,14 +3,16 @@ import Docxtemplater from 'docxtemplater';
 import { existsSync, readFileSync } from 'fs';
 import { join } from 'path';
 import PizZip from 'pizzip';
+import { Lang } from './format';
 
 export const TEMPLATE_DIR = process.env.TEMPLATE_DIR ?? join(__dirname, '..', '..', 'templates');
 
 @Injectable()
 export class DocxService {
-  render(templateName: string, data: Record<string, unknown>): Buffer {
-    const path = join(TEMPLATE_DIR, `${templateName}.docx`);
-    if (!existsSync(path)) throw new BadRequestException(`Shablon topilmadi: ${templateName}.docx`);
+  /** Shablon: `templates/<lang>/<name>.docx` (lat — lotin, cyr — kirill) */
+  render(lang: Lang, templateName: string, data: Record<string, unknown>): Buffer {
+    const path = join(TEMPLATE_DIR, lang, `${templateName}.docx`);
+    if (!existsSync(path)) throw new BadRequestException(`Шаблон топилмади: ${lang}/${templateName}.docx`);
     try {
       const doc = new Docxtemplater(new PizZip(readFileSync(path)), {
         delimiters: { start: '{{', end: '}}' },
@@ -23,7 +25,7 @@ export class DocxService {
     } catch (e: any) {
       const errs = e?.properties?.errors as { properties?: { explanation?: string } }[] | undefined;
       const detail = errs?.map((x) => x.properties?.explanation).filter(Boolean).join('; ') || e?.message;
-      throw new BadRequestException(`Shablonni to'ldirishda xato (${templateName}): ${detail}`);
+      throw new BadRequestException(`Шаблонни тўлдиришда хато (${lang}/${templateName}): ${detail}`);
     }
   }
 }

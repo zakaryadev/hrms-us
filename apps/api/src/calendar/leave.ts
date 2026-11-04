@@ -14,7 +14,7 @@ export interface LeaveResult {
  * Ishga chiqish sanasi — tugashdan keyingi birinchi ish kuni.
  */
 export function calcLeave(startDate: string, days: number): LeaveResult {
-  if (!Number.isInteger(days) || days < 1) throw new Error("Ta'til kunlari musbat butun son bo'lishi kerak");
+  if (!Number.isInteger(days) || days < 1) throw new Error('Таътил кунлари мусбат бутун сон бўлиши керак');
   const start = utcDate(startDate);
   const holidays: string[] = [];
   let remaining = days;

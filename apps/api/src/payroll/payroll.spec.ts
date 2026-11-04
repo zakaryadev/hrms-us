@@ -82,8 +82,8 @@ describe('validateDaysData', () => {
     expect(validateDaysData(2026, 12, { '1': '8', '2': '', '31': 'MT' })).toEqual({ '1': '8', '31': 'MT' });
   });
   it("noto'g'ri kod va kunni rad etadi", () => {
-    expect(() => validateDaysData(2026, 12, { '1': 'XX' })).toThrow(/kodi/);
-    expect(() => validateDaysData(2026, 2, { '30': '8' })).toThrow(/kun/);
+    expect(() => validateDaysData(2026, 12, { '1': 'XX' })).toThrow(/коди/);
+    expect(() => validateDaysData(2026, 2, { '30': '8' })).toThrow(/кун/);
     expect(() => validateDaysData(2026, 12, { '0': '8' })).toThrow();
     expect(() => validateDaysData(2026, 12, [] as any)).toThrow();
   });

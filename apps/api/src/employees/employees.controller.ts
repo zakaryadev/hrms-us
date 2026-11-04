@@ -16,7 +16,7 @@ export class EmployeesController {
   @Post('import')
   @UseInterceptors(FileInterceptor('file'))
   import(@UploadedFile() file?: Express.Multer.File) {
-    if (!file) throw new BadRequestException('"file" maydonida Excel fayl yuboring');
+    if (!file) throw new BadRequestException('«file» майдонида Excel файл юборинг');
     return this.importer.import(file.buffer);
   }
 

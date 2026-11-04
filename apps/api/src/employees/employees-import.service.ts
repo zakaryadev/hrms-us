@@ -20,6 +20,11 @@ const COLUMNS: Record<string, string> = {
   'turi': 'employmentType',
   'ishga qabul sanasi': 'hireDate',
   'oylik': 'salary',
+  // Kirill sarlavhalar (UI shu nomlarni ko'rsatadi)
+  'табель рақами': 'tabNumber', 'фамилия': 'lastName', 'исм': 'firstName', 'отасининг исми': 'middleName',
+  'туғилган сана': 'birthDate', 'жинси': 'gender', 'миллати': 'nationality', 'телефон': 'phone', 'манзил': 'addressResidential',
+  'жшшир': 'pinfl', 'паспорт': 'passportSeriesNumber', 'бўлим': 'department', 'лавозим': 'position', 'тури': 'employmentType',
+  'ишга қабул санаси': 'hireDate', 'ойлик': 'salary',
 };
 
 export interface ImportResult {
@@ -47,7 +52,7 @@ export class EmployeesImportService {
       const wb = XLSX.read(buffer, { type: 'buffer', cellDates: true });
       rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: '' });
     } catch {
-      throw new BadRequestException('Excel faylni o\'qib bo\'lmadi');
+      throw new BadRequestException('Excel файлни ўқиб бўлмади');
     }
 
     const result: ImportResult = { created: 0, updated: 0, errors: [] };
@@ -59,9 +64,9 @@ export class EmployeesImportService {
         if (f) r[f] = typeof v === 'string' ? v.trim() : v;
       }
       try {
-        if (!r.tabNumber || !r.firstName || !r.lastName) throw new Error('Tabel raqami, familiya va ism majburiy');
-        if (!r.department || !r.position) throw new Error('Bo\'lim va lavozim majburiy');
-        if (r.pinfl && !/^\d{14}$/.test(String(r.pinfl))) throw new Error('JSHSHIR 14 ta raqam bo\'lishi kerak');
+        if (!r.tabNumber || !r.firstName || !r.lastName) throw new Error('Табель рақами, фамилия ва исм мажбурий');
+        if (!r.department || !r.position) throw new Error('Бўлим ва лавозим мажбурий');
+        if (r.pinfl && !/^\d{14}$/.test(String(r.pinfl))) throw new Error('ЖШШИР 14 та рақамдан иборат бўлиши керак');
 
         const dept =
           (await this.prisma.department.findFirst({ where: { name: r.department } })) ??
@@ -77,7 +82,7 @@ export class EmployeesImportService {
           lastName: r.lastName,
           middleName: r.middleName || undefined,
           birthDate: parseDate(r.birthDate),
-          gender: gender.startsWith('e') ? ('erkak' as const) : gender.startsWith('a') ? ('ayol' as const) : undefined,
+          gender: /^(e|э|эр)/.test(gender) ? ('erkak' as const) : /^(a|а|аё)/.test(gender) ? ('ayol' as const) : undefined,
           nationality: r.nationality || undefined,
           phone: r.phone ? String(r.phone) : undefined,
           addressResidential: r.addressResidential || undefined,
@@ -85,7 +90,7 @@ export class EmployeesImportService {
           passportSeriesNumber: r.passportSeriesNumber || undefined,
           departmentId: dept.id,
           positionId: pos.id,
-          employmentType: String(r.employmentType ?? '').toLowerCase() === 'gpx' ? ('gpx' as const) : ('shtat' as const),
+          employmentType: ['gpx', 'гпх'].includes(String(r.employmentType ?? '').toLowerCase()) ? ('gpx' as const) : ('shtat' as const),
           hireDate: parseDate(r.hireDate),
           salary: r.salary !== '' && r.salary != null ? Number(String(r.salary).replace(/\s/g, '')) || 0 : undefined,
         };

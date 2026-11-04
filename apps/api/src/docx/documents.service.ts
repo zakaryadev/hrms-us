@@ -7,7 +7,8 @@ import { workYear, calcLeave } from '../calendar/leave';
 import { PrismaService } from '../prisma/prisma.service';
 import { SettingsService } from '../settings/settings.service';
 import { DocxService } from './docx.service';
-import { dayOf, fmtDate, fmtDayMonth, fmtMoney, fmtYear, monthName } from './format';
+import { dayOf, fmtDate, fmtDayMonth, fmtMoney, fmtYear, monthName, toLang } from './format';
+import { DOC_STRINGS } from './strings';
 
 export const DOC_TYPES = ['obyektivka', 'ariza', 'kelishuv', 'buyruq-otkazish', 'buyruq-tatil'] as const;
 export type DocType = (typeof DOC_TYPES)[number];
@@ -17,11 +18,11 @@ type Params = Record<string, any>;
 
 function need(params: Params, ...keys: string[]) {
   const missing = keys.filter((k) => params[k] === undefined || params[k] === null || params[k] === '');
-  if (missing.length) throw new BadRequestException(`Majburiy maydonlar to'ldirilmagan: ${missing.join(', ')}`);
+  if (missing.length) throw new BadRequestException(`Мажбурий майдонлар тўлдирилмаган: ${missing.join(', ')}`);
 }
 const ISO = /^\d{4}-\d{2}-\d{2}$/;
 function needDates(params: Params, ...keys: string[]) {
-  for (const k of keys) if (!ISO.test(String(params[k] ?? ''))) throw new BadRequestException(`"${k}" sanasi YYYY-MM-DD formatida bo'lishi kerak`);
+  for (const k of keys) if (!ISO.test(String(params[k] ?? ''))) throw new BadRequestException(`«${k}» санаси ЙЙЙЙ-ОО-КК форматида бўлиши керак`);
 }
 
 @Injectable()
@@ -36,7 +37,7 @@ export class DocumentsService {
         education: true, workHistory: { orderBy: { startDate: 'asc' } }, relatives: true,
       },
     });
-    if (!e) throw new NotFoundException('Xodim topilmadi');
+    if (!e) throw new NotFoundException('Ходим топилмади');
     return e;
   }
 
@@ -44,7 +45,7 @@ export class DocumentsService {
     need(params, 'newDepartmentId', 'newPositionId');
     const dept = await this.prisma.department.findUnique({ where: { id: params.newDepartmentId }, include: { parent: true } });
     const pos = await this.prisma.position.findUnique({ where: { id: params.newPositionId } });
-    if (!dept || !pos) throw new BadRequestException('Yangi bo\'lim yoki lavozim topilmadi');
+    if (!dept || !pos) throw new BadRequestException('Янги бўлим ёки лавозим топилмади');
     return { dept, pos };
   }
 
@@ -55,6 +56,8 @@ export class DocumentsService {
     [e.lastName, e.firstName, e.middleName].filter(Boolean).join(' ');
 
   async generate(type: DocType, employeeId: string, params: Params = {}, persist = true) {
+    const lang = toLang(params.lang);
+    const L = DOC_STRINGS[lang];
     const e = await this.employee(employeeId);
     const s = await this.settings.getAll();
     const cur = DocumentsService.names(e.department);
@@ -63,7 +66,7 @@ export class DocumentsService {
       tashkilot_nomi: s.tashkilot_nomi, rahbar_fish: s.bosh_direktor_fish, bosh_direktor_fish: s.bosh_direktor_fish,
       shahar: s.shahar, vakil_fish: s.vakil_fish, ishonchnoma_matni: s.ishonchnoma_matni,
       ish_beruvchi_rekvizitlari: s.ish_beruvchi_rekvizitlari,
-      imzolovchi: params.signer || 'Bosh direktor',
+      imzolovchi: params.signer || L.signer,
       xodim_fish: fish, amaldagi_filial: cur.filial, amaldagi_bolim: cur.bolim, amaldagi_lavozim: e.position.title,
     };
     let data: Record<string, unknown>;
@@ -74,18 +77,18 @@ export class DocumentsService {
       case 'obyektivka': {
         const edu = e.education[e.education.length - 1];
         const history = e.workHistory.map((w) => ({
-          davr: `${w.startDate ? fmtDate(w.startDate).slice(3) : '—'} — ${w.endDate ? fmtDate(w.endDate).slice(3) : 'h.v.'}`,
+          davr: `${w.startDate ? fmtDate(w.startDate).slice(3) : '—'} — ${w.endDate ? fmtDate(w.endDate).slice(3) : L.present}`,
           lavozim_va_joy: [w.positionTitle, w.organizationName].filter(Boolean).join(', '),
         }));
         if (e.hireDate) {
-          history.push({ davr: `${fmtDate(e.hireDate).slice(3)} — h.v.`, lavozim_va_joy: `${e.position.title}, ${s.tashkilot_nomi}, ${e.department.name}` });
+          history.push({ davr: `${fmtDate(e.hireDate).slice(3)} — ${L.present}`, lavozim_va_joy: `${e.position.title}, ${s.tashkilot_nomi}, ${e.department.name}` });
         }
         data = {
           ...base,
           tugilgan_sana: fmtDate(e.birthDate), tugilgan_joy: e.birthPlace ?? '', millati: e.nationality ?? '',
-          partiyaviyligi: e.partyMembership || "yo'q", malumoti: params.malumoti ?? '',
+          partiyaviyligi: e.partyMembership || L.none, malumoti: params.malumoti ?? '',
           tamomlagan_oliygoh: edu?.institutionName ?? '', mutaxassisligi: edu?.speciality ?? '',
-          harbiy_unvoni: params.harbiyUnvoni || "yo'q", ishga_tushgan_sana: fmtDate(e.hireDate),
+          harbiy_unvoni: params.harbiyUnvoni || L.none, ishga_tushgan_sana: fmtDate(e.hireDate),
           ish_joylari: history,
           qarindoshlar: e.relatives.map((r) => ({
             qarindoshligi: r.relativeType, fish: r.fullName, tugilgan_yil_joy: r.birthYearPlace ?? '',
@@ -101,13 +104,13 @@ export class DocumentsService {
         data = {
           ...base, yangi_filial: [tn.filial, tn.bolim].filter(Boolean).join(' '), yangi_lavozim: t.pos.title,
           otkazish_yili: fmtYear(params.transferDate), otkazish_kuni: dayOf(params.transferDate),
-          otkazish_oyi: monthName(params.transferDate), ariza_sanasi: fmtDate(params.applicationDate),
+          otkazish_oyi: monthName(params.transferDate, lang), ariza_sanasi: fmtDate(params.applicationDate),
         };
         break;
       }
       case 'kelishuv': {
         need(params, 'transferDate', 'agreementDate', 'newSalary'); needDates(params, 'transferDate', 'agreementDate');
-        if (!e.contractNumber || !e.contractDate) throw new BadRequestException("Xodimda mehnat shartnomasi raqami va sanasi kiritilmagan");
+        if (!e.contractNumber || !e.contractDate) throw new BadRequestException('Ходимда меҳнат шартномаси рақами ва санаси киритилмаган');
         const t = await this.target(params);
         const tn = DocumentsService.names(t.dept);
         const prev = await this.prisma.generatedDocument.count({ where: { employeeId, type: 'kelishuv' } });
@@ -117,7 +120,7 @@ export class DocumentsService {
           shartnoma_sanasi: fmtDate(e.contractDate), shartnoma_raqami: e.contractNumber.replace(/^\D+\s*/, ''),
           kelishuv_raqami: number, kelishuv_sanasi: fmtDate(params.agreementDate),
           yangi_filial: [tn.filial, tn.bolim].filter(Boolean).join(' '), yangi_lavozim: t.pos.title,
-          otkazish_yili: fmtYear(params.transferDate), otkazish_sanasi: fmtDayMonth(params.transferDate),
+          otkazish_yili: fmtYear(params.transferDate), otkazish_sanasi: fmtDayMonth(params.transferDate, lang),
           oylik_maosh: fmtMoney(params.newSalary),
           xodim_pasport: e.passportSeriesNumber ?? '', xodim_pinfl: e.pinfl ?? '', xodim_manzil: e.addressResidential ?? '',
         };
@@ -127,19 +130,19 @@ export class DocumentsService {
         need(params, 'orderDate', 'transferDate', 'basis'); needDates(params, 'orderDate', 'transferDate');
         const t = await this.target(params);
         const tn = DocumentsService.names(t.dept);
-        number = String(params.orderNumber || `М-${(await this.prisma.order.count()) + 1}`);
+        number = String(params.orderNumber || `${L.orderPrefix}${(await this.prisma.order.count()) + 1}`);
         order = { type: 'lavozim_otkazish', number, date: params.orderDate };
         data = {
           ...base, buyruq_raqami: number, buyruq_sanasi: fmtDate(params.orderDate),
           yangi_filial: [tn.filial, tn.bolim].filter(Boolean).join(' '), yangi_lavozim: t.pos.title,
-          otkazish_yili: fmtYear(params.transferDate), otkazish_sanasi: fmtDayMonth(params.transferDate),
+          otkazish_yili: fmtYear(params.transferDate), otkazish_sanasi: fmtDayMonth(params.transferDate, lang),
           asos_matni: String(params.basis).replace(/[.\s]+$/, ''),
         };
         break;
       }
       case 'buyruq-tatil': {
         need(params, 'orderDate', 'startDate'); needDates(params, 'orderDate', 'startDate');
-        if (!e.hireDate) throw new BadRequestException('Xodimning ishga qabul sanasi kiritilmagan');
+        if (!e.hireDate) throw new BadRequestException('Ходимнинг ишга қабул санаси киритилмаган');
         const basic = Number(params.basicDays ?? e.annualLeaveBasicDays);
         const extra = Number(params.extraDays ?? e.annualLeaveExtraDays);
         const leave = calcLeave(params.startDate, basic + extra);
@@ -148,26 +151,26 @@ export class DocumentsService {
           start: ISO.test(String(params.workYearStart ?? '')) ? params.workYearStart : auto.start,
           end: ISO.test(String(params.workYearEnd ?? '')) ? params.workYearEnd : auto.end,
         };
-        number = String(params.orderNumber || `T-${(await this.prisma.order.count()) + 1}`);
+        number = String(params.orderNumber || `${L.leavePrefix}${(await this.prisma.order.count()) + 1}`);
         order = { type: 'tatil_berish', number, date: params.orderDate };
         data = {
           ...base, filial: cur.filial, lavozim: e.position.title,
           buyruq_raqami: number, buyruq_sanasi: fmtDate(params.orderDate),
           ish_yili_boshi: fmtDate(wy.start), ish_yili_oxiri: fmtDate(wy.end),
           asosiy_kun: basic, qoshimcha_kun: extra, jami_kun: basic + extra,
-          boshlanish_yili: fmtYear(params.startDate), boshlanish_sanasi: fmtDayMonth(params.startDate),
-          chiqish_yili: fmtYear(leave.returnDate), ishga_chiqish_sanasi: fmtDayMonth(leave.returnDate),
+          boshlanish_yili: fmtYear(params.startDate), boshlanish_sanasi: fmtDayMonth(params.startDate, lang),
+          chiqish_yili: fmtYear(leave.returnDate), ishga_chiqish_sanasi: fmtDayMonth(leave.returnDate, lang),
           moddiy_yordam: !!params.materialAid,
-          asos_matni: String(params.basis || `${fish}ning arizasi va O'zR Mehnat kodeksining 216, 217, 221-moddalari`).replace(/[.\s]+$/, ''),
+          asos_matni: String(params.basis || L.basisLeave(fish)).replace(/[.\s]+$/, ''),
         };
         params = { ...params, calculated: leave };
         break;
       }
       default:
-        throw new BadRequestException(`Noma'lum hujjat turi: ${type}`);
+        throw new BadRequestException(`Номаълум ҳужжат тури: ${type}`);
     }
 
-    const buffer = this.docx.render(type, data);
+    const buffer = this.docx.render(lang, type, data);
     if (!persist) {
       return { buffer, fileName: `${type}-${e.tabNumber}${number ? '-' + number.replace(/[^\w-]/g, '_') : ''}.docx` };
     }
