@@ -1,9 +1,10 @@
-import { LayoutDashboard, Network, Settings, Users } from 'lucide-react';
+import { CalendarDays, LayoutDashboard, Network, Settings, Users } from 'lucide-react';
 import { NavLink, Outlet } from 'react-router-dom';
 
 const links = [
   { to: '/', label: 'Bosh sahifa', icon: LayoutDashboard, end: true },
   { to: '/employees', label: 'Xodimlar', icon: Users },
+  { to: '/timesheet', label: 'Tabel', icon: CalendarDays },
   { to: '/structure', label: 'Tuzilma', icon: Network },
   { to: '/settings', label: 'Sozlamalar', icon: Settings },
 ];

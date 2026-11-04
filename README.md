@@ -27,3 +27,8 @@ Shablonlar `apps/api/templates/*.docx` (teglar `{{o'zgaruvchi}}`, tsikllar `{{#r
 O'zingizning shabloningiz bilan almashtirishingiz mumkin (o'zgaruvchi nomlari `apps/api/scripts/build-templates.ts` da).
 Namunaviy shablonlarni qayta yaratish: `cd apps/api && npx ts-node scripts/build-templates.ts`.
 Tashkilot rekvizitlari: UI → Sozlamalar. Bayramlar: `apps/api/src/calendar/holidays.ts` (hayit sanalarini yil boshida tekshiring).
+
+## Tabel va oylik
+UI → Tabel. Kodlar: `8`, `7.2` (ishlangan), `MT`, `KV` (50%), `BPT`, `SK`, `TSH`, `TK` (ogohlantirish, kun ishlangan hisoblanadi).
+Hisob: `apps/api/src/payroll/payroll.ts` (yagona manba). Shtat: ishlangan × kunlik + KV × kunlik × 0.5 (oikladdan oshmaydi);
+GPX: ishlangan × kunlik, 100 so'mgacha yaxlitlanadi. `GET /api/timesheet/export?year=&month=` — Excel.
