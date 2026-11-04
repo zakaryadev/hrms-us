@@ -47,3 +47,39 @@ describe('workingDaysInMonth', () => {
     expect(workingDaysInMonth(2026, 12)).toBe(22);
   });
 });
+
+describe('taqvim: qo\'shimcha holatlar', () => {
+  it('2026: Ramazon hayit (20.03) + Navro\'z (21.03) ketma-ket — ta\'til 2 kunga uzayadi, qaytish dushanba', () => {
+    const r = calcLeave('2026-03-16', 5); // du-pa: 16,17,18,19, keyin 20-21 bayram, 22-yakshanba 5-kun
+    expect(r.holidaysInRange).toEqual(['2026-03-20', '2026-03-21']);
+    expect(r.endDate).toBe('2026-03-22');
+    expect(r.returnDate).toBe('2026-03-23');
+  });
+
+  it('shanbadan boshlangan ta\'til: dam olish kunlari ta\'til kuniga kiradi', () => {
+    const r = calcLeave('2026-06-06', 3); // shanba, yakshanba, dushanba
+    expect(r.endDate).toBe('2026-06-08');
+    expect(r.returnDate).toBe('2026-06-09');
+  });
+
+  it("Qurbon hayit (27.05.2026) ta'til oralig'ida", () => {
+    const r = calcLeave('2026-05-25', 3);
+    expect(r.holidaysInRange).toEqual(['2026-05-27']);
+    expect(r.endDate).toBe('2026-05-28');
+  });
+
+  it("tugash kuni juma bo'lib, dushanba bayram bo'lsa — ishga chiqish keyingi ish kuni", () => {
+    // 2026-12-04 (juma) 1 kunlik ta'til: tugash 04.12, qaytish dushanba 07.12 (8-dekabr seshanba — ish kuni emas, lekin 7-si ish kuni)
+    expect(calcLeave('2026-12-04', 1).returnDate).toBe('2026-12-07');
+    // 2026-12-07 (dushanba) 1 kun: qaytish 8-dekabr bayram → 9-dekabr
+    expect(calcLeave('2026-12-07', 1).returnDate).toBe('2026-12-09');
+  });
+
+  it('ish kunlari: may 2026 = 20 (Qurbon hayit chiqariladi; shanbaga tushgan 9-may ko\'chirilmaydi)', () => {
+    expect(workingDaysInMonth(2026, 5)).toBe(20);
+  });
+
+  it('hayit jadvali yo\'q yilda faqat doimiy bayramlar hisobga olinadi', () => {
+    expect(workingDaysInMonth(2027, 3)).toBe(22); // 23 ish kuni − 8-mart (dushanba); 21-mart yakshanba; hayit sanalari kiritilmagan
+  });
+});

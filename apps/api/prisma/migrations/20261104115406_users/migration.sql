@@ -1,0 +1,18 @@
+-- CreateEnum
+CREATE TYPE "UserRole" AS ENUM ('superadmin', 'kadrlar', 'buxgalter');
+
+-- CreateTable
+CREATE TABLE "users" (
+    "id" TEXT NOT NULL,
+    "login" TEXT NOT NULL,
+    "password_hash" TEXT NOT NULL,
+    "full_name" TEXT NOT NULL,
+    "role" "UserRole" NOT NULL DEFAULT 'kadrlar',
+    "active" BOOLEAN NOT NULL DEFAULT true,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "users_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateIndex
+CREATE UNIQUE INDEX "users_login_key" ON "users"("login");

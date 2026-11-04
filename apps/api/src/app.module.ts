@@ -1,5 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { AuthModule } from './auth/auth.module';
+import { UsersModule } from './users/users.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { DocumentsModule } from './documents/documents.module';
 import { DocxModule } from './docx/docx.module';
@@ -12,7 +14,7 @@ import { PositionsModule } from './positions/positions.module';
 import { PrismaModule } from './prisma/prisma.module';
 
 @Module({
-  imports: [ConfigModule.forRoot({ isGlobal: true }), PrismaModule, DepartmentsModule, PositionsModule, EmployeesModule, DashboardModule, DocumentsModule, DocxModule, SettingsModule, TimesheetModule],
+  imports: [ConfigModule.forRoot({ isGlobal: true }), PrismaModule, AuthModule, UsersModule, DepartmentsModule, PositionsModule, EmployeesModule, DashboardModule, DocumentsModule, DocxModule, SettingsModule, TimesheetModule],
   controllers: [HealthController],
 })
 export class AppModule {}

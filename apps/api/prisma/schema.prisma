@@ -28,6 +28,12 @@ enum EmployeeStatus {
   ishdan_boshagan
 }
 
+enum UserRole {
+  superadmin
+  kadrlar
+  buxgalter
+}
+
 enum OrderType {
   ishga_qabul
   lavozim_otkazish
@@ -207,4 +213,16 @@ model GeneratedDocument {
 
   @@index([employeeId, type])
   @@map("generated_documents")
+}
+
+model User {
+  id           String   @id @default(uuid())
+  login        String   @unique
+  passwordHash String   @map("password_hash")
+  fullName     String   @map("full_name")
+  role         UserRole @default(kadrlar)
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  @@map("users")
 }
