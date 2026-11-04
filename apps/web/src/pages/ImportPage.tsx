@@ -15,21 +15,21 @@ export default function ImportPage() {
   const r = run.data;
   return (
     <div className="max-w-4xl space-y-4">
-      <h1 className="text-2xl font-semibold text-navy">Excel’дан юклаш</h1>
+      <h1 className="text-2xl font-semibold text-ink">Excel’дан юклаш</h1>
       <div className="card space-y-4 p-5">
-        <p className="text-sm text-slate-600">Ходимлар рўйхатини .xlsx файлдан юкланг. Биринчи қатор — устун номлари. Мавжуд табель рақами бўйича ходим янгиланади, янгиси қўшилади.</p>
-        <div className="flex flex-wrap gap-1.5">{COLS.map((c) => <span key={c} className="rounded bg-slate-100 px-2 py-1 text-xs text-slate-700">{c}</span>)}</div>
+        <p className="text-sm text-ink-500">Ходимлар рўйхатини .xlsx файлдан юкланг. Биринчи қатор — устун номлари. Мавжуд табель рақами бўйича ходим янгиланади, янгиси қўшилади.</p>
+        <div className="flex flex-wrap gap-1.5">{COLS.map((c) => <span key={c} className="rounded bg-surface px-2 py-1 text-xs text-ink-700">{c}</span>)}</div>
         <input ref={ref} type="file" accept=".xlsx,.xls" hidden onChange={(e) => { const f = e.target.files?.[0]; if (f) run.mutate(f); e.target.value = ''; }} />
         <button className="btn-primary" onClick={() => ref.current?.click()} disabled={run.isPending}><Upload size={16} /> Файлни танлаш</button>
         {run.error && <p className="text-sm text-red-600">{(run.error as Error).message}</p>}
       </div>
       {r && (
         <div className="card p-5">
-          <div className="mb-3 flex items-center gap-2 font-semibold"><FileSpreadsheet size={18} className="text-blue-700" /> Натижа</div>
+          <div className="mb-3 flex items-center gap-2 font-semibold"><FileSpreadsheet size={18} className="text-brand" /> Натижа</div>
           <p className="text-sm">Қўшилди: <b>{r.created}</b> · Янгиланди: <b>{r.updated}</b> · Хато: <b className={r.errors.length ? 'text-red-600' : ''}>{r.errors.length}</b></p>
           {r.errors.length > 0 && (
             <table className="mt-3 w-full text-sm"><thead><tr><th className="th">Қатор</th><th className="th">Хато</th></tr></thead>
-              <tbody className="divide-y">{r.errors.map((e) => <tr key={e.row}><td className="td">{e.row}</td><td className="td text-red-600">{e.message}</td></tr>)}</tbody></table>
+              <tbody className="divide-y divide-surface-line">{r.errors.map((e) => <tr key={e.row}><td className="td">{e.row}</td><td className="td text-red-600">{e.message}</td></tr>)}</tbody></table>
           )}
         </div>
       )}

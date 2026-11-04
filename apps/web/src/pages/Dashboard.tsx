@@ -21,7 +21,7 @@ export default function Dashboard() {
         {cards.map(({ label, value, icon: Icon }) => (
           <div key={label} className="card flex items-center gap-3 p-4 sm:gap-4 sm:p-5">
             <div className="shrink-0 rounded-lg bg-brand-soft p-3 text-brand"><Icon size={22} /></div>
-            <div className="min-w-0"><p className="text-2xl font-semibold">{value}</p><p className="break-words text-xs text-slate-500">{label}</p></div>
+            <div className="min-w-0"><p className="text-2xl font-semibold">{value}</p><p className="break-words text-xs text-ink-500">{label}</p></div>
           </div>
         ))}
       </div>
@@ -30,11 +30,11 @@ export default function Dashboard() {
         <div className="space-y-4">
           {data.departments.map((d: any) => (
             <div key={d.id}>
-              <div className="mb-1 flex justify-between text-sm"><span>{d.name}</span><span className="text-slate-500">{d.occupied} / {d.staff}</span></div>
+              <div className="mb-1 flex justify-between text-sm"><span>{d.name}</span><span className="text-ink-500">{d.occupied} / {d.staff}</span></div>
               <Progress value={d.occupied} max={d.staff} />
             </div>
           ))}
-          {data.departments.length === 0 && <p className="text-sm text-slate-500">Бўлимлар йўқ</p>}
+          {data.departments.length === 0 && <p className="text-sm text-ink-500">Бўлимлар йўқ</p>}
         </div>
       </div>
     </div>

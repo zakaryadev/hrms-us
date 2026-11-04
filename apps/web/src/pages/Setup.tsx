@@ -38,30 +38,30 @@ export default function Setup() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[#f8fafc] p-4">
+    <div className="flex min-h-screen items-center justify-center bg-surface p-4">
       <div className="card w-full max-w-lg p-6">
         <img src="/logo.svg" alt="Logo" className="mx-auto mb-5 h-9" />
         <ol className="mb-6 flex items-center justify-center gap-2 text-xs">
           {STEPS.map((s, i) => (
             <li key={s} className="flex items-center gap-2">
-              <span className={`flex h-6 w-6 items-center justify-center rounded-full font-semibold ${i < step ? 'bg-emerald-600 text-white' : i === step ? 'bg-brand text-white' : 'bg-slate-200 text-slate-500'}`}>{i < step ? <Check size={14} /> : i + 1}</span>
-              <span className={i === step ? 'font-medium text-slate-800' : 'text-slate-500'}>{s}</span>
-              {i < STEPS.length - 1 && <span className="h-px w-6 bg-slate-300" />}
+              <span className={`flex h-6 w-6 items-center justify-center rounded-full font-semibold ${i < step ? 'bg-brand-600 text-white' : i === step ? 'bg-brand text-white' : 'bg-surface-line text-ink-500'}`}>{i < step ? <Check size={14} /> : i + 1}</span>
+              <span className={i === step ? 'font-medium text-ink' : 'text-ink-500'}>{s}</span>
+              {i < STEPS.length - 1 && <span className="h-px w-6 bg-surface-line" />}
             </li>
           ))}
         </ol>
 
         {step === 0 && (
           <div className="space-y-4">
-            <h1 className="text-xl font-semibold text-navy">Тизимни дастлабки созлаш</h1>
-            <p className="text-sm text-slate-600">Тизимда ҳали фойдаланувчи йўқ. Аввал биринчи <b>Суперадмин</b> ҳисобини яратамиз — у бошқа ходимларни (Кадрлар, Бухгалтер) қўшади ва ҳамма нарсани бошқаради. Сўнг ташкилот маълумотларини киритасиз (улар ҳужжатларга автоматик қўйилади).</p>
+            <h1 className="text-xl font-semibold text-ink">Тизимни дастлабки созлаш</h1>
+            <p className="text-sm text-ink-500">Тизимда ҳали фойдаланувчи йўқ. Аввал биринчи <b>Суперадмин</b> ҳисобини яратамиз — у бошқа ходимларни (Кадрлар, Бухгалтер) қўшади ва ҳамма нарсани бошқаради. Сўнг ташкилот маълумотларини киритасиз (улар ҳужжатларга автоматик қўйилади).</p>
             <button className="btn-primary" onClick={() => setStep(1)}>Бошлаш</button>
           </div>
         )}
 
         {step === 1 && (
           <form className="space-y-4" onSubmit={submitAdmin}>
-            <h1 className="text-xl font-semibold text-navy">Суперадмин ҳисоби</h1>
+            <h1 className="text-xl font-semibold text-ink">Суперадмин ҳисоби</h1>
             <Field label="Ф.И.Ш. *"><input required minLength={2} className="input" value={admin.fullName} onChange={(e) => setAdmin({ ...admin, fullName: e.target.value })} /></Field>
             <Field label="Логин * (лотин ҳарфлари, рақам, . _ -)"><input required minLength={2} pattern="[a-zA-Z0-9._\-]+" autoComplete="username" className="input" value={admin.login} onChange={(e) => setAdmin({ ...admin, login: e.target.value })} /></Field>
             <Field label="Парол * (камида 8 белги)"><input required type="password" autoComplete="new-password" className="input" value={admin.password} onChange={(e) => setAdmin({ ...admin, password: e.target.value })} /></Field>
@@ -76,8 +76,8 @@ export default function Setup() {
 
         {step === 2 && (
           <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); saveOrg.mutate(); }}>
-            <h1 className="text-xl font-semibold text-navy">Ташкилот маълумотлари</h1>
-            <p className="text-sm text-slate-500">Суперадмин ҳисоби яратилди ва сиз тизимга кирдингиз. Бу маълумотларни кейин «Справочниклар» бўлимида ўзгартириш мумкин.</p>
+            <h1 className="text-xl font-semibold text-ink">Ташкилот маълумотлари</h1>
+            <p className="text-sm text-ink-500">Суперадмин ҳисоби яратилди ва сиз тизимга кирдингиз. Бу маълумотларни кейин «Справочниклар» бўлимида ўзгартириш мумкин.</p>
             <Field label="Ташкилот номи"><input className="input" value={org.tashkilot_nomi} onChange={(e) => setOrg({ ...org, tashkilot_nomi: e.target.value })} /></Field>
             <Field label="Бош директор Ф.И.Ш."><input className="input" value={org.bosh_direktor_fish} onChange={(e) => setOrg({ ...org, bosh_direktor_fish: e.target.value })} /></Field>
             <Field label="Шаҳар"><input className="input" value={org.shahar} onChange={(e) => setOrg({ ...org, shahar: e.target.value })} /></Field>

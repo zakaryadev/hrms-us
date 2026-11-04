@@ -35,7 +35,7 @@ export default function Employees() {
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-2xl font-semibold text-navy">Ходимлар</h1>
+        <h1 className="text-2xl font-semibold text-ink">Ходимлар</h1>
         <div className="flex gap-2">
           <input ref={fileRef} type="file" accept=".xlsx,.xls" hidden onChange={(e) => { const f = e.target.files?.[0]; if (f) importExcel.mutate(f); e.target.value = ''; }} />
           <button className="btn-secondary" onClick={() => fileRef.current?.click()} disabled={importExcel.isPending}><Upload size={16} /> Excel’дан юклаш</button>
@@ -45,7 +45,7 @@ export default function Employees() {
       {importMsg && <p className="card p-3 text-sm">{importMsg}</p>}
       <div className="flex flex-wrap gap-3">
         <div className="relative min-w-[220px] flex-1">
-          <Search size={16} className="absolute left-3 top-2.5 text-slate-400" />
+          <Search size={16} className="absolute left-3 top-2.5 text-ink-400" />
           <input className="input pl-9" placeholder="Ф.И.Ш., табель рақами ёки ЖШШИР" value={q} onChange={(e) => { setQ(e.target.value); setPage(1); }} />
         </div>
         <select className="input w-auto" value={departmentId} onChange={(e) => { setDepartmentId(e.target.value); setPage(1); }}>
@@ -55,25 +55,25 @@ export default function Employees() {
       </div>
       <div className="card overflow-x-auto">
         <table className="w-full">
-          <thead className="border-b bg-slate-50"><tr>
+          <thead className="border-b border-surface-line bg-surface"><tr>
             <th className="th">Табель</th><th className="th">Ф.И.Ш.</th><th className="th">Лавозим</th><th className="th">Бўлим</th><th className="th">Тури</th><th className="th">Ҳолат</th>
           </tr></thead>
-          <tbody className="divide-y">
+          <tbody className="divide-y divide-surface-line">
             {list.data?.items.map((e: any) => (
-              <tr key={e.id} className="hover:bg-slate-50">
+              <tr key={e.id} className="hover:bg-brand-50">
                 <td className="td font-mono">{e.tabNumber}</td>
-                <td className="td"><Link to={`/employees/${e.id}`} className="font-medium text-navy hover:text-brand">{fullName(e)}</Link></td>
+                <td className="td"><Link to={`/employees/${e.id}`} className="font-medium text-ink hover:text-brand">{fullName(e)}</Link></td>
                 <td className="td">{e.position.title}</td>
-                <td className="td text-slate-500">{e.department.name}</td>
-                <td className="td text-slate-500">{EMP_TYPE_LABEL[e.employmentType]}</td>
+                <td className="td text-ink-500">{e.department.name}</td>
+                <td className="td text-ink-500">{EMP_TYPE_LABEL[e.employmentType]}</td>
                 <td className="td"><StatusBadge status={e.status} /></td>
               </tr>
             ))}
-            {list.data?.items.length === 0 && <tr><td colSpan={6} className="td py-10 text-center text-slate-500">Ходимлар топилмади</td></tr>}
+            {list.data?.items.length === 0 && <tr><td colSpan={6} className="td py-10 text-center text-ink-500">Ходимлар топилмади</td></tr>}
           </tbody>
         </table>
       </div>
-      <div className="flex items-center justify-between text-sm text-slate-500">
+      <div className="flex items-center justify-between text-sm text-ink-500">
         <span>Жами: {list.data?.total ?? 0}</span>
         <div className="flex items-center gap-2">
           <button className="btn-secondary" disabled={page <= 1} onClick={() => setPage(page - 1)}>Олдинги</button>

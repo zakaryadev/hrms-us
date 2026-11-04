@@ -10,20 +10,20 @@ export default function Certificates() {
   const q = useQuery({ queryKey: ['generated', 'obyektivka'], queryFn: () => api<any[]>('/documents/generated?type=obyektivka') });
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-semibold text-navy">Маълумотнома</h1>
+      <h1 className="text-2xl font-semibold text-ink">Маълумотнома</h1>
       <div className="card flex flex-wrap items-center gap-3 p-4">
-        <span className="text-sm text-slate-600">Янги маълумотнома (Т-2):</span>
+        <span className="text-sm text-ink-500">Янги маълумотнома (Т-2):</span>
         <EmployeePicker onPick={setEmp} />
       </div>
       <div className="card overflow-x-auto">
         <table className="w-full">
-          <thead className="border-b bg-slate-50"><tr><th className="th">Сана</th><th className="th">Ходим</th><th className="th">Табель</th><th /></tr></thead>
-          <tbody className="divide-y">
+          <thead className="border-b border-surface-line bg-surface"><tr><th className="th">Сана</th><th className="th">Ходим</th><th className="th">Табель</th><th /></tr></thead>
+          <tbody className="divide-y divide-surface-line">
             {q.data?.map((g) => (
-              <tr key={g.id} className="hover:bg-slate-50"><td className="td">{fmtDate(g.createdAt)}</td><td className="td font-medium">{fullName(g.employee)}</td><td className="td font-mono">{g.employee.tabNumber}</td>
+              <tr key={g.id} className="hover:bg-brand-50"><td className="td">{fmtDate(g.createdAt)}</td><td className="td font-medium">{fullName(g.employee)}</td><td className="td font-mono">{g.employee.tabNumber}</td>
                 <td className="td text-right"><a className="btn-secondary !px-3 !py-1.5" href={`/api/documents/generated/${g.id}/download`}><Download size={14} /> DOCX</a></td></tr>
             ))}
-            {q.data?.length === 0 && <tr><td colSpan={4} className="td py-10 text-center text-slate-500">Ҳали маълумотнома яратилмаган</td></tr>}
+            {q.data?.length === 0 && <tr><td colSpan={4} className="td py-10 text-center text-ink-500">Ҳали маълумотнома яратилмаган</td></tr>}
           </tbody>
         </table>
       </div>

@@ -17,12 +17,12 @@ export default function Login() {
   if (needsSetup) return <Navigate to="/setup" replace />;
   if (user) return <Navigate to="/" replace />;
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[#f8fafc] p-4">
+    <div className="flex min-h-screen items-center justify-center bg-surface p-4">
       <form className="card w-full max-w-sm space-y-4 p-6" onSubmit={(e) => { e.preventDefault(); login.mutate(); }}>
         <img src="/logo.svg" alt="Logo" className="mx-auto h-9" />
         <div className="text-center">
-          <h1 className="text-xl font-semibold text-navy">Тизимга кириш</h1>
-          <p className="mt-1 text-sm text-slate-500">Кадрлар бўлими бошқаруви тизими</p>
+          <h1 className="text-xl font-semibold text-ink">Тизимга кириш</h1>
+          <p className="mt-1 text-sm text-ink-500">Кадрлар бўлими бошқаруви тизими</p>
         </div>
         <Field label="Логин"><input required autoFocus autoComplete="username" className="input" value={f.login} onChange={(e) => setF({ ...f, login: e.target.value })} /></Field>
         <Field label="Парол"><input required type="password" autoComplete="current-password" className="input" value={f.password} onChange={(e) => setF({ ...f, password: e.target.value })} /></Field>

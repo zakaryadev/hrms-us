@@ -33,13 +33,13 @@ export default function Structure() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-semibold text-navy">Штат ва сон</h1>
+      <h1 className="text-2xl font-semibold text-ink">Штат ва сон</h1>
       {err && <p className="card border-red-300 p-3 text-sm text-red-600">{err}</p>}
       <div className="grid gap-4 lg:grid-cols-[320px_1fr]">
         <div className="card p-4">
           <ul className="mb-4 space-y-1">
             {departments.data?.map((d) => (
-              <li key={d.id} className={`flex items-center rounded-lg px-3 py-2 text-sm ${d.id === current ? 'bg-navy text-white' : 'hover:bg-slate-100'}`}>
+              <li key={d.id} className={`flex items-center rounded-lg px-3 py-2 text-sm ${d.id === current ? 'bg-brand text-white' : 'hover:bg-brand-50'}`}>
                 <button className="flex-1 text-left" onClick={() => setSelected(d.id)}>{d.name}</button>
                 <button aria-label="Ўчириш" className="opacity-60 hover:opacity-100" onClick={() => confirm(`«${d.name}» ўчирилсинми?`) && delDept.mutate(d.id)}><Trash2 size={15} /></button>
               </li>
@@ -58,12 +58,12 @@ export default function Structure() {
         <div className="card p-4">
           <div className="mb-4 overflow-x-auto"><table className="w-full">
             <thead className="border-b"><tr><th className="th">Тартиб</th><th className="th">Лавозим</th><th className="th">Оклад</th><th className="th">Штат сони</th><th /></tr></thead>
-            <tbody className="divide-y">
+            <tbody className="divide-y divide-surface-line">
               {positions.data?.map((p) => (
                 <tr key={p.id}><td className="td">{p.rankOrder}</td><td className="td font-medium">{p.title}</td><td className="td">{fmtMoney(p.baseSalary)}</td><td className="td">{p.staffCount}</td>
-                  <td className="td text-right"><button aria-label="Ўчириш" className="text-slate-400 hover:text-red-600" onClick={() => confirm(`«${p.title}» ўчирилсинми?`) && delPos.mutate(p.id)}><Trash2 size={16} /></button></td></tr>
+                  <td className="td text-right"><button aria-label="Ўчириш" className="text-ink-400 hover:text-red-600" onClick={() => confirm(`«${p.title}» ўчирилсинми?`) && delPos.mutate(p.id)}><Trash2 size={16} /></button></td></tr>
               ))}
-              {positions.data?.length === 0 && <tr><td colSpan={5} className="td text-slate-500">Бу бўлимда лавозим йўқ</td></tr>}
+              {positions.data?.length === 0 && <tr><td colSpan={5} className="td text-ink-500">Бу бўлимда лавозим йўқ</td></tr>}
             </tbody>
           </table></div>
           {current && (

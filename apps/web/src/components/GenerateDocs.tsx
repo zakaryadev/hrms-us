@@ -26,18 +26,18 @@ export default function GenerateDocs({ employee }: { employee: any }) {
         {DOCS.map((d) => (
           <button key={d.type} onClick={() => setOpen(d.type)} className="card flex items-start gap-3 p-4 text-left transition hover:border-brand">
             <FilePlus2 className="mt-0.5 shrink-0 text-brand" size={20} />
-            <span><span className="block text-sm font-semibold">{d.title}</span><span className="text-xs text-slate-500">{d.desc}</span></span>
+            <span><span className="block text-sm font-semibold">{d.title}</span><span className="text-xs text-ink-500">{d.desc}</span></span>
           </button>
         ))}
       </div>
       <div className="card p-5">
         <h3 className="mb-2 font-semibold">Яратилган ҳужжатлар</h3>
-        <ul className="divide-y">
+        <ul className="divide-y divide-surface-line">
           {history.data?.map((g) => (
             <li key={g.id} className="flex items-center gap-3 py-2.5 text-sm">
               <span className="font-medium">{TYPE_LABEL[g.type] ?? g.type}</span>
-              {g.number && <span className="text-slate-500">№ {g.number}</span>}
-              <span className="text-slate-500">{fmtDate(g.createdAt)}</span>
+              {g.number && <span className="text-ink-500">№ {g.number}</span>}
+              <span className="text-ink-500">{fmtDate(g.createdAt)}</span>
               <a className="btn-secondary ml-auto !px-3 !py-1.5" href={`/api/documents/generated/${g.id}/download`}><Download size={14} /> DOCX</a>
             </li>
           ))}
@@ -83,7 +83,7 @@ function useGenerate(type: DocType, employee: any, onClose: () => void, save: bo
 function LangPicker({ lang, setLang }: { lang: Lang; setLang: (l: Lang) => void }) {
   return (
     <div className="flex justify-end">
-      <label className="flex items-center gap-2 text-sm text-slate-600">
+      <label className="flex items-center gap-2 text-sm text-ink-500">
         Ҳужжат тили
         <select className="input !w-auto !py-1.5" value={lang} onChange={(e) => setLang(e.target.value as Lang)}>
           <option value="cyr">Кирилл</option><option value="lat">Лотин</option>
@@ -100,8 +100,8 @@ function ModalFooter({ save, setSave, pending, error, onClose }: {
     <div className="mt-2 space-y-3 border-t pt-4">
       {error && <p className="text-sm text-red-600">{error.message}</p>}
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <label className="flex items-center gap-2 text-sm text-slate-700">
-          <input type="checkbox" className="h-4 w-4 rounded border-slate-300 accent-blue-700" checked={save} onChange={(e) => setSave(e.target.checked)} />
+        <label className="flex items-center gap-2 text-sm text-ink-700">
+          <input type="checkbox" className="h-4 w-4 rounded border-surface-line accent-brand" checked={save} onChange={(e) => setSave(e.target.checked)} />
           Ҳужжатни сақлаш ҳамда юклаб олинган ҳужжатлар рўйхатига қўшиш
         </label>
         <div className="flex gap-2">
@@ -144,7 +144,7 @@ export function DocModal({ type, employee, onClose }: { type: Exclude<DocType, '
     <Modal title={TYPE_LABEL[type]} onClose={onClose} wide>
       <form className="space-y-5" onSubmit={(e) => { e.preventDefault(); submit.mutate(); }}>
         <LangPicker lang={lang} setLang={setLang} />
-        <section><Field label="Ходим"><input className="input bg-slate-50" readOnly value={`${employee.lastName} ${employee.firstName} — ${cur}`} /></Field></section>
+        <section><Field label="Ходим"><input className="input bg-surface" readOnly value={`${employee.lastName} ${employee.firstName} — ${cur}`} /></Field></section>
 
         {needsTarget && (
           <section>
@@ -169,12 +169,12 @@ export function DocModal({ type, employee, onClose }: { type: Exclude<DocType, '
           <section>
             <SectionTitle>Келишув</SectionTitle>
             <div className="grid gap-4 md:grid-cols-3">
-              <Field label="Шартнома"><input className="input bg-slate-50" readOnly value={employee.contractNumber ? `${employee.contractNumber} (${fmtDate(employee.contractDate)})` : 'Киритилмаган!'} /></Field>
+              <Field label="Шартнома"><input className="input bg-surface" readOnly value={employee.contractNumber ? `${employee.contractNumber} (${fmtDate(employee.contractDate)})` : 'Киритилмаган!'} /></Field>
               <Field label="Келишув тузилган сана *"><input required type="date" className="input" value={f.agreementDate} onChange={set('agreementDate')} /></Field>
               <Field label="Янги ойлик иш ҳақи (сўм) *"><input required type="number" min={0} className="input" value={f.newSalary} onChange={set('newSalary')} /></Field>
               <div className="md:col-span-3"><Field label="Ишончнома реквизитлари"><input className="input" placeholder={settings.data?.ishonchnoma_matni} value={f.poaText} onChange={set('poaText')} /></Field></div>
             </div>
-            <p className="mt-2 text-xs text-slate-500">Келишув рақами автоматик берилади (ходим бўйича 1, 2, …).</p>
+            <p className="mt-2 text-xs text-ink-500">Келишув рақами автоматик берилади (ходим бўйича 1, 2, …).</p>
           </section>
         )}
 
@@ -244,7 +244,7 @@ export function LeaveModal({ employee, onClose }: { employee: any; onClose: () =
   const s = settings.data;
   const fullName = [employee.lastName, employee.firstName, employee.middleName].filter(Boolean).join(' ');
   const unit = [employee.department.parent?.name, employee.department.name].filter(Boolean).join(', ');
-  const ro = 'input bg-slate-50 text-slate-700';
+  const ro = 'input bg-surface text-ink-700';
 
   return (
     <Modal title="Меҳнат таътили бериш ҳақида буйруқ" onClose={onClose} wide>
@@ -270,7 +270,7 @@ export function LeaveModal({ employee, onClose }: { employee: any; onClose: () =
           <Field label="Жами календар кун"><input className={ro} readOnly value={days} /></Field>
         </section>
 
-        <section className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+        <section className="rounded-lg border border-slate-200 bg-surface p-4">
           <div className="grid gap-4 md:grid-cols-2">
             <Field label="Тугаши"><div className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold">{calc.data ? fmtDate(calc.data.endDate) : '—'}</div></Field>
             <Field label="Ишга чиқиш куни"><div className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold">{calc.data ? fmtDate(calc.data.returnDate) : '—'}</div></Field>
@@ -278,7 +278,7 @@ export function LeaveModal({ employee, onClose }: { employee: any; onClose: () =
           {calc.data?.holidaysInRange.length > 0 && (
             <p className="mt-2 text-xs font-medium text-red-600">Байрам кунлари сабабли узайтирилди: {calc.data.holidaysInRange.map((d: string) => fmtDate(d)).join(', ')}</p>
           )}
-          {!f.startDate && <p className="mt-2 text-xs text-slate-500">Бошланиш санасини танланг — тугаш ва ишга чиқиш санаси автоматик ҳисобланади.</p>}
+          {!f.startDate && <p className="mt-2 text-xs text-ink-500">Бошланиш санасини танланг — тугаш ва ишга чиқиш санаси автоматик ҳисобланади.</p>}
         </section>
 
         <section className="grid gap-4 md:grid-cols-2">

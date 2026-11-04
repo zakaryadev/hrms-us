@@ -13,22 +13,22 @@ export default function Leaves() {
     const s = o.payloadJson?.startDate, e = o.payloadJson?.calculated?.endDate;
     return s && e && today >= s && today <= e ? 'on' : s && today < s ? 'soon' : 'done';
   };
-  const badge = { on: ['Таътилда', 'bg-amber-50 text-amber-700'], soon: ['Режалаштирилган', 'bg-blue-50 text-blue-700'], done: ['Тугаган', 'bg-slate-100 text-slate-600'] } as const;
+  const badge = { on: ['Таътилда', 'bg-amber-50 text-amber-700'], soon: ['Режалаштирилган', 'bg-sky-50 text-sky-700'], done: ['Тугаган', 'bg-surface text-ink-500'] } as const;
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-semibold text-navy">Таътиллар</h1>
+      <h1 className="text-2xl font-semibold text-ink">Таътиллар</h1>
       <div className="card flex flex-wrap items-center gap-3 p-4">
-        <span className="text-sm text-slate-600">Таътил буйруғи яратиш:</span>
+        <span className="text-sm text-ink-500">Таътил буйруғи яратиш:</span>
         <EmployeePicker onPick={setEmp} />
       </div>
       <div className="card overflow-x-auto">
         <table className="w-full">
-          <thead className="border-b bg-slate-50"><tr><th className="th">Ходим</th><th className="th">Бошланиши</th><th className="th">Тугаши</th><th className="th">Ишга чиқиш</th><th className="th">Кун</th><th className="th">Ҳолат</th><th /></tr></thead>
-          <tbody className="divide-y">
+          <thead className="border-b border-surface-line bg-surface"><tr><th className="th">Ходим</th><th className="th">Бошланиши</th><th className="th">Тугаши</th><th className="th">Ишга чиқиш</th><th className="th">Кун</th><th className="th">Ҳолат</th><th /></tr></thead>
+          <tbody className="divide-y divide-surface-line">
             {q.data?.map((o) => {
               const p = o.payloadJson ?? {}, st = state(o), [label, cls] = badge[st];
               return (
-                <tr key={o.id} className="hover:bg-slate-50">
+                <tr key={o.id} className="hover:bg-brand-50">
                   <td className="td font-medium">{fullName(o.employee)}</td><td className="td">{fmtDate(p.startDate)}</td>
                   <td className="td">{fmtDate(p.calculated?.endDate)}</td><td className="td">{fmtDate(p.calculated?.returnDate)}</td>
                   <td className="td">{p.calculated?.totalDays ?? '—'}</td><td className="td"><span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${cls}`}>{label}</span></td>
@@ -36,7 +36,7 @@ export default function Leaves() {
                 </tr>
               );
             })}
-            {q.data?.length === 0 && <tr><td colSpan={7} className="td py-10 text-center text-slate-500">Таътил буйруқлари йўқ</td></tr>}
+            {q.data?.length === 0 && <tr><td colSpan={7} className="td py-10 text-center text-ink-500">Таътил буйруқлари йўқ</td></tr>}
           </tbody>
         </table>
       </div>

@@ -20,9 +20,9 @@ export default function Settings() {
   });
   return (
     <div className="max-w-2xl space-y-4">
-      <h1 className="text-2xl font-semibold text-navy">Справочниклар</h1>
+      <h1 className="text-2xl font-semibold text-ink">Справочниклар</h1>
       <form className="card space-y-4 p-5" onSubmit={(e) => { e.preventDefault(); save.mutate(); }}>
-        <p className="text-sm text-slate-500">Бу маълумотлар барча ҳужжатларга (ариза, келишув, буйруқлар) автоматик қўйилади.</p>
+        <p className="text-sm text-ink-500">Бу маълумотлар барча ҳужжатларга (ариза, келишув, буйруқлар) автоматик қўйилади.</p>
         {FIELDS.map(([k, label]) => (
           <Field key={k} label={label}><input className="input" value={f[k] ?? ''} onChange={(e) => setF({ ...f, [k]: e.target.value })} /></Field>
         ))}
