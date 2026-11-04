@@ -1,11 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft, FileText, Pencil, Trash2, Upload, UserRound } from 'lucide-react';
-import { useRef, useState } from 'react';
+import { ArrowLeft, FileText, Pencil, Trash2 } from 'lucide-react';
+import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import EmployeeForm from '../components/EmployeeForm';
 import GenerateDocs from '../components/GenerateDocs';
 import { Field, Loading, StatusBadge } from '../components/ui';
-import { api, CONTRACT_LABEL, EMP_TYPE_LABEL, fmtDate, fmtMoney, fullName, GENDER_LABEL } from '../lib/api';
+import { api, photoSrc, CONTRACT_LABEL, EMP_TYPE_LABEL, fmtDate, fmtMoney, fullName, GENDER_LABEL } from '../lib/api';
+import { Avatar, Button, DatePicker, FileDropzone, Input, Select } from '../components/kit';
 
 const TABS = ['Шахсий маълумотлар', 'Меҳнат фаолияти', 'Қариндошлари', 'Ҳужжатлар', 'Ҳужжат яратиш'] as const;
 const DOC_TYPES = [
@@ -32,13 +33,13 @@ export default function EmployeeProfile() {
     <div className="space-y-5">
       <Link to="/employees" className="inline-flex items-center gap-1 text-sm text-slate-500 hover:text-navy"><ArrowLeft size={16} /> Ходимлар</Link>
       <div className="card flex flex-wrap items-center gap-5 p-5">
-        <PhotoBox e={e} onDone={refresh} />
+        <Avatar size={88} src={photoSrc(e.photoUrl)} name={fullName(e)} />
         <div className="min-w-0 flex-1">
           <h1 className="text-xl font-semibold text-navy">{fullName(e)}</h1>
           <p className="text-sm text-slate-500">{e.position.title} · {e.department.name}</p>
           <div className="mt-2 flex items-center gap-3 text-sm"><StatusBadge status={e.status} /><span className="font-mono text-slate-500">Табель: {e.tabNumber}</span></div>
         </div>
-        <button className="btn-secondary" onClick={() => setEditing(true)}><Pencil size={16} /> Таҳрирлаш</button>
+        <Button variant="secondary"  onClick={() => setEditing(true)}><Pencil size={16} /> Таҳрирлаш</Button>
       </div>
 
       <div className="flex gap-1 overflow-x-auto border-b">
@@ -77,20 +78,6 @@ export default function EmployeeProfile() {
   );
 }
 
-function PhotoBox({ e, onDone }: { e: any; onDone: () => void }) {
-  const ref = useRef<HTMLInputElement>(null);
-  const up = useMutation({
-    mutationFn: (file: File) => { const f = new FormData(); f.append('file', file); return api(`/employees/${e.id}/photo`, { method: 'POST', body: f }); },
-    onSuccess: onDone,
-  });
-  return (
-    <button onClick={() => ref.current?.click()} title="Расм юклаш" className="relative h-24 w-24 shrink-0 overflow-hidden rounded-full bg-navy/5 text-navy/40">
-      {e.photoUrl ? <img src={`/api/files/${e.photoUrl}`} className="h-full w-full object-cover" alt="" /> : <UserRound className="mx-auto" size={48} />}
-      <input ref={ref} type="file" accept=".jpg,.jpeg,.png" hidden onChange={(ev) => ev.target.files?.[0] && up.mutate(ev.target.files[0])} />
-    </button>
-  );
-}
-
 /** Ro'yxat qatorlarini qo'shish/o'chirish: PATCH butun ro'yxatni almashtiradi. */
 function useListSave(e: any, key: 'workHistory' | 'relatives', onSaved: () => void) {
   return useMutation({
@@ -117,11 +104,11 @@ function WorkHistory({ e, onSaved }: { e: any; onSaved: () => void }) {
         </tbody>
       </table>
       <form className="grid items-end gap-3 sm:grid-cols-5" onSubmit={(ev) => { ev.preventDefault(); save.mutate([...e.workHistory.map(clean), clean(n)]); setN({ startDate: '', endDate: '', organizationName: '', positionTitle: '' }); }}>
-        <Field label="Бошланиши"><input type="date" className="input" value={n.startDate} onChange={(x) => setN({ ...n, startDate: x.target.value })} /></Field>
-        <Field label="Тугаши"><input type="date" className="input" value={n.endDate} onChange={(x) => setN({ ...n, endDate: x.target.value })} /></Field>
-        <Field label="Ташкилот *"><input required className="input" value={n.organizationName} onChange={(x) => setN({ ...n, organizationName: x.target.value })} /></Field>
-        <Field label="Лавозим"><input className="input" value={n.positionTitle} onChange={(x) => setN({ ...n, positionTitle: x.target.value })} /></Field>
-        <button className="btn-primary justify-center" disabled={save.isPending}>Қўшиш</button>
+        <Field label="Бошланиши"><DatePicker value={n.startDate} onChange={(v) => setN({ ...n, startDate: v })} /></Field>
+        <Field label="Тугаши"><DatePicker value={n.endDate} onChange={(v) => setN({ ...n, endDate: v })} /></Field>
+        <Field label="Ташкилот *"><Input required value={n.organizationName} onChange={(x) => setN({ ...n, organizationName: x.target.value })} /></Field>
+        <Field label="Лавозим"><Input value={n.positionTitle} onChange={(x) => setN({ ...n, positionTitle: x.target.value })} /></Field>
+        <Button variant="primary" className="justify-center"  disabled={save.isPending}>Қўшиш</Button>
       </form>
     </div>
   );
@@ -146,16 +133,15 @@ function Relatives({ e, onSaved }: { e: any; onSaved: () => void }) {
       </table></div>
       <form className="grid items-end gap-3 sm:grid-cols-6" onSubmit={(ev) => { ev.preventDefault(); save.mutate([...e.relatives.map(clean), clean(n)]); setN(empty); }}>
         {([['relativeType', 'Қариндошлиги *', true], ['fullName', 'Ф.И.Ш. *', true], ['birthYearPlace', 'Туғилган йил, жой'], ['workPlacePosition', 'Иш жойи'], ['livingAddress', 'Манзил']] as const).map(([k, label, req]) => (
-          <Field key={k} label={label}><input required={!!req} className="input" value={(n as any)[k]} onChange={(x) => setN({ ...n, [k]: x.target.value })} /></Field>
+          <Field key={k} label={label}><Input required={!!req} value={(n as any)[k]} onChange={(x) => setN({ ...n, [k]: x.target.value })} /></Field>
         ))}
-        <button className="btn-primary justify-center" disabled={save.isPending}>Қўшиш</button>
+        <Button variant="primary" className="justify-center"  disabled={save.isPending}>Қўшиш</Button>
       </form>
     </div>
   );
 }
 
 function Documents({ e, onSaved }: { e: any; onSaved: () => void }) {
-  const ref = useRef<HTMLInputElement>(null);
   const [type, setType] = useState('pasport');
   const up = useMutation({
     mutationFn: (file: File) => { const f = new FormData(); f.append('documentType', type); f.append('file', file); return api(`/employees/${e.id}/documents`, { method: 'POST', body: f }); },
@@ -166,12 +152,11 @@ function Documents({ e, onSaved }: { e: any; onSaved: () => void }) {
   return (
     <div className="card p-5">
       <div className="mb-4 flex flex-wrap items-center gap-3">
-        <select className="input w-auto" value={type} onChange={(x) => setType(x.target.value)}>{DOC_TYPES.map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select>
-        <input ref={ref} type="file" accept=".pdf,.jpg,.jpeg,.png" hidden onChange={(x) => { if (x.target.files?.[0]) up.mutate(x.target.files[0]); x.target.value = ''; }} />
-        <button className="btn-primary" onClick={() => ref.current?.click()} disabled={up.isPending}><Upload size={16} /> Файл юклаш</button>
-        <span className="text-xs text-slate-500">PDF, JPG, PNG · 10 МБ гача</span>
+        <Select className="!w-auto" value={type} onChange={(v) => setType(v)}>{DOC_TYPES.map(([k, l]) => <option key={k} value={k}>{l}</option>)}</Select>
+        <span className="text-xs text-slate-500">Ҳужжат турини танлаб, файлни пастдаги майдонга ташланг</span>
       </div>
-      {up.error && <p className="mb-3 text-sm text-red-600">{(up.error as Error).message}</p>}
+      <FileDropzone accept={{ 'application/pdf': ['.pdf'], 'image/jpeg': ['.jpg', '.jpeg'], 'image/png': ['.png'] }} typesHint="PDF, JPG, PNG" maxMb={10} loading={up.isPending} onFile={(f) => up.mutate(f)} className="mb-3" />
+      {up.error && <p className="mb-3 text-sm text-red-600" role="alert">{(up.error as Error).message}</p>}
       <ul className="divide-y">
         {e.documents.map((d: any) => (
           <li key={d.id} className="flex items-center gap-3 py-3 text-sm">

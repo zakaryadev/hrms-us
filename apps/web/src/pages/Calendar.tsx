@@ -3,6 +3,7 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useState } from 'react';
 import { ErrorNote, Loading, PageHeader } from '../components/ui';
 import { api, fmtDate } from '../lib/api';
+import { Button, Input } from '../components/kit';
 
 const MONTHS = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
 const WD = ['Ду', 'Се', 'Чо', 'Па', 'Жу', 'Ша', 'Як'];
@@ -87,7 +88,7 @@ export default function Calendar() {
                   </div>
                   <div>
                     <label className="label">Изоҳ (ихтиёрий)</label>
-                    <input className="input" maxLength={200} placeholder="Масалан: Ҳукумат қарори №…" value={note} onChange={(e) => setNote(e.target.value)} />
+                    <Input maxLength={200} placeholder="Масалан: Ҳукумат қарори №…" value={note} onChange={(e) => setNote(e.target.value)} />
                   </div>
                   <div className="space-y-1.5">
                     {KINDS.map((k) => (
@@ -97,7 +98,7 @@ export default function Calendar() {
                       </button>
                     ))}
                   </div>
-                  {cur.custom && <button className="btn-secondary w-full justify-center" disabled={reset.isPending} onClick={() => reset.mutate()}>Ўзгартиришни бекор қилиш</button>}
+                  {cur.custom && <Button variant="secondary" className="w-full justify-center"  disabled={reset.isPending} onClick={() => reset.mutate()}>Ўзгартиришни бекор қилиш</Button>}
                 </>
               )}
             </div>

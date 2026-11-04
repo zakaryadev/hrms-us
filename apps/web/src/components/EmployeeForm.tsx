@@ -2,8 +2,9 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Save } from 'lucide-react';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { api } from '../lib/api';
+import { api, deletePhoto, photoSrc, uploadPhoto } from '../lib/api';
 import { Field, Modal, SectionTitle } from './ui';
+import { Button, DatePicker, ImageUploader, Input, Select } from './kit';
 
 const DATE_KEYS = ['birthDate', 'passportGivenDate', 'hireDate', 'contractDate'];
 const NUM_KEYS = ['probationMonths', 'salary', 'annualLeaveBasicDays', 'annualLeaveExtraDays'];
@@ -22,6 +23,11 @@ export default function EmployeeForm({ employee, onClose }: { employee?: any; on
     ...(employee && Object.fromEntries(Object.entries(employee).filter(([, v]) => v !== null).map(([k, v]) => [k, DATE_KEYS.includes(k) ? toInput(v as string) : v]))),
   }));
   const set = (k: string) => (e: React.ChangeEvent<any>) => setF({ ...f, [k]: e.target.value });
+  // Расм: сақлаш тугмасида ходим билан бирга юборилади
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [photoRemoved, setPhotoRemoved] = useState(false);
+  const [photoError, setPhotoError] = useState('');
+  const [createdId, setCreatedId] = useState<string | null>(null); // расм юкланмаса қайта уриниш ходимни иккинчи марта яратмаслиги учун
 
   const departments = useQuery({ queryKey: ['departments'], queryFn: () => api<any[]>('/departments') });
   const positions = useQuery({
@@ -30,25 +36,40 @@ export default function EmployeeForm({ employee, onClose }: { employee?: any; on
   });
 
   const save = useMutation({
-    mutationFn: () => {
+    mutationFn: async () => {
       const body: any = {};
       for (const k of ALL_KEYS) if (f[k] !== '' && f[k] !== undefined) body[k] = NUM_KEYS.includes(k) ? Number(f[k]) : f[k];
-      return employee
-        ? api(`/employees/${employee.id}`, { method: 'PATCH', body: JSON.stringify(body) })
-        : api('/employees', { method: 'POST', body: JSON.stringify(body) });
+      const existingId = employee?.id ?? createdId;
+      let saved: any;
+      if (existingId) saved = await api(`/employees/${existingId}`, { method: 'PATCH', body: JSON.stringify(body) });
+      else { saved = await api('/employees', { method: 'POST', body: JSON.stringify(body) }); setCreatedId(saved.id); }
+      setPhotoError('');
+      try {
+        if (photoFile) await uploadPhoto(saved.id, photoFile);
+        else if (photoRemoved && employee?.photoUrl) await deletePhoto(saved.id);
+      } catch (e) {
+        setPhotoError(`Ходим сақланди, лекин расм юкланмади: ${(e as Error).message}`);
+        throw e;
+      }
+      return saved;
     },
     onSuccess: (r: any) => {
       qc.invalidateQueries({ queryKey: ['employees'] }); qc.invalidateQueries({ queryKey: ['employee'] }); qc.invalidateQueries({ queryKey: ['stats'] });
       onClose();
       if (!employee) navigate(`/employees/${r.id}`);
     },
+    onError: () => { if (createdId || photoError) { qc.invalidateQueries({ queryKey: ['employees'] }); qc.invalidateQueries({ queryKey: ['stats'] }); } },
   });
 
   const inp = (k: string, label: string, type = 'text', required = false) => (
-    <Field label={label + (required ? ' *' : '')}><input required={required} className="input" type={type} value={f[k]} onChange={set(k)} /></Field>
+    <Field label={label + (required ? ' *' : '')}>
+      {type === 'date'
+        ? <DatePicker required={required} value={f[k]} onChange={(v) => setF({ ...f, [k]: v })} />
+        : <Input required={required} type={type} value={f[k]} onChange={set(k)} />}
+    </Field>
   );
   const sel = (k: string, label: string, opts: [string, string][], empty?: string) => (
-    <Field label={label}><select className="input" value={f[k]} onChange={set(k)}>{empty !== undefined && <option value="">{empty}</option>}{opts.map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select></Field>
+    <Field label={label}><Select value={f[k]} onChange={(v) => setF({ ...f, [k]: v })}>{empty !== undefined && <option value="">{empty}</option>}{opts.map(([v, l]) => <option key={v} value={v}>{l}</option>)}</Select></Field>
   );
 
   return (
@@ -56,6 +77,9 @@ export default function EmployeeForm({ employee, onClose }: { employee?: any; on
       <form className="space-y-5" onSubmit={(e) => { e.preventDefault(); save.mutate(); }}>
         <section>
           <SectionTitle>Шахсий маълумотлар</SectionTitle>
+          <ImageUploader className="mb-4" src={photoRemoved ? null : photoSrc(employee?.photoUrl)} error={photoError || null}
+            onSelect={(file) => { setPhotoFile(file); setPhotoRemoved(false); setPhotoError(''); }}
+            onRemove={() => { setPhotoFile(null); setPhotoRemoved(true); setPhotoError(''); }} />
           <div className="grid gap-4 md:grid-cols-3">
             {inp('tabNumber', 'Табель рақами', 'text', true)}{inp('lastName', 'Фамилия', 'text', true)}{inp('firstName', 'Исм', 'text', true)}
             {inp('middleName', 'Отасининг исми')}{inp('birthDate', 'Туғилган санаси', 'date')}{inp('birthPlace', 'Туғилган жойи')}
@@ -76,8 +100,8 @@ export default function EmployeeForm({ employee, onClose }: { employee?: any; on
         <section>
           <SectionTitle>Иш жойи ва шартнома</SectionTitle>
           <div className="grid gap-4 md:grid-cols-3">
-            <Field label="Бўлим *"><select required className="input" value={f.departmentId} onChange={(e) => setF({ ...f, departmentId: e.target.value, positionId: '' })}><option value="">Танланг</option>{departments.data?.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}</select></Field>
-            <Field label="Лавозим *"><select required className="input" value={f.positionId} onChange={set('positionId')} disabled={!f.departmentId}><option value="">Танланг</option>{positions.data?.map((p) => <option key={p.id} value={p.id}>{p.title}</option>)}</select></Field>
+            <Field label="Бўлим *"><Select required value={f.departmentId} onChange={(v) => setF({ ...f, departmentId: v, positionId: '' })}><option value="">Танланг</option>{departments.data?.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}</Select></Field>
+            <Field label="Лавозим *"><Select required value={f.positionId} onChange={(v) => setF({ ...f, positionId: v })} disabled={!f.departmentId}><option value="">Танланг</option>{positions.data?.map((p) => <option key={p.id} value={p.id}>{p.title}</option>)}</Select></Field>
             {sel('employmentType', 'Иш тури', [['shtat', 'Штат'], ['gpx', 'ГПХ (шартнома)']])}
             {inp('hireDate', 'Ишга қабул санаси', 'date')}{inp('contractNumber', 'Шартнома рақами')}{inp('contractDate', 'Шартнома санаси', 'date')}
             {sel('contractDurationType', 'Шартнома муддати', [['muddatsiz', 'Муддатсиз'], ['muddatli', 'Муддатли']])}
@@ -90,8 +114,8 @@ export default function EmployeeForm({ employee, onClose }: { employee?: any; on
         <div className="mt-2 space-y-3 border-t pt-4">
           {save.error && <p className="text-sm text-red-600">{(save.error as Error).message}</p>}
           <div className="flex justify-end gap-2">
-            <button type="button" className="btn-secondary" onClick={onClose}>Бекор қилиш</button>
-            <button className="btn-primary" disabled={save.isPending}><Save size={16} /> Сақлаш</button>
+            <Button variant="secondary" type="button"  onClick={onClose}>Бекор қилиш</Button>
+            <Button variant="primary"  disabled={save.isPending}><Save size={16} /> Сақлаш</Button>
           </div>
         </div>
       </form>

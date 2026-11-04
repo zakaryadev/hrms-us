@@ -3,6 +3,7 @@ import { Pencil, Plus, Save, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { Empty, ErrorNote, Field, Modal, PageHeader } from '../components/ui';
 import { api, fmtMoney } from '../lib/api';
+import { Button, Input, Select } from '../components/kit';
 
 export default function Structure() {
   const qc = useQueryClient();
@@ -55,12 +56,12 @@ export default function Structure() {
             {departments.data?.length === 0 && <li><Empty>Бўлимлар йўқ</Empty></li>}
           </ul>
           <form className="space-y-3 border-t pt-4" onSubmit={(e) => { e.preventDefault(); addDept.mutate(); }}>
-            <Field label="Янги бўлим номи *"><input required className="input" value={dn.name} onChange={(e) => setDn({ ...dn, name: e.target.value })} /></Field>
+            <Field label="Янги бўлим номи *"><Input required value={dn.name} onChange={(e) => setDn({ ...dn, name: e.target.value })} /></Field>
             <div className="grid grid-cols-2 gap-3">
-              <Field label="Код"><input className="input" value={dn.code} onChange={(e) => setDn({ ...dn, code: e.target.value })} /></Field>
-              <Field label="Юқори бўлим"><select className="input" value={dn.parentId} onChange={(e) => setDn({ ...dn, parentId: e.target.value })}><option value="">—</option>{departments.data?.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}</select></Field>
+              <Field label="Код"><Input value={dn.code} onChange={(e) => setDn({ ...dn, code: e.target.value })} /></Field>
+              <Field label="Юқори бўлим"><Select value={dn.parentId} onChange={(v) => setDn({ ...dn, parentId: v })}><option value="">—</option>{departments.data?.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}</Select></Field>
             </div>
-            <button className="btn-primary w-full justify-center" disabled={addDept.isPending}><Plus size={16} /> Бўлим қўшиш</button>
+            <Button variant="primary" className="w-full justify-center"  disabled={addDept.isPending}><Plus size={16} /> Бўлим қўшиш</Button>
           </form>
         </div>
 
@@ -83,11 +84,11 @@ export default function Structure() {
           </table></div>
           {current && (
             <form className="grid items-end gap-3 border-t pt-4 sm:grid-cols-5" onSubmit={(e) => { e.preventDefault(); addPos.mutate(); }}>
-              <div className="sm:col-span-2"><Field label="Янги лавозим *"><input required className="input" value={pn.title} onChange={(e) => setPn({ ...pn, title: e.target.value })} /></Field></div>
-              <Field label="Тартиб"><input type="number" className="input" value={pn.rankOrder} onChange={(e) => setPn({ ...pn, rankOrder: e.target.value })} /></Field>
-              <Field label="Оклад"><input type="number" min={0} className="input" value={pn.baseSalary} onChange={(e) => setPn({ ...pn, baseSalary: e.target.value })} /></Field>
-              <Field label="Штат сони"><input type="number" min={1} className="input" value={pn.staffCount} onChange={(e) => setPn({ ...pn, staffCount: e.target.value })} /></Field>
-              <button className="btn-primary justify-center sm:col-span-5" disabled={addPos.isPending}><Plus size={16} /> Лавозим қўшиш</button>
+              <div className="sm:col-span-2"><Field label="Янги лавозим *"><Input required value={pn.title} onChange={(e) => setPn({ ...pn, title: e.target.value })} /></Field></div>
+              <Field label="Тартиб"><Input type="number" value={pn.rankOrder} onChange={(e) => setPn({ ...pn, rankOrder: e.target.value })} /></Field>
+              <Field label="Оклад"><Input type="number" min={0} value={pn.baseSalary} onChange={(e) => setPn({ ...pn, baseSalary: e.target.value })} /></Field>
+              <Field label="Штат сони"><Input type="number" min={1} value={pn.staffCount} onChange={(e) => setPn({ ...pn, staffCount: e.target.value })} /></Field>
+              <Button variant="primary" className="justify-center sm:col-span-5"  disabled={addPos.isPending}><Plus size={16} /> Лавозим қўшиш</Button>
             </form>
           )}
         </div>
@@ -107,13 +108,13 @@ function DeptModal({ dept, all, onClose, onSaved }: { dept: any; all: any[]; onC
   return (
     <Modal title="Бўлимни таҳрирлаш" onClose={onClose}>
       <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); save.mutate(); }}>
-        <Field label="Номи *"><input required className="input" value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} /></Field>
+        <Field label="Номи *"><Input required value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} /></Field>
         <div className="grid grid-cols-2 gap-4">
-          <Field label="Код"><input className="input" value={f.code} onChange={(e) => setF({ ...f, code: e.target.value })} /></Field>
-          <Field label="Юқори бўлим"><select className="input" value={f.parentId} onChange={(e) => setF({ ...f, parentId: e.target.value })}><option value="">—</option>{all.filter((d) => d.id !== dept.id).map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}</select></Field>
+          <Field label="Код"><Input value={f.code} onChange={(e) => setF({ ...f, code: e.target.value })} /></Field>
+          <Field label="Юқори бўлим"><Select value={f.parentId} onChange={(v) => setF({ ...f, parentId: v })}><option value="">—</option>{all.filter((d) => d.id !== dept.id).map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}</Select></Field>
         </div>
         {save.error && <p className="text-sm text-red-600" role="alert">{(save.error as Error).message}</p>}
-        <div className="flex justify-end gap-2 border-t pt-4"><button type="button" className="btn-secondary" onClick={onClose}>Бекор қилиш</button><button className="btn-primary" disabled={save.isPending}><Save size={16} /> Сақлаш</button></div>
+        <div className="flex justify-end gap-2 border-t pt-4"><Button variant="secondary" type="button"  onClick={onClose}>Бекор қилиш</Button><Button variant="primary"  disabled={save.isPending}><Save size={16} /> Сақлаш</Button></div>
       </form>
     </Modal>
   );
@@ -128,15 +129,15 @@ function PosModal({ pos, onClose, onSaved }: { pos: any; onClose: () => void; on
   return (
     <Modal title="Лавозимни таҳрирлаш" onClose={onClose}>
       <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); save.mutate(); }}>
-        <Field label="Лавозим номи *"><input required className="input" value={f.title} onChange={(e) => setF({ ...f, title: e.target.value })} /></Field>
+        <Field label="Лавозим номи *"><Input required value={f.title} onChange={(e) => setF({ ...f, title: e.target.value })} /></Field>
         <div className="grid gap-4 sm:grid-cols-3">
-          <Field label="Тартиб"><input type="number" className="input" value={f.rankOrder} onChange={(e) => setF({ ...f, rankOrder: e.target.value })} /></Field>
-          <Field label="Оклад (сўм)"><input type="number" min={0} className="input" value={f.baseSalary} onChange={(e) => setF({ ...f, baseSalary: e.target.value })} /></Field>
-          <Field label="Штат сони"><input type="number" min={1} className="input" value={f.staffCount} onChange={(e) => setF({ ...f, staffCount: e.target.value })} /></Field>
+          <Field label="Тартиб"><Input type="number" value={f.rankOrder} onChange={(e) => setF({ ...f, rankOrder: e.target.value })} /></Field>
+          <Field label="Оклад (сўм)"><Input type="number" min={0} value={f.baseSalary} onChange={(e) => setF({ ...f, baseSalary: e.target.value })} /></Field>
+          <Field label="Штат сони"><Input type="number" min={1} value={f.staffCount} onChange={(e) => setF({ ...f, staffCount: e.target.value })} /></Field>
         </div>
         <p className="text-xs text-slate-500">Оклад ўзгартирилса, мавжуд ходимларнинг ойлик маоши ўзгармайди (у ходим картасида).</p>
         {save.error && <p className="text-sm text-red-600" role="alert">{(save.error as Error).message}</p>}
-        <div className="flex justify-end gap-2 border-t pt-4"><button type="button" className="btn-secondary" onClick={onClose}>Бекор қилиш</button><button className="btn-primary" disabled={save.isPending}><Save size={16} /> Сақлаш</button></div>
+        <div className="flex justify-end gap-2 border-t pt-4"><Button variant="secondary" type="button"  onClick={onClose}>Бекор қилиш</Button><Button variant="primary"  disabled={save.isPending}><Save size={16} /> Сақлаш</Button></div>
       </form>
     </Modal>
   );

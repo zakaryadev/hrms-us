@@ -4,6 +4,7 @@ import { useState } from 'react';
 import EmployeePicker from '../components/EmployeePicker';
 import { LeaveModal } from '../components/GenerateDocs';
 import { api, fmtDate, fullName } from '../lib/api';
+import { buttonStyles, cn } from '../components/kit';
 
 export default function Leaves() {
   const [emp, setEmp] = useState<any>(null);
@@ -32,7 +33,7 @@ export default function Leaves() {
                   <td className="td font-medium">{fullName(o.employee)}</td><td className="td">{fmtDate(p.startDate)}</td>
                   <td className="td">{fmtDate(p.calculated?.endDate)}</td><td className="td">{fmtDate(p.calculated?.returnDate)}</td>
                   <td className="td">{p.calculated?.totalDays ?? '—'}</td><td className="td"><span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${cls}`}>{label}</span></td>
-                  <td className="td text-right">{o.hasFile && <a className="btn-secondary !px-3 !py-1.5" href={`/api/orders/${o.id}/download`}><Download size={14} /> DOCX</a>}</td>
+                  <td className="td text-right">{o.hasFile && <a className={cn(buttonStyles({ variant: 'secondary', size: 'sm' }))} href={`/api/orders/${o.id}/download`}><Download size={14} /> DOCX</a>}</td>
                 </tr>
               );
             })}

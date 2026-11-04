@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Download } from 'lucide-react';
 import { useState } from 'react';
 import { api, fmtDate, fullName } from '../lib/api';
+import { Select, buttonStyles, cn } from '../components/kit';
 
 export const ORDER_LABEL: Record<string, string> = {
   ishga_qabul: 'Ишга қабул', lavozim_otkazish: 'Лавозимга ўтказиш', tatil_berish: 'Меҳнат таътили',
@@ -15,9 +16,9 @@ export default function Orders() {
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-semibold text-navy">Буйруқлар</h1>
-        <select className="input w-auto" value={type} onChange={(e) => setType(e.target.value)}>
+        <Select className="!w-auto" value={type} onChange={(v) => setType(v)}>
           <option value="">Барча турлар</option>{Object.entries(ORDER_LABEL).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
-        </select>
+        </Select>
       </div>
       <div className="card overflow-x-auto">
         <table className="w-full">
@@ -27,7 +28,7 @@ export default function Orders() {
               <tr key={o.id} className="hover:bg-slate-50">
                 <td className="td font-medium">{o.orderNumber}</td><td className="td">{fmtDate(o.orderDate)}</td>
                 <td className="td">{ORDER_LABEL[o.orderType] ?? o.orderType}</td><td className="td">{fullName(o.employee)}</td>
-                <td className="td text-right">{o.hasFile && <a className="btn-secondary !px-3 !py-1.5" href={`/api/orders/${o.id}/download`}><Download size={14} /> DOCX</a>}</td>
+                <td className="td text-right">{o.hasFile && <a className={cn(buttonStyles({ variant: 'secondary', size: 'sm' }))} href={`/api/orders/${o.id}/download`}><Download size={14} /> DOCX</a>}</td>
               </tr>
             ))}
             {q.data?.length === 0 && <tr><td colSpan={5} className="td py-10 text-center text-slate-500">Буйруқлар йўқ. Ходим саҳифасидан «Ҳужжат яратиш» орқали яратилади.</td></tr>}

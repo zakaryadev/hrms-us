@@ -3,6 +3,7 @@ import { ChevronLeft, ChevronRight, Download, Wand2 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { Loading } from '../components/ui';
 import { api, fmtMoney } from '../lib/api';
+import { Button, Select, buttonStyles, cn } from '../components/kit';
 
 const MONTHS = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
 const WD = ['Як', 'Ду', 'Се', 'Чо', 'Па', 'Жу', 'Ша'];
@@ -95,11 +96,11 @@ export default function Timesheet() {
             <span className="min-w-[130px] text-center text-sm font-medium">{MONTHS[month - 1]} {year}</span>
             <button className="px-2 py-2 hover:bg-slate-50" onClick={() => shift(1)} aria-label="Кейинги ой"><ChevronRight size={16} /></button>
           </div>
-          <select className="input w-auto" value={departmentId} onChange={(e) => setDepartmentId(e.target.value)}>
+          <Select className="!w-auto" value={departmentId} onChange={(v) => setDepartmentId(v)}>
             <option value="">Барча бўлимлар</option>{departments.data?.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
-          </select>
-          <button className="btn-secondary" onClick={() => autofill.mutate()} disabled={autofill.isPending}><Wand2 size={16} /> Авто тўлдириш</button>
-          <a className="btn-primary" href={`/api/timesheet/export?year=${year}&month=${month}${departmentId ? `&departmentId=${departmentId}` : ''}`}><Download size={16} /> Excel</a>
+          </Select>
+          <Button variant="secondary"  onClick={() => autofill.mutate()} disabled={autofill.isPending}><Wand2 size={16} /> Авто тўлдириш</Button>
+          <a className={cn(buttonStyles({ variant: 'primary' }))} href={`/api/timesheet/export?year=${year}&month=${month}${departmentId ? `&departmentId=${departmentId}` : ''}`}><Download size={16} /> Excel</a>
         </div>
       </div>
 

@@ -1,13 +1,12 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { FileSpreadsheet, Upload } from 'lucide-react';
-import { useRef } from 'react';
+import { FileSpreadsheet } from 'lucide-react';
 import { api } from '../lib/api';
+import { FileDropzone } from '../components/kit';
 
 const COLS = ['Табель рақами*', 'Фамилия*', 'Исм*', 'Отасининг исми', 'Туғилган сана', 'Жинси', 'Миллати', 'Телефон', 'Манзил', 'ЖШШИР', 'Паспорт', 'Бўлим*', 'Лавозим*', 'Тури', 'Ишга қабул санаси', 'Ойлик'];
 
 export default function ImportPage() {
   const qc = useQueryClient();
-  const ref = useRef<HTMLInputElement>(null);
   const run = useMutation({
     mutationFn: (file: File) => { const f = new FormData(); f.append('file', file); return api<{ created: number; updated: number; errors: { row: number; message: string }[] }>('/employees/import', { method: 'POST', body: f }); },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['employees'] }); qc.invalidateQueries({ queryKey: ['stats'] }); },
@@ -19,8 +18,7 @@ export default function ImportPage() {
       <div className="card space-y-4 p-5">
         <p className="text-sm text-slate-600">Ходимлар рўйхатини .xlsx файлдан юкланг. Биринчи қатор — устун номлари. Мавжуд табель рақами бўйича ходим янгиланади, янгиси қўшилади.</p>
         <div className="flex flex-wrap gap-1.5">{COLS.map((c) => <span key={c} className="rounded bg-slate-100 px-2 py-1 text-xs text-slate-700">{c}</span>)}</div>
-        <input ref={ref} type="file" accept=".xlsx,.xls" hidden onChange={(e) => { const f = e.target.files?.[0]; if (f) run.mutate(f); e.target.value = ''; }} />
-        <button className="btn-primary" onClick={() => ref.current?.click()} disabled={run.isPending}><Upload size={16} /> Файлни танлаш</button>
+        <FileDropzone accept={{ 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx'], 'application/vnd.ms-excel': ['.xls'] }} typesHint="Excel (.xlsx, .xls)" maxMb={10} loading={run.isPending} onFile={(f) => run.mutate(f)} title="Excel файлни шу ерга ташланг ёки танлаш учун босинг" />
         {run.error && <p className="text-sm text-red-600">{(run.error as Error).message}</p>}
       </div>
       {r && (

@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import { Field } from '../components/ui';
 import { api } from '../lib/api';
+import { Button, Input } from '../components/kit';
 
 const FIELDS: [string, string][] = [
   ['tashkilot_nomi', 'Ташкилот номи'], ['bosh_direktor_fish', 'Бош директор Ф.И.Ш.'], ['shahar', 'Шаҳар'],
@@ -24,11 +25,11 @@ export default function Settings() {
       <form className="card space-y-4 p-5" onSubmit={(e) => { e.preventDefault(); save.mutate(); }}>
         <p className="text-sm text-slate-500">Бу маълумотлар барча ҳужжатларга (ариза, келишув, буйруқлар) автоматик қўйилади.</p>
         {FIELDS.map(([k, label]) => (
-          <Field key={k} label={label}><input className="input" value={f[k] ?? ''} onChange={(e) => setF({ ...f, [k]: e.target.value })} /></Field>
+          <Field key={k} label={label}><Input value={f[k] ?? ''} onChange={(e) => setF({ ...f, [k]: e.target.value })} /></Field>
         ))}
         {save.isSuccess && <p className="text-sm text-emerald-700">Сақланди</p>}
         {save.error && <p className="text-sm text-red-600">{(save.error as Error).message}</p>}
-        <button className="btn-primary" disabled={save.isPending}>Сақлаш</button>
+        <Button variant="primary"  disabled={save.isPending}>Сақлаш</Button>
       </form>
     </div>
   );

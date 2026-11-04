@@ -31,3 +31,11 @@ export const EMP_TYPE_LABEL: Record<string, string> = { shtat: 'Штат', gpx: 
 export const CONTRACT_LABEL: Record<string, string> = { muddatsiz: 'Муддатсиз', muddatli: 'Муддатли' };
 
 export const ROLE_LABEL: Record<string, string> = { superadmin: 'Суперадмин', kadrlar: 'Кадрлар ходими', buxgalter: 'Бухгалтер' };
+
+export const photoSrc = (photoUrl?: string | null) => (photoUrl ? `/api/files/${photoUrl}` : null);
+export function uploadPhoto(employeeId: string, file: File) {
+  const f = new FormData();
+  f.append('file', file);
+  return api(`/employees/${employeeId}/photo`, { method: 'POST', body: f });
+}
+export const deletePhoto = (employeeId: string) => api(`/employees/${employeeId}/photo`, { method: 'DELETE' });
