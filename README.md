@@ -26,7 +26,7 @@ Tug'ilgan sana, Jinsi, Millati, Telefon, Manzil, JSHSHIR, Pasport, Bo'lim, Lavoz
 Shablonlar `apps/api/templates/*.docx` (teglar `{{o'zgaruvchi}}`, tsikllar `{{#royxat}}…{{/royxat}}`).
 O'zingizning shabloningiz bilan almashtirishingiz mumkin (o'zgaruvchi nomlari `apps/api/scripts/build-templates.ts` da).
 Namunaviy shablonlarni qayta yaratish: `cd apps/api && npx ts-node scripts/build-templates.ts`.
-Tashkilot rekvizitlari: UI → Sozlamalar. Bayramlar: `apps/api/src/calendar/holidays.ts` (hayit sanalarini yil boshida tekshiring).
+Tashkilot rekvizitlari: UI → Sozlamalar. Bayramlar va ish kunlari: UI → «Иш календари» (kodni o'zgartirish shart emas).
 
 ## Tabel va oylik
 UI → Tabel. Kodlar: `8`, `7.2` (ishlangan), `MT`, `KV` (50%), `BPT`, `SK`, `TSH`, `TK` (ogohlantirish, kun ishlangan hisoblanadi).
@@ -50,3 +50,14 @@ docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --build
 - JWT `httpOnly` cookie (`SameSite=Lax`), 12 соат. `JWT_SECRET` productionда мажбурий.
 - Логинда 5 та хато уринишдан кейин 15 дақиқа блок (login+IP бўйича). Охирги фаол Суперадминни ўчириб бўлмайди.
 - Рол: `superadmin` (+ фойдаланувчилар), `kadrlar` ва `buxgalter` (бир хил ҳуқуқ).
+
+## Иш календари
+UI → «Иш календари». Йил бўйича кунларни белгилаш мумкин (Суперадмин талаб қилинмайди):
+- **Расмий байрам** — иш куни эмас, таътил оралиғига тушса таътилни узайтиради (ҳайит кунлари ҳар йили ҳукумат қарори бўйича киритилади);
+- **Кўчирилган дам олиш куни** — иш куни эмас, лекин таътилни узайтирмайди;
+- **Иш куни** — масалан, ишчи шанба ёки ишчи деб белгиланган байрам.
+
+Белгиланган кунлар таътил калькулятори, табель (иш кунлари) ва ойлик ҳисобига дарҳол таъсир қилади. Ўрнатилган байрамлар (1.01, 8.03, 21.03, 9.05, 1.09, 1.10, 8.12) ва 2026 ҳайит кунлари `apps/api/src/calendar/holidays.ts` да; ҳайит жадвали йўқ йил учун огоҳлантириш чиқади.
+
+## Таътил буйруғи → табель
+Таътил буйруғи **сақланганда** (чекбокс ёқиқ) таътил оралиғидаги иш кунларига табелда «MT» автоматик қўйилади. Бўш катак ва «8»/«7.2» алмаштирилади; KV, BPT, TSH, SK, TK сақланади. Бош саҳифадаги «Таътилдагилар» бугунги сана буйруқ оралиғига тушган ходимларни ҳам санайди.

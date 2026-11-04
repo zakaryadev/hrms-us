@@ -73,7 +73,7 @@ function useGenerate(type: DocType, employee: any, onClose: () => void, save: bo
       return null;
     },
     onSuccess: (r) => {
-      qc.invalidateQueries({ queryKey: ['generated'] }); qc.invalidateQueries({ queryKey: ['orders'] });
+      qc.invalidateQueries({ queryKey: ['generated'] }); qc.invalidateQueries({ queryKey: ['orders'] }); qc.invalidateQueries({ queryKey: ['timesheet'] }); qc.invalidateQueries({ queryKey: ['stats'] });
       if (r) window.location.href = r.downloadUrl;
       onClose();
     },

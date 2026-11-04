@@ -84,6 +84,35 @@ export class TimesheetService {
     return { employeeId: emp.id, daysData, result };
   }
 
+  /**
+   * Таътил буйруғи яратилганда: таътил оралиғидаги ИШ кунларига «MT» қўяди (ойлар бўйича).
+   * Бўш катак ва «8»/«7.2» алмаштирилади; KV, BPT, TSH, SK, TK каби аниқ белгилар сақланади.
+   */
+  async applyLeave(employeeId: string, startIso: string, endIso: string) {
+    const emp = await this.prisma.employee.findUnique({ where: { id: employeeId } });
+    if (!emp) throw new NotFoundException('Ходим топилмади');
+    const start = utcDate(startIso), end = utcDate(endIso);
+    const ov = await this.calendar.overrides(start.getUTCFullYear(), end.getUTCFullYear());
+    const REPLACEABLE = new Set(['', '8', '7.2']);
+    const byMonth = new Map<string, { year: number; month: number; days: number[] }>();
+    for (let d = start; d <= end; d = new Date(d.getTime() + 86_400_000)) {
+      if (dayStatus(d, ov) !== 'work') continue;
+      const y = d.getUTCFullYear(), m = d.getUTCMonth() + 1, key = `${y}-${m}`;
+      if (!byMonth.has(key)) byMonth.set(key, { year: y, month: m, days: [] });
+      byMonth.get(key)!.days.push(d.getUTCDate());
+    }
+    let marked = 0;
+    for (const { year, month, days } of byMonth.values()) {
+      const existing = await this.prisma.timesheet.findUnique({ where: { employeeId_year_month: { employeeId, year, month } } });
+      const data = { ...((existing?.daysData ?? {}) as Record<string, string>) };
+      for (const day of days) {
+        if (REPLACEABLE.has(data[String(day)] ?? '')) { data[String(day)] = 'MT'; marked++; }
+      }
+      await this.persist(emp, year, month, data, ov);
+    }
+    return { marked };
+  }
+
   /** Ish kunlariga '8' qo'yadi; mavjud kodlarni, ishga qabuldan oldingi kunlarni va dam olish kunlarini tegmaydi. */
   async autofill(year: number, month: number, departmentId?: string) {
     const emps = await this.employees(departmentId);

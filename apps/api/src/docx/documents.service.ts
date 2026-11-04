@@ -7,6 +7,7 @@ import { workYear, calcLeave } from '../calendar/leave';
 import { PrismaService } from '../prisma/prisma.service';
 import { CalendarService } from '../calendar/calendar.service';
 import { SettingsService } from '../settings/settings.service';
+import { TimesheetService } from '../timesheet/timesheet.service';
 import { DocxService } from './docx.service';
 import { dayOf, fmtDate, fmtDayMonth, fmtMoney, fmtYear, monthName, toLang } from './format';
 import { DOC_STRINGS } from './strings';
@@ -28,7 +29,7 @@ function needDates(params: Params, ...keys: string[]) {
 
 @Injectable()
 export class DocumentsService {
-  constructor(private prisma: PrismaService, private docx: DocxService, private settings: SettingsService, private calendar: CalendarService) {}
+  constructor(private prisma: PrismaService, private docx: DocxService, private settings: SettingsService, private calendar: CalendarService, private timesheet: TimesheetService) {}
 
   private async employee(id: string) {
     const e = await this.prisma.employee.findUnique({
@@ -193,6 +194,10 @@ export class DocumentsService {
       }
       return created;
     });
+    // Таътил буйруғи сақланганда табелга MT автоматик қўйилади
+    if (type === 'buyruq-tatil' && params.calculated) {
+      await this.timesheet.applyLeave(employeeId, params.startDate, params.calculated.endDate);
+    }
     return { id: doc.id, type, number, downloadUrl: `/api/documents/generated/${doc.id}/download` };
   }
 
