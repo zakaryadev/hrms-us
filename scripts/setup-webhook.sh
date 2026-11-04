@@ -8,7 +8,7 @@
 #
 set -euo pipefail
 
-REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}") / .." && pwd)"
+REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 SERVICE_NAME="hrms-webhook"
 SERVICE_FILE="/etc/systemd/system/${SERVICE_NAME}.service"
 WEBHOOK_PORT="${WEBHOOK_PORT:-9000}"
