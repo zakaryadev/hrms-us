@@ -3,6 +3,7 @@ import Layout from './components/Layout';
 import Dashboard from './pages/Dashboard';
 import EmployeeProfile from './pages/EmployeeProfile';
 import Employees from './pages/Employees';
+import Structure from './pages/Structure';
 
 export default function App() {
   return (
@@ -11,6 +12,7 @@ export default function App() {
         <Route element={<Layout />}>
           <Route index element={<Dashboard />} />
           <Route path="employees" element={<Employees />} />
+          <Route path="structure" element={<Structure />} />
           <Route path="employees/:id" element={<EmployeeProfile />} />
         </Route>
       </Routes>
