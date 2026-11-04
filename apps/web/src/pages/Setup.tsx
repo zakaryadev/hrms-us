@@ -38,7 +38,7 @@ export default function Setup() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-surface p-4">
+    <div className="flex min-h-screen items-center justify-center bg-white p-4">
       <div className="card w-full max-w-lg p-6">
         <img src="/logo.svg" alt="Logo" className="mx-auto mb-5 h-9" />
         <ol className="mb-6 flex items-center justify-center gap-2 text-xs">

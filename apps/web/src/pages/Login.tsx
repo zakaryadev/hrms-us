@@ -17,7 +17,7 @@ export default function Login() {
   if (needsSetup) return <Navigate to="/setup" replace />;
   if (user) return <Navigate to="/" replace />;
   return (
-    <div className="flex min-h-screen items-center justify-center bg-surface p-4">
+    <div className="flex min-h-screen items-center justify-center bg-white p-4">
       <form className="card w-full max-w-sm space-y-4 p-6" onSubmit={(e) => { e.preventDefault(); login.mutate(); }}>
         <img src="/logo.svg" alt="Logo" className="mx-auto h-9" />
         <div className="text-center">
