@@ -35,3 +35,18 @@ GPX: ishlangan × kunlik, 100 so'mgacha yaxlitlanadi. `GET /api/timesheet/export
 
 ## Til
 Интерфейс — ўзбек кирилл. DOCX ҳужжатлар икки тилда: `templates/cyr` ва `templates/lat` (ҳужжат яратишда тил танланади, API: `params.lang = 'cyr' | 'lat'`).
+
+## Ишга тушириш (production, Docker)
+```bash
+cp .env.prod.example .env.prod      # POSTGRES_PASSWORD, JWT_SECRET ни алмаштиринг (openssl rand -hex 32)
+docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --build
+```
+- Сайт: `http://<сервер>:8080` (`WEB_PORT`). HTTPS орқасида бўлса `COOKIE_SECURE=true` қўйинг (акс ҳолда cookie ўрнатилмайди).
+- Биринчи очилишда **созлаш устаси** чиқади: Суперадмин ва ташкилот маълумотлари киритилади. Кейин Суперадмин «Фойдаланувчилар» бўлимидан Кадрлар/Бухгалтер ҳисобларини қўшади (икковининг ҳуқуқи бир хил).
+- Маълумотлар volume’ларда: `pgdata` (база), `uploads` (ходим ҳужжатлари), `generated` (яратилган DOCX). Захира: `docker compose -f docker-compose.prod.yml exec db pg_dump -U hrms hrms > backup.sql` ва uploads/generated volume’ларни нусхалаш.
+- Миграциялар API ишга тушганда автоматик қўлланади (`prisma migrate deploy`).
+
+## Хавфсизлик
+- JWT `httpOnly` cookie (`SameSite=Lax`), 12 соат. `JWT_SECRET` productionда мажбурий.
+- Логинда 5 та хато уринишдан кейин 15 дақиқа блок (login+IP бўйича). Охирги фаол Суперадминни ўчириб бўлмайди.
+- Рол: `superadmin` (+ фойдаланувчилар), `kadrlar` ва `buxgalter` (бир хил ҳуқуқ).
