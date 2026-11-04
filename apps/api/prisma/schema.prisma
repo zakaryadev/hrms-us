@@ -1,0 +1,194 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Gender {
+  erkak
+  ayol
+}
+
+enum EmploymentType {
+  shtat
+  gpx
+}
+
+enum ContractDurationType {
+  muddatsiz
+  muddatli
+}
+
+enum EmployeeStatus {
+  ishlamoqda
+  tatilda
+  ishdan_boshagan
+}
+
+enum OrderType {
+  ishga_qabul
+  lavozim_otkazish
+  tatil_berish
+  ishdan_boshatish
+  ragbatlantirish
+}
+
+model Department {
+  id        String       @id @default(uuid())
+  name      String
+  code      String?
+  parentId  String?      @map("parent_id")
+  parent    Department?  @relation("DepartmentTree", fields: [parentId], references: [id])
+  children  Department[] @relation("DepartmentTree")
+  positions Position[]
+  employees Employee[]
+
+  @@map("departments")
+}
+
+model Position {
+  id           String     @id @default(uuid())
+  title        String
+  rankOrder    Int        @default(100) @map("rank_order")
+  departmentId String     @map("department_id")
+  department   Department @relation(fields: [departmentId], references: [id])
+  baseSalary   Decimal    @default(0) @map("base_salary") @db.Decimal(14, 2)
+  employees    Employee[]
+
+  @@map("positions")
+}
+
+model Employee {
+  id                   String               @id @default(uuid())
+  tabNumber            String               @unique @map("tab_number")
+  firstName            String               @map("first_name")
+  lastName             String               @map("last_name")
+  middleName           String?              @map("middle_name")
+  birthDate            DateTime?            @map("birth_date") @db.Date
+  birthPlace           String?              @map("birth_place")
+  gender               Gender?
+  nationality          String?
+  partyMembership      String?              @map("party_membership")
+  phone                String?
+  addressResidential   String?              @map("address_residential")
+  pinfl                String?              @db.VarChar(14)
+  passportSeriesNumber String?              @map("passport_series_number")
+  passportGivenDate    DateTime?            @map("passport_given_date") @db.Date
+  passportGivenBy      String?              @map("passport_given_by")
+  departmentId         String               @map("department_id")
+  department           Department           @relation(fields: [departmentId], references: [id])
+  positionId           String               @map("position_id")
+  position             Position             @relation(fields: [positionId], references: [id])
+  employmentType       EmploymentType       @default(shtat) @map("employment_type")
+  hireDate             DateTime?            @map("hire_date") @db.Date
+  contractNumber       String?              @map("contract_number")
+  contractDate         DateTime?            @map("contract_date") @db.Date
+  contractDurationType ContractDurationType @default(muddatsiz) @map("contract_duration_type")
+  probationMonths      Int                  @default(0) @map("probation_months")
+  salary               Decimal              @default(0) @db.Decimal(14, 2)
+  annualLeaveBasicDays Int                  @default(21) @map("annual_leave_basic_days")
+  annualLeaveExtraDays Int                  @default(6) @map("annual_leave_extra_days")
+  photoUrl             String?              @map("photo_url")
+  status               EmployeeStatus       @default(ishlamoqda)
+  createdAt            DateTime             @default(now()) @map("created_at")
+  updatedAt            DateTime             @updatedAt @map("updated_at")
+
+  education   EmployeeEducation[]
+  workHistory EmployeeWorkHistory[]
+  relatives   EmployeeRelative[]
+  documents   EmployeeDocument[]
+  orders      Order[]
+  timesheets  Timesheet[]
+
+  @@index([departmentId])
+  @@index([positionId])
+  @@map("employees")
+}
+
+model EmployeeEducation {
+  id              String   @id @default(uuid())
+  employeeId      String   @map("employee_id")
+  employee        Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  institutionName String   @map("institution_name")
+  speciality      String?
+  studyType       String?  @map("study_type")
+  startYear       Int?     @map("start_year")
+  endYear         Int?     @map("end_year")
+
+  @@map("employee_education")
+}
+
+model EmployeeWorkHistory {
+  id               String    @id @default(uuid())
+  employeeId       String    @map("employee_id")
+  employee         Employee  @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  startDate        DateTime? @map("start_date") @db.Date
+  endDate          DateTime? @map("end_date") @db.Date
+  organizationName String    @map("organization_name")
+  positionTitle    String?   @map("position_title")
+
+  @@map("employee_work_history")
+}
+
+model EmployeeRelative {
+  id                String   @id @default(uuid())
+  employeeId        String   @map("employee_id")
+  employee          Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  relativeType      String   @map("relative_type")
+  fullName          String   @map("full_name")
+  birthYearPlace    String?  @map("birth_year_place")
+  workPlacePosition String?  @map("work_place_position")
+  livingAddress     String?  @map("living_address")
+
+  @@map("employee_relatives")
+}
+
+model EmployeeDocument {
+  id           String   @id @default(uuid())
+  employeeId   String   @map("employee_id")
+  employee     Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  documentType String   @map("document_type")
+  filePath     String   @map("file_path")
+  uploadDate   DateTime @default(now()) @map("upload_date")
+
+  @@map("employee_documents")
+}
+
+model Order {
+  id           String    @id @default(uuid())
+  orderNumber  String    @map("order_number")
+  orderDate    DateTime  @map("order_date") @db.Date
+  orderType    OrderType @map("order_type")
+  employeeId   String    @map("employee_id")
+  employee     Employee  @relation(fields: [employeeId], references: [id])
+  payloadJson  Json      @default("{}") @map("payload_json")
+  docxFilePath String?   @map("docx_file_path")
+  createdAt    DateTime  @default(now()) @map("created_at")
+
+  @@map("orders")
+}
+
+model Timesheet {
+  id               String   @id @default(uuid())
+  employeeId       String   @map("employee_id")
+  employee         Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  year             Int
+  month            Int
+  daysData         Json     @default("{}") @map("days_data")
+  totalWorkedDays  Int      @default(0) @map("total_worked_days")
+  totalWorkedHours Int      @default(0) @map("total_worked_hours")
+  calculatedSalary Decimal  @default(0) @map("calculated_salary") @db.Decimal(14, 2)
+
+  @@unique([employeeId, year, month])
+  @@map("timesheet")
+}
+
+model Setting {
+  key   String @id
+  value String
+
+  @@map("settings")
+}
