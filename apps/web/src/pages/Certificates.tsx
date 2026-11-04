@@ -12,7 +12,7 @@ export default function Certificates() {
   const q = useQuery({ queryKey: ['generated', 'obyektivka'], queryFn: () => api<any[]>('/documents/generated?type=obyektivka') });
   return (
     <div className="space-y-4">
-      <PageHeader eyebrow="Ҳужжатлар" title="Маълумотнома" hint="Ходимлар учун яратилган Т-2 маълумотномалар" />
+      <PageHeader title="Маълумотнома" hint="Ходимлар учун яратилган Т-2 маълумотномалар" />
       <div className="card flex flex-wrap items-center gap-3 p-4">
         <span className="text-sm text-slate-600">Янги маълумотнома (Т-2):</span>
         <EmployeePicker onPick={setEmp} />

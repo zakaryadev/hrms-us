@@ -1,4 +1,9 @@
+import { Suspense, lazy } from 'react';
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
+import { Loading } from './components/ui';
+
+// recharts фақат бош саҳифага керак: алоҳида бўлак сифатида юкланади
+const Dashboard = lazy(() => import('./pages/Dashboard'));
 import Layout from './components/Layout';
 import { AuthProvider, RequireAuth } from './auth/AuthContext';
 import Login from './pages/Login';
@@ -11,7 +16,6 @@ import ImportPage from './pages/ImportPage';
 import Leaves from './pages/Leaves';
 import Orders from './pages/Orders';
 import Payroll from './pages/Payroll';
-import Dashboard from './pages/Dashboard';
 import EmployeeProfile from './pages/EmployeeProfile';
 import Employees from './pages/Employees';
 import Settings from './pages/Settings';
@@ -27,7 +31,7 @@ export default function App() {
         <Route path="login" element={<Login />} />
         <Route element={<RequireAuth><Layout /></RequireAuth>}>
           <Route path="users" element={<RequireAuth roles={['superadmin']}><Users /></RequireAuth>} />
-          <Route index element={<Dashboard />} />
+          <Route index element={<Suspense fallback={<Loading rows={6} />}><Dashboard /></Suspense>} />
           <Route path="employees" element={<Employees />} />
           <Route path="import" element={<ImportPage />} />
           <Route path="archive" element={<Archive />} />

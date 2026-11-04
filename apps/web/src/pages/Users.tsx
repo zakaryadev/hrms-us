@@ -14,7 +14,7 @@ export default function Users() {
   const [edit, setEdit] = useState<any | 'new' | null>(null);
   return (
     <div className="space-y-4">
-      <PageHeader eyebrow="Тизим" title="Фойдаланувчилар" hint="Тизимга кирувчи ҳисоблар. Кадрлар ходими ва Бухгалтер бир хил ҳуқуқда; фақат Суперадмин фойдаланувчиларни бошқаради.">
+      <PageHeader title="Фойдаланувчилар" hint="Тизимга кирувчи ҳисоблар. Кадрлар ходими ва Бухгалтер бир хил ҳуқуқда; фақат Суперадмин фойдаланувчиларни бошқаради.">
         <Button variant="primary"  onClick={() => setEdit('new')}><Plus size={16} /> Янги фойдаланувчи</Button>
       </PageHeader>
       {q.isLoading && <Loading />}

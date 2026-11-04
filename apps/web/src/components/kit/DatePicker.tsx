@@ -104,7 +104,7 @@ export function DatePicker({ value, onChange, min, max, required, disabled, inva
       </Popover.Anchor>
       <Popover.Portal>
         <Popover.Content align="start" sideOffset={6} collisionPadding={12} onOpenAutoFocus={(e) => e.preventDefault()}
-          className="z-[70] w-[300px] rounded-lg border border-slate-200 bg-white p-3 shadow-lg">
+          className="z-[70] w-[300px] rounded-lg border border-slate-200 bg-white p-3 shadow-md">
           <div className="mb-2 flex items-center gap-1.5">
             <Button type="button" variant="ghost" size="icon" aria-label="Олдинги ой" onClick={() => setMonth(new Date(month.getFullYear(), month.getMonth() - 1, 1))}><ChevronLeft size={16} /></Button>
             <div className="min-w-0 flex-1"><Select aria-label="Ой" className="!h-8 !px-2 text-xs" value={String(month.getMonth())} onChange={(v) => setMonth(new Date(month.getFullYear(), Number(v), 1))} options={MONTHS.map((m, i) => ({ value: String(i), label: m }))} /></div>
@@ -116,9 +116,9 @@ export function DatePicker({ value, onChange, min, max, required, disabled, inva
             classNames={{
               root: 'text-slate-800', month_caption: 'hidden', month_grid: 'w-full border-collapse',
               weekday: 'h-8 w-[38px] text-center text-[11px] font-medium text-slate-400', day: 'p-0 text-center',
-              day_button: 'h-[38px] w-[38px] rounded-md text-sm transition hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40',
-              selected: '[&>button]:bg-brand [&>button]:font-semibold [&>button]:text-white [&>button:hover]:bg-brand-600',
-              today: '[&>button]:font-bold [&>button]:text-brand', outside: '[&>button]:text-slate-300',
+              day_button: 'h-[38px] w-[38px] rounded-md text-sm transition hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-slate-400/50',
+              selected: '[&>button]:bg-brand [&>button]:font-semibold [&>button]:text-white [&>button:hover]:bg-brand/90',
+              today: '[&>button]:bg-slate-100 [&>button]:font-semibold', outside: '[&>button]:text-slate-300',
               disabled: '[&>button]:pointer-events-none [&>button]:opacity-30',
             }} />
           <div className="mt-2 flex items-center justify-between border-t pt-2">

@@ -39,7 +39,7 @@ export default function Calendar() {
 
   return (
     <div className="space-y-4">
-      <PageHeader eyebrow="Ҳисоб-китоб" title="Иш календари" hint="Байрамлар, кўчирилган дам олиш кунлари ва ишчи шанбалар. Бу ерда белгиланган кунлар таътил, табель ва ойлик ҳисобига таъсир қилади.">
+      <PageHeader title="Иш календари" hint="Байрамлар, кўчирилган дам олиш кунлари ва ишчи шанбалар. Бу ерда белгиланган кунлар таътил, табель ва ойлик ҳисобига таъсир қилади.">
         <PeriodSwitch label={String(year)} onPrev={() => setYear(year - 1)} onNext={() => setYear(year + 1)} prevLabel="Олдинги йил" nextLabel="Кейинги йил" />
       </PageHeader>
 

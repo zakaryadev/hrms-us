@@ -18,7 +18,7 @@ export default function Leaves() {
   const badge = { on: ['Таътилда', 'bg-amber-50 text-amber-700'], soon: ['Режалаштирилган', 'bg-blue-50 text-blue-700'], done: ['Тугаган', 'bg-slate-100 text-slate-600'] } as const;
   return (
     <div className="space-y-4">
-      <PageHeader eyebrow="Ҳужжатлар" title="Таътиллар" hint="Меҳнат таътили буйруқлари ва ходимларнинг таътил ҳолати" />
+      <PageHeader title="Таътиллар" hint="Меҳнат таътили буйруқлари ва ходимларнинг таътил ҳолати" />
       <div className="card flex flex-wrap items-center gap-3 p-4">
         <span className="text-sm text-slate-600">Таътил буйруғи яратиш:</span>
         <EmployeePicker onPick={setEmp} />

@@ -54,7 +54,7 @@ export function Select({ value, onChange, options, children, placeholder = 'Та
       </RS.Trigger>
       <RS.Portal>
         <RS.Content position="popper" sideOffset={4} collisionPadding={12}
-          className="z-[80] max-h-[min(320px,var(--radix-select-content-available-height))] min-w-[var(--radix-select-trigger-width)] overflow-hidden rounded-md border border-slate-200 bg-white shadow-md">
+          className="z-[80] max-h-[min(320px,var(--radix-select-content-available-height))] min-w-[var(--radix-select-trigger-width)] overflow-hidden rounded-md border border-slate-200 bg-white text-slate-950 shadow-md">
           <RS.Viewport className="max-h-[inherit] overflow-y-auto p-1">
             {emptyOpt && <Item value={EMPTY} label={emptyOpt.label} muted />}
             {items.map((o) => <Item key={o.value} value={o.value} label={o.label} disabled={o.disabled} />)}
@@ -69,7 +69,7 @@ export function Select({ value, onChange, options, children, placeholder = 'Та
 function Item({ value, label, disabled, muted }: { value: string; label: ReactNode; disabled?: boolean; muted?: boolean }) {
   return (
     <RS.Item value={value} disabled={disabled}
-      className={cn('relative flex cursor-pointer select-none items-center rounded py-1.5 pl-8 pr-3 text-[13.5px] outline-none data-[disabled]:pointer-events-none data-[disabled]:opacity-40 data-[highlighted]:bg-brand-soft data-[highlighted]:text-brand', muted && 'text-slate-500')}>
+      className={cn('relative flex cursor-pointer select-none items-center rounded py-1.5 pl-8 pr-3 text-[13.5px] outline-none data-[disabled]:pointer-events-none data-[disabled]:opacity-40 data-[highlighted]:bg-slate-100 data-[highlighted]:text-slate-950', muted && 'text-slate-500')}>
       <span className="absolute left-2 flex h-4 w-4 items-center justify-center"><RS.ItemIndicator><Check size={14} /></RS.ItemIndicator></span>
       <RS.ItemText>{label}</RS.ItemText>
     </RS.Item>

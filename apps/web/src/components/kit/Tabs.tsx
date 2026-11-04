@@ -4,8 +4,8 @@ import { cn } from './cn';
 export interface TabItem<T extends string> { value: T; label: ReactNode }
 
 /**
- * "Папка табларидек" табчалар: фаол таб контент панелига улангандек кўринади
- * (устида 2px accent чизиқ, остки чегара йўқ). Клавиатура: ←/→, Home/End.
+ * Сегментли табчалар (shadcn «Tabs» кўриниши): кулранг пилюля ичида фаол таб — оқ, енгил соя.
+ * Клавиатура: ←/→, Home/End. Тор экранда ёнга сурилади.
  */
 export function Tabs<T extends string>({ items, value, onChange, className, 'aria-label': ariaLabel }: {
   items: TabItem<T>[]; value: T; onChange: (v: T) => void; className?: string; 'aria-label'?: string;
@@ -18,15 +18,14 @@ export function Tabs<T extends string>({ items, value, onChange, className, 'ari
     e.preventDefault(); onChange(items[to].value); refs.current[to]?.focus();
   };
   return (
-    <div role="tablist" aria-label={ariaLabel} className={cn('flex gap-1 overflow-x-auto border-b border-slate-200', className)}>
+    <div role="tablist" aria-label={ariaLabel} className={cn('inline-flex max-w-full items-center gap-0.5 overflow-x-auto rounded-lg bg-slate-100 p-[3px]', className)}>
       {items.map((t, i) => {
         const active = t.value === value;
         return (
           <button key={t.value} ref={(el) => { refs.current[i] = el; }} role="tab" type="button" aria-selected={active} tabIndex={active ? 0 : -1}
             onClick={() => onChange(t.value)} onKeyDown={(e) => onKey(e, i)}
-            className={cn('relative -mb-px whitespace-nowrap rounded-t-md border border-b-0 px-4 py-2.5 text-[13.5px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand/40',
-              active ? 'border-slate-200 bg-white font-semibold text-navy before:absolute before:inset-x-0 before:top-0 before:h-0.5 before:rounded-t-md before:bg-brand'
-                : 'border-transparent text-slate-500 hover:bg-slate-200/50 hover:text-slate-800')}>
+            className={cn('whitespace-nowrap rounded-md px-3 py-1.5 text-sm font-medium transition-[color,box-shadow] focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-slate-400/50',
+              active ? 'bg-white text-slate-950 shadow-sm' : 'text-slate-500 hover:text-slate-900')}>
             {t.label}
           </button>
         );

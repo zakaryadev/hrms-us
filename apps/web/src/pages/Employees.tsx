@@ -1,18 +1,20 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Plus, Search, Upload } from 'lucide-react';
-import { useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
+import { Search, Upload } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
 import EmployeeForm from '../components/EmployeeForm';
 import { PageHeader, StatusBadge } from '../components/ui';
 import { api, EMP_TYPE_LABEL, fullName, photoSrc } from '../lib/api';
 import { Avatar, Button, Input, Select, buttonStyles, cn } from '../components/kit';
 
 export default function Employees() {
-  const qc = useQueryClient();
   const [q, setQ] = useState('');
   const [departmentId, setDepartmentId] = useState('');
   const [page, setPage] = useState(1);
   const [creating, setCreating] = useState(false);
+  // Юқори панелдаги «Янги ходим» тугмаси: /employees?new=1
+  const [params, setParams] = useSearchParams();
+  useEffect(() => { if (params.get('new') === '1') { setCreating(true); setParams({}, { replace: true }); } }, [params, setParams]);
   const pageSize = 15;
 
   const departments = useQuery({ queryKey: ['departments'], queryFn: () => api<any[]>('/departments') });
@@ -25,9 +27,8 @@ export default function Employees() {
   const totalPages = Math.max(1, Math.ceil((list.data?.total ?? 0) / pageSize));
   return (
     <div className="space-y-4">
-      <PageHeader eyebrow="Кадрлар" title="Ходимлар" hint="Ишлаётган ходимлар рўйхати: қидирув, бўлим бўйича фильтр, янги ходим қўшиш">
+      <PageHeader title="Ходимлар" hint="Ишлаётган ходимлар рўйхати: қидирув, бўлим бўйича фильтр, янги ходим қўшиш">
           <Link to="/import" className={cn(buttonStyles({ variant: 'secondary' }))}><Upload size={16} /> Excel’дан юклаш</Link>
-          <Button variant="primary"  onClick={() => setCreating(true)}><Plus size={16} /> Янги ходим</Button>
         </PageHeader>
       <div className="card flex flex-wrap items-center gap-3 p-3">
         <div className="relative min-w-[220px] flex-1">
@@ -48,7 +49,7 @@ export default function Employees() {
             {list.data?.items.map((e: any) => (
               <tr key={e.id} className="hover:bg-slate-50">
                 <td className="td font-mono">{e.tabNumber}</td>
-                <td className="td"><Link to={`/employees/${e.id}`} className="flex items-center gap-3 font-medium text-navy hover:text-brand"><Avatar size={34} src={photoSrc(e.photoUrl)} name={fullName(e)} />{fullName(e)}</Link></td>
+                <td className="td"><Link to={`/employees/${e.id}`} className="flex items-center gap-3 font-medium text-slate-950 hover:underline"><Avatar size={34} src={photoSrc(e.photoUrl)} name={fullName(e)} />{fullName(e)}</Link></td>
                 <td className="td">{e.position.title}</td>
                 <td className="td text-slate-500">{e.department.name}</td>
                 <td className="td text-slate-500">{EMP_TYPE_LABEL[e.employmentType]}</td>

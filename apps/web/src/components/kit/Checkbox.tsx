@@ -10,7 +10,7 @@ export function Checkbox({ checked, onChange, children, disabled, className }: {
   return (
     <div className={cn('flex items-center gap-2', className)}>
       <RC.Root id={id} checked={checked} disabled={disabled} onCheckedChange={(v) => onChange(v === true)}
-        className="flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded border border-slate-300 bg-white shadow-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40 data-[state=checked]:border-brand data-[state=checked]:bg-brand disabled:opacity-50">
+        className="flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded border border-slate-300 bg-white shadow-sm transition focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-slate-400/50 data-[state=checked]:border-brand data-[state=checked]:bg-brand disabled:opacity-50">
         <RC.Indicator><Check size={13} strokeWidth={3} className="text-white" /></RC.Indicator>
       </RC.Root>
       {children && <label htmlFor={id} className="cursor-pointer select-none text-sm text-slate-700">{children}</label>}

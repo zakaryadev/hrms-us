@@ -35,18 +35,18 @@ export default function EmployeeProfile() {
         <Link to="/employees" className="inline-flex items-center gap-1 hover:text-navy"><ArrowLeft size={14} /> Ходимлар</Link>
         <span aria-hidden>/</span><span className="truncate text-slate-800">{fullName(e)}</span>
       </nav>
-      <header className="mb-8 flex flex-wrap items-center gap-x-5 gap-y-4 border-b border-slate-200 pb-6">
+      <header className="mb-6 flex flex-wrap items-center gap-x-5 gap-y-4">
         <Avatar size={72} src={photoSrc(e.photoUrl)} name={fullName(e)} />
         <div className="min-w-[220px] flex-1">
-          <p className="eyebrow mb-1.5">Табель № <span className="tnum">{e.tabNumber}</span></p>
-          <h1 className="text-[22px] font-semibold leading-tight tracking-tight text-navy sm:text-[26px]">{fullName(e)}</h1>
+          <p className="mb-1 text-xs font-medium text-slate-500">Табель № <span className="tnum">{e.tabNumber}</span></p>
+          <h1 className="text-2xl font-bold leading-8 tracking-[-0.025em] text-slate-950">{fullName(e)}</h1>
           <p className="mt-1 text-[13.5px] text-slate-500">{e.position.title} · {e.department.name}</p>
         </div>
         <div className="flex items-center gap-5"><StatusBadge status={e.status} /><Button variant="secondary" onClick={() => setEditing(true)}><Pencil size={15} /> Таҳрирлаш</Button></div>
       </header>
 
       <Tabs aria-label="Ходим маълумотлари" items={TABS.map((t) => ({ value: t, label: t }))} value={tab} onChange={setTab} />
-      <div className="min-h-[220px] rounded-b-lg border border-t-0 border-slate-200 bg-white p-6">
+      <div className="card mt-5 min-h-[220px] p-6">
       {tab === TABS[0] && (
         <dl className="grid gap-x-14 gap-y-8 md:grid-cols-2">
           <div>
@@ -161,7 +161,7 @@ function Documents({ e, onSaved }: { e: any; onSaved: () => void }) {
         {e.documents.map((d: any) => (
           <li key={d.id} className="flex items-center gap-3 py-3 text-sm">
             <FileText size={18} className="text-navy/60" />
-            <a href={`/api/files/${d.filePath}`} target="_blank" rel="noreferrer" className="font-medium text-navy hover:text-brand">{label(d.documentType)}</a>
+            <a href={`/api/files/${d.filePath}`} target="_blank" rel="noreferrer" className="font-medium text-slate-950 hover:underline">{label(d.documentType)}</a>
             <span className="text-slate-500">{fmtDate(d.uploadDate)}</span>
             <button aria-label="Ўчириш" className="ml-auto text-slate-400 hover:text-red-600" onClick={() => confirm('Ҳужжат ўчирилсинми?') && del.mutate(d.id)}><Trash2 size={16} /></button>
           </li>

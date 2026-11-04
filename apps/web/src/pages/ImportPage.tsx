@@ -15,7 +15,7 @@ export default function ImportPage() {
   const r = run.data;
   return (
     <div className="max-w-4xl space-y-4">
-      <PageHeader eyebrow="Кадрлар" title="Excel’дан юклаш" />
+      <PageHeader title="Excel’дан юклаш" />
       <div className="card space-y-4 p-5">
         <p className="text-sm text-slate-600">Ходимлар рўйхатини .xlsx файлдан юкланг. Биринчи қатор — устун номлари. Мавжуд табель рақами бўйича ходим янгиланади, янгиси қўшилади.</p>
         <div className="flex flex-wrap gap-1.5">{COLS.map((c) => <span key={c} className="rounded bg-slate-100 px-2 py-1 text-xs text-slate-700">{c}</span>)}</div>

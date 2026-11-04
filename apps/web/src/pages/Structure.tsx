@@ -38,13 +38,13 @@ export default function Structure() {
 
   return (
     <div className="space-y-4">
-      <PageHeader eyebrow="Кадрлар" title="Штат ва сон" hint="Бўлимлар (филиаллар) ва лавозимлар. «Штат сони» — шу лавозимдаги штат бирликлари, «Банд» — ишлаётган ходимлар." />
+      <PageHeader title="Штат ва сон" hint="Бўлимлар (филиаллар) ва лавозимлар. «Штат сони» — шу лавозимдаги штат бирликлари, «Банд» — ишлаётган ходимлар." />
       {err && <ErrorNote error={new Error(err)} />}
       <div className="grid gap-4 lg:grid-cols-[340px_1fr]">
         <div className="card p-4">
           <ul className="mb-4 space-y-1">
             {departments.data?.map((d) => (
-              <li key={d.id} className={`flex items-center gap-1 rounded-md px-3 py-2 text-[13.5px] ${d.id === current ? 'bg-brand-soft font-medium text-navy ring-1 ring-inset ring-brand/25' : 'hover:bg-slate-100'}`}>
+              <li key={d.id} className={`flex items-center gap-1 rounded-md px-3 py-2 text-[13.5px] ${d.id === current ? 'bg-slate-100 font-medium text-slate-950' : 'hover:bg-slate-100'}`}>
                 <button className="min-w-0 flex-1 text-left" onClick={() => setSelected(d.id)}>
                   <span className="block truncate">{d.name}</span>
                   {d.parentId && <span className={`block truncate text-[11px] text-slate-500`}>↳ {parentName(d.parentId)}</span>}

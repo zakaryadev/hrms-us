@@ -3,9 +3,9 @@ import { cn } from './cn';
 import { useFieldId } from './Field';
 
 export const inputBase =
-  'w-full rounded-md border bg-white text-[13.5px] text-slate-900 transition-colors placeholder:text-slate-500 focus:outline-none focus:ring-2 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-500';
+  'w-full rounded-md border bg-white text-sm text-slate-950 shadow-sm transition-[color,box-shadow] placeholder:text-slate-500 focus:outline-none focus:ring-[3px] disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-500';
 export const inputState = (invalid?: boolean) =>
-  invalid ? 'border-red-400 focus:border-red-500 focus:ring-red-500/20' : 'border-slate-300 focus:border-brand focus:ring-brand/20';
+  invalid ? 'border-red-400 focus:border-red-500 focus:ring-red-500/20' : 'border-slate-200 focus:border-slate-400 focus:ring-slate-400/40';
 
 export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   invalid?: boolean;

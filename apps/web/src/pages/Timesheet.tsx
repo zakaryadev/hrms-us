@@ -89,7 +89,7 @@ export default function Timesheet() {
   const t = q.data;
   return (
     <div className="space-y-4">
-      <PageHeader eyebrow="Ҳисоб-китоб" title="Табель" hint="Ишга келиш белгилари. Ойлик ҳар ўзгаришда қайта ҳисобланади.">
+      <PageHeader title="Табель" hint="Ишга келиш белгилари. Ойлик ҳар ўзгаришда қайта ҳисобланади.">
         <PeriodSwitch label={`${MONTHS[month - 1]} ${year}`} onPrev={() => shift(-1)} onNext={() => shift(1)} prevLabel="Олдинги ой" nextLabel="Кейинги ой" />
           <Select plain className="!w-auto" value={departmentId} onChange={(v) => setDepartmentId(v)}>
             <option value="">Барча бўлимлар</option>{departments.data?.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}

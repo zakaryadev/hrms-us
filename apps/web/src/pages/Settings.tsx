@@ -21,7 +21,7 @@ export default function Settings() {
   });
   return (
     <div className="max-w-2xl space-y-4">
-      <PageHeader eyebrow="Тизим" title="Справочниклар" />
+      <PageHeader title="Справочниклар" />
       <form className="card space-y-4 p-5" onSubmit={(e) => { e.preventDefault(); save.mutate(); }}>
         <p className="text-sm text-slate-500">Бу маълумотлар барча ҳужжатларга (ариза, келишув, буйруқлар) автоматик қўйилади.</p>
         {FIELDS.map(([k, label]) => (

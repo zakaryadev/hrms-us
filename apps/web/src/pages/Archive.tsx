@@ -14,7 +14,7 @@ export default function Archive() {
   });
   return (
     <div className="space-y-4">
-      <PageHeader eyebrow="Кадрлар" title="Архив" hint="Ишдан бўшаган ходимлар. Ходим ҳолатини «Ишдан бўшаган» қилиб қўйсангиз, у шу ерга ўтади." />
+      <PageHeader title="Архив" hint="Ишдан бўшаган ходимлар. Ходим ҳолатини «Ишдан бўшаган» қилиб қўйсангиз, у шу ерга ўтади." />
       <div className="card overflow-x-auto">
         <table className="w-full">
           <thead className="border-b border-slate-200"><tr><th className="th">Табель</th><th className="th">Ф.И.Ш.</th><th className="th">Лавозим</th><th className="th">Бўлим</th><th className="th">Ишга қабул</th><th /></tr></thead>
@@ -22,7 +22,7 @@ export default function Archive() {
             {q.data?.items.map((e: any) => (
               <tr key={e.id} className="hover:bg-slate-50">
                 <td className="td font-mono">{e.tabNumber}</td>
-                <td className="td"><Link className="font-medium text-navy hover:text-brand" to={`/employees/${e.id}`}>{fullName(e)}</Link></td>
+                <td className="td"><Link className="font-medium text-slate-950 hover:underline" to={`/employees/${e.id}`}>{fullName(e)}</Link></td>
                 <td className="td">{e.position.title}</td><td className="td text-slate-500">{e.department.name}</td><td className="td">{fmtDate(e.hireDate)}</td>
                 <td className="td text-right"><Button variant="secondary" size="sm"  onClick={() => restore.mutate(e.id)}><RotateCcw size={14} /> Қайтариш</Button></td>
               </tr>

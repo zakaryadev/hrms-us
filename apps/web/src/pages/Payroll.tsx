@@ -15,7 +15,7 @@ export default function Payroll() {
   const total = q.data?.rows.reduce((s: number, r: any) => s + r.result.salary, 0) ?? 0;
   return (
     <div className="space-y-4">
-      <PageHeader eyebrow="Ҳисоб-китоб" title="Иш ҳақи" hint="Табель асосида ҳисобланган ойлик. Табелни ўзгартирсангиз, бу ерда ҳам янгиланади.">
+      <PageHeader title="Иш ҳақи" hint="Табель асосида ҳисобланган ойлик. Табелни ўзгартирсангиз, бу ерда ҳам янгиланади.">
         <PeriodSwitch label={`${MONTHS[month - 1]} ${year}`} onPrev={() => shift(-1)} onNext={() => shift(1)} prevLabel="Олдинги ой" nextLabel="Кейинги ой" />
       </PageHeader>
       <div className="card overflow-x-auto">
