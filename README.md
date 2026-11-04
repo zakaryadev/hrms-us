@@ -36,15 +36,38 @@ GPX: ishlangan × kunlik, 100 so'mgacha yaxlitlanadi. `GET /api/timesheet/export
 ## Til
 Интерфейс — ўзбек кирилл. DOCX ҳужжатлар икки тилда: `templates/cyr` ва `templates/lat` (ҳужжат яратишда тил танланади, API: `params.lang = 'cyr' | 'lat'`).
 
-## Ишга тушириш (production, Docker)
+## Серверга жойлаш (Ubuntu/Debian, Docker)
+Серверда (root ёки sudo):
 ```bash
-cp .env.prod.example .env.prod      # POSTGRES_PASSWORD, JWT_SECRET ни алмаштиринг (openssl rand -hex 32)
-docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --build
+git clone <repo-url> /opt/hrms && cd /opt/hrms
+sudo DOMAIN=hrms.example.uz ./scripts/deploy.sh     # HTTPS (Caddy, сертификат автоматик)
+# ёки домен йўқ бўлса (фақат синов/ички тармоқ):  sudo ./scripts/deploy.sh   →  http://<server-ip>:8080
 ```
-- Сайт: `http://<сервер>:8080` (`WEB_PORT`). HTTPS орқасида бўлса `COOKIE_SECURE=true` қўйинг (акс ҳолда cookie ўрнатилмайди).
-- Биринчи очилишда **созлаш устаси** чиқади: Суперадмин ва ташкилот маълумотлари киритилади. Кейин Суперадмин «Фойдаланувчилар» бўлимидан Кадрлар/Бухгалтер ҳисобларини қўшади (икковининг ҳуқуқи бир хил).
-- Маълумотлар volume’ларда: `pgdata` (база), `uploads` (ходим ҳужжатлари), `generated` (яратилган DOCX). Захира: `docker compose -f docker-compose.prod.yml exec db pg_dump -U hrms hrms > backup.sql` ва uploads/generated volume’ларни нусхалаш.
-- Миграциялар API ишга тушганда автоматик қўлланади (`prisma migrate deploy`).
+Скрипт: Docker’ни ўрнатади (йўқ бўлса), `.env.prod` ни тасодифий паролларда яратади (мавжудини **босмайди**, `chmod 600`), `ufw` фаол бўлса керакли портларни очади, контейнерларни build қилиб ишга туширади ва API тайёр бўлишини кутади. Қайта ишга туширса хавфсиз: маълумотлар volume’ларда қолади.
+- **DNS**: `DOMAIN` учун A-ёзув сервер IP’сига йўналтирилган ва 80/443 очиқ бўлиши керак (сертификат биринчи киришда олинади).
+- Биринчи очилишда **созлаш устаси** чиқади (Суперадмин ва ташкилот маълумотлари).
+- **Янгилаш**: `cd /opt/hrms && sudo ./scripts/deploy.sh` (`git pull` ни ўзи қилади; `NO_PULL=1` билан ўчирилади).
+- **Лог**: `docker compose -f docker-compose.prod.yml logs -f api` (HTTPS режимида `-f docker-compose.caddy.yml` ҳам қўшилади).
+- Қўлда (скриптсиз): `cp .env.prod.example .env.prod`, қийматларни алмаштиринг, сўнг `docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --build` (HTTPS учун иккинчи `-f docker-compose.caddy.yml` ва `DOMAIN`, `COOKIE_SECURE=true`).
+
+### Захира нусха ва тиклаш
+```bash
+sudo ./scripts/backup.sh                      # /var/backups/hrms: db-*.sql.gz + files-*.tar.gz (охирги 14 таси сақланади)
+# cron (ҳар куни 03:15):  15 3 * * *  cd /opt/hrms && ./scripts/backup.sh >> /var/log/hrms-backup.log 2>&1
+```
+Тиклаш (HTTP режими; HTTPS да иккинчи `-f docker-compose.caddy.yml` қўшилади):
+```bash
+C="docker compose -f docker-compose.prod.yml --env-file .env.prod"
+$C stop api
+gunzip -c /var/backups/hrms/db-<сана>.sql.gz | $C exec -T db psql -U hrms hrms
+$C exec -T api sh -c 'tar -C /data -xzf -' < /var/backups/hrms/files-<сана>.tar.gz
+$C start api
+```
+Захирани **бошқа серверга/дискка** ҳам нусхалаб туринг; `.env.prod` (JWT_SECRET, POSTGRES_PASSWORD) ни алоҳида хавфсиз жойда сақланг.
+
+### Сервер хавфсизлиги (тавсия)
+- Root паролини **алмаштиринг** (айниқса у чат/хабарда очиқ ёзилган бўлса), SSH калитига ўтиб, `PasswordAuthentication no` қилинг; `ufw allow 22,80,443/tcp && ufw enable` (скрипт `ufw` ни ўзи ёқмайди — SSH’дан чиқиб кетмаслик учун).
+- Server vaqtini (`timedatectl`) ва автоматик хавфсизлик янгиланишларини (`unattended-upgrades`) текширинг.
 
 ## Хавфсизлик
 - JWT `httpOnly` cookie (`SameSite=Lax`), 12 соат. `JWT_SECRET` productionда мажбурий.

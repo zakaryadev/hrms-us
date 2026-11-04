@@ -1,0 +1,32 @@
+# HTTPS rejimi (domen bilan): Caddy sertifikatni avtomatik oladi va yangilaydi.
+# Ishlatish: docker compose -f docker-compose.prod.yml -f docker-compose.caddy.yml --env-file .env.prod up -d --build
+# (scripts/deploy.sh DOMAIN=... berilganda buni o'zi qo'shadi)
+services:
+  api:
+    environment:
+      COOKIE_SECURE: "true"
+      # Caddy -> nginx -> api: ikki proksi, haqiqiy mijoz IP (login cheklovi uchun) 2-qadamda
+      TRUST_PROXY: "2"
+  web:
+    # nginx faqat Caddy orqali: tashqariga port ochilmaydi
+    ports: !reset []
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    depends_on:
+      web:
+        condition: service_started
+    environment:
+      DOMAIN: ${DOMAIN:?DOMAIN kerak (masalan hrms.example.uz)}
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+
+volumes:
+  caddy_data:
+  caddy_config:
