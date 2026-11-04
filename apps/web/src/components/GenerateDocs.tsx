@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Download, FilePlus2, Plus } from 'lucide-react';
 import { useState } from 'react';
-import { api, fmtDate } from '../lib/api';
+import { api, fmtDate, onUnauthorized } from '../lib/api';
 import { Empty, Field, Modal, SectionTitle } from './ui';
 
 export type DocType = 'obyektivka' | 'ariza' | 'kelishuv' | 'buyruq-otkazish' | 'buyruq-tatil';
@@ -60,6 +60,7 @@ function useGenerate(type: DocType, employee: any, onClose: () => void, save: bo
       const res = await fetch(`/api/documents/generate/${type}`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ employeeId: employee.id, params }),
       });
+      if (res.status === 401) onUnauthorized();
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
         throw new Error((Array.isArray(body.message) ? body.message.join(', ') : body.message) || `Хатолик (${res.status})`);

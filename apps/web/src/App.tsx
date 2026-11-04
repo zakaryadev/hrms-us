@@ -1,5 +1,9 @@
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import Layout from './components/Layout';
+import { AuthProvider, RequireAuth } from './auth/AuthContext';
+import Login from './pages/Login';
+import Setup from './pages/Setup';
+import Users from './pages/Users';
 import Archive from './pages/Archive';
 import Certificates from './pages/Certificates';
 import ImportPage from './pages/ImportPage';
@@ -16,8 +20,12 @@ import Timesheet from './pages/Timesheet';
 export default function App() {
   return (
     <BrowserRouter>
+      <AuthProvider>
       <Routes>
-        <Route element={<Layout />}>
+        <Route path="setup" element={<Setup />} />
+        <Route path="login" element={<Login />} />
+        <Route element={<RequireAuth><Layout /></RequireAuth>}>
+          <Route path="users" element={<RequireAuth roles={['superadmin']}><Users /></RequireAuth>} />
           <Route index element={<Dashboard />} />
           <Route path="employees" element={<Employees />} />
           <Route path="import" element={<ImportPage />} />
@@ -32,6 +40,7 @@ export default function App() {
           <Route path="employees/:id" element={<EmployeeProfile />} />
         </Route>
       </Routes>
+      </AuthProvider>
     </BrowserRouter>
   );
 }

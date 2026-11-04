@@ -1,7 +1,12 @@
 import {
+  KeyRound, LogOut, UserCog,
   Archive, BookMarked, CalendarDays, FileSpreadsheet, FileText, LayoutDashboard, Palmtree, ScrollText, Users, Wallet, Network,
 } from 'lucide-react';
+import { useState } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
+import { useAuth } from '../auth/AuthContext';
+import { ROLE_LABEL } from '../lib/api';
+import ChangePassword from './ChangePassword';
 
 const links = [
   { to: '/', label: 'Бош саҳифа', icon: LayoutDashboard, end: true },
@@ -23,6 +28,9 @@ const item = ({ isActive }: { isActive: boolean }) =>
   }`;
 
 export default function Layout() {
+  const { user, logout } = useAuth();
+  const [pwd, setPwd] = useState(false);
+  const isAdmin = user?.role === 'superadmin';
   return (
     <div className="flex min-h-screen">
       <aside className="hidden w-64 shrink-0 flex-col bg-navy text-white md:flex">
@@ -33,8 +41,17 @@ export default function Layout() {
           {links.map(({ to, label, icon: Icon, end }) => (
             <NavLink key={to} to={to} end={end} className={item}><Icon size={18} /> {label}</NavLink>
           ))}
-          <div className="mt-auto border-t border-white/10 pt-3 pb-4">
+          <div className="mt-auto space-y-0.5 border-t border-white/10 pt-3">
+            {isAdmin && <NavLink to="/users" className={item}><UserCog size={18} /> Фойдаланувчилар</NavLink>}
             <NavLink to={bottom.to} className={item}><bottom.icon size={18} /> {bottom.label}</NavLink>
+          </div>
+          <div className="mb-3 mt-2 rounded-lg bg-white/5 p-3">
+            <p className="truncate text-sm font-medium text-white" title={user?.fullName}>{user?.fullName}</p>
+            <p className="text-xs text-slate-400">{user && ROLE_LABEL[user.role]}</p>
+            <div className="mt-2 flex gap-2 text-xs">
+              <button className="flex items-center gap-1 text-slate-300 hover:text-white" onClick={() => setPwd(true)}><KeyRound size={13} /> Парол</button>
+              <button className="ml-auto flex items-center gap-1 text-slate-300 hover:text-white" onClick={logout}><LogOut size={13} /> Чиқиш</button>
+            </div>
           </div>
         </nav>
       </aside>
@@ -42,13 +59,15 @@ export default function Layout() {
         <header className="flex items-center gap-3 border-b bg-white px-4 py-3 md:hidden">
           <img src="/logo.svg" alt="Logo" className="h-5 shrink-0" />
           <nav className="ml-auto flex min-w-0 gap-3 overflow-x-auto whitespace-nowrap text-xs">
-            {[...links, bottom].map((l) => (
+            {[...links, ...(isAdmin ? [{ to: '/users', label: 'Фойдаланувчилар', icon: UserCog }] : []), bottom].map((l) => (
               <NavLink key={l.to} to={l.to} end={(l as any).end} className={({ isActive }) => (isActive ? 'font-semibold text-blue-600' : 'text-slate-600')}>{l.label}</NavLink>
             ))}
           </nav>
+          <button aria-label="Чиқиш" className="shrink-0 text-slate-500" onClick={logout}><LogOut size={16} /></button>
         </header>
         <main className="flex-1 p-4 md:p-8"><Outlet /></main>
       </div>
+      {pwd && <ChangePassword onClose={() => setPwd(false)} />}
     </div>
   );
 }
