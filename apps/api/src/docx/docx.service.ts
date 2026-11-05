@@ -3,6 +3,7 @@ import Docxtemplater from 'docxtemplater';
 import { existsSync, readFileSync } from 'fs';
 import { join, resolve } from 'path';
 import PizZip from 'pizzip';
+import { convertDocx } from './convert';
 import { Lang } from './format';
 
 export const TEMPLATE_DIR = process.env.TEMPLATE_DIR ?? join(__dirname, '..', '..', 'templates');
@@ -10,17 +11,33 @@ export const TEMPLATE_DIR = process.env.TEMPLATE_DIR ?? join(__dirname, '..', '.
 /** Foydalanuvchi yuklagan shablonlar (volume'da saqlanadi, standart shablonni bosib o'tadi). */
 export const CUSTOM_TEMPLATE_DIR = resolve(process.env.CUSTOM_TEMPLATE_DIR ?? join(process.cwd(), 'templates-custom'));
 
+export const SCRIPTS = ['cyr', 'lat', 'lat-new'] as const;
+
 @Injectable()
 export class DocxService {
-  bundledPath(lang: string, name: string) { return join(TEMPLATE_DIR, lang, `${name}.docx`); }
-  customPath(lang: string, name: string) { return join(CUSTOM_TEMPLATE_DIR, lang, `${name}.docx`); }
-  /** Haqiqatda ishlatiladigan fayl: yuklangan bo'lsa o'sha, bo'lmasa standart. */
-  effectivePath(lang: string, name: string) { return existsSync(this.customPath(lang, name)) ? this.customPath(lang, name) : this.bundledPath(lang, name); }
+  /** Стандарт шаблонлар фақат кирилл ва лотин (1995) да; янги алифбо ўгириш орқали ҳосил бўлади */
+  bundledPath(script: string, name: string) { return join(TEMPLATE_DIR, script === 'cyr' ? 'cyr' : 'lat', `${name}.docx`); }
+  customPath(script: string, name: string) { return join(CUSTOM_TEMPLATE_DIR, script, `${name}.docx`); }
 
-  /** Shablon: `templates/<lang>/<name>.docx` (lat — lotin, cyr — kirill); yuklangan shablon ustun */
+  /**
+   * Сўралган ёзув учун шаблон: 1) шу ёзувда юкланган; 2) бошқа ёзувда юкланган (ҳужжат охирида АВТОМАТИК ўгирилади);
+   * 3) стандарт (лотин/кирилл; янги алифбо учун лотиндан ўгирилади).
+   */
+  resolve(lang: Lang, name: string): { path: string; from: Lang; custom: boolean } | null {
+    for (const from of [lang, 'lat', 'cyr', 'lat-new'] as Lang[]) {
+      const path = this.customPath(from, name);
+      if (existsSync(path)) return { path, from, custom: true };
+    }
+    const from: Lang = lang === 'cyr' ? 'cyr' : 'lat';
+    const path = this.bundledPath(from, name);
+    return existsSync(path) ? { path, from, custom: false } : null;
+  }
+
+  /** Шаблонни тўлдиради. Шаблон бошқа ёзувда бўлса, тайёр ҳужжатнинг БУТУН матни (шаблон матни ҳам, маълумот ҳам) керакли ёзувга ўгирилади. */
   render(lang: Lang, templateName: string, data: Record<string, unknown>, extra: { photo?: Buffer } = {}): Buffer {
-    const path = this.effectivePath(lang, templateName);
-    if (!existsSync(path)) throw new BadRequestException(`Шаблон топилмади: ${lang}/${templateName}.docx`);
+    const found = this.resolve(lang, templateName);
+    if (!found) throw new BadRequestException(`Шаблон топилмади: ${templateName}.docx`);
+    const path = found.path;
     try {
       const doc = new Docxtemplater(new PizZip(readFileSync(path)), {
         delimiters: { start: '{{', end: '}}' },
@@ -31,7 +48,8 @@ export class DocxService {
       doc.render(data);
       const zip = doc.getZip();
       if (extra.photo) applyPhoto(zip, extra.photo);
-      return zip.generate({ type: 'nodebuffer', compression: 'DEFLATE' });
+      const out = zip.generate({ type: 'nodebuffer', compression: 'DEFLATE' });
+      return found.from === lang ? out : convertDocx(out, lang);
     } catch (e: any) {
       const errs = e?.properties?.errors as { properties?: { explanation?: string } }[] | undefined;
       const detail = errs?.map((x) => x.properties?.explanation).filter(Boolean).join('; ') || e?.message;

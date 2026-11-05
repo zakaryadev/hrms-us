@@ -109,42 +109,96 @@ describe('Yangi buyruqlar, tahrirlash, raqamlash, shablon yuklash, eksport, foyd
     await gen('buyruq-bosh', params, e2).expect(400);
   });
 
-  it('shablonlar: ro\'yxat 8x2, yuklash tekshiriladi, yuklangan shablon ishlatiladi, standartga qaytadi', async () => {
-    const list = (await a.get('/api/documents/templates').expect(200)).body;
-    expect(list.length).toBe(16); expect(list.every((t: any) => t.custom === false)).toBe(true);
+  it("shablonlar: ro'yxat 8 ta, bitta shablon yuklanadi (yozuv avtomatik aniqlanadi), qolgan yozuvlar avtomatik o'giriladi, standartga qaytadi", async () => {
+    const T = '/api/documents/templates';
+    const list = (await a.get(T).expect(200)).body;
+    expect(list.length).toBe(8);
+    expect(list.every((t: any) => t.custom === false && t.scripts.cyr === 'bundled' && t.scripts.lat === 'bundled' && t.scripts['lat-new'] === 'auto')).toBe(true);
 
-    const put = (name: string, buf: Buffer | string, fname = 'x.docx', ag = a) => ag.put(`/api/documents/templates/lat/${name}`).attach('file', Buffer.from(buf as any), fname);
+    const put = (name: string, buf: Buffer | string, fname = 'x.docx', ag = a, qs = '') => ag.put(`${T}/${name}${qs}`).attach('file', Buffer.from(buf as any), fname);
     await put('buyruq-rag', 'oddiy matn').expect(400);                                    // docx emas
-    const src = readFileSync(join(bundled, 'lat', 'buyruq-rag.docx'));
+    const src = readFileSync(join(bundled, 'cyr', 'buyruq-rag.docx'));
     await put('buyruq-rag', src, 'x.txt').expect(400);                                    // kengaytma
     await put('nomalum', src).expect(404);
     await put('buyruq-rag', src, 'x.docx', acc).expect(403);
     const broken = new PizZip(src); broken.file('word/document.xml', broken.file('word/document.xml')!.asText().replace('{{sabab_matni}}', '{{#ochiq}}'));
     await put('buyruq-rag', broken.generate({ type: 'nodebuffer' })).expect(400);          // yopilmagan blok
 
+    // KIRILL shablon yuklaymiz (statik matn kirillda)
     const zip = new PizZip(src);
-    zip.file('word/document.xml', zip.file('word/document.xml')!.asText().replace('{{buyruq_raqami}}', 'MAXSUS-{{buyruq_raqami}}{{notanish}}'));
+    zip.file('word/document.xml', zip.file('word/document.xml')!.asText().replace('{{buyruq_raqami}}', 'ШАХСУС-{{buyruq_raqami}}{{notanish}}'));
     const ok = await put('buyruq-rag', zip.generate({ type: 'nodebuffer' })).expect(200);
     expect(ok.body.unknownFields).toEqual(['notanish']);
-    expect((await a.get('/api/documents/templates').expect(200)).body.find((t: any) => t.lang === 'lat' && t.name === 'buyruq-rag').custom).toBe(true);
+    expect(ok.body.script).toBe('cyr');                                                    // yozuv avtomatik aniqlandi
+    const row = (await a.get(T).expect(200)).body.find((t: any) => t.name === 'buyruq-rag');
+    expect(row).toMatchObject({ custom: true, masterScript: 'cyr', scripts: { cyr: 'custom', lat: 'auto', 'lat-new': 'auto' } });
 
-    const r = await gen('buyruq-rag', { orderDate: '2026-07-01', reason: 'x', basis: 'y', rewardText: 'z' }).expect(201);
-    expect(text(await fileOf(r.body.id))).toContain('MAXSUS-R-');
+    // shu bitta shablondan har uch yozuvda hujjat: butun matn avtomatik o'giriladi
+    const gen3 = async (lang: string) => text(await fileOf((await a.post('/api/documents/generate/buyruq-rag').send({ employeeId: empId, params: { lang, orderDate: '2026-07-01', reason: 'намунали меҳнат', basis: 'Асос', rewardText: 'Миннатдорчилик' } }).expect(201)).body.id));
+    const cyr = await gen3('cyr'), lat = await gen3('lat'), neu = await gen3('lat-new');
+    expect(cyr).toContain('ШАХСУС-'); expect(cyr).toContain('намунали меҳнат');
+    expect(lat).toContain('SHAXSUS-'); expect(lat).toContain('namunali mehnat'); expect(lat).not.toMatch(/[А-Яа-я]/);
+    expect(neu).toContain('ŞAXSUS-'); expect(neu).toContain('namunali meçnat'.replace('meçnat', 'mehnat')); expect(neu).not.toMatch(/[А-Яа-я]/);
 
-    await acc.delete('/api/documents/templates/lat/buyruq-rag').expect(403);
-    await a.delete('/api/documents/templates/lat/buyruq-rag').expect(204);
-    await a.delete('/api/documents/templates/lat/buyruq-rag').expect(404);
-    const r2 = await gen('buyruq-rag', { orderDate: '2026-07-02', reason: 'x', basis: 'y', rewardText: 'z' }).expect(201);
-    expect(text(await fileOf(r2.body.id))).not.toContain('MAXSUS');
+    // yuklab olish: istalgan yozuvda
+    const get = (qs: string) => a.get(`${T}/buyruq-rag/download${qs}`).buffer(true).parse((res, cb) => { const c: Buffer[] = []; res.on('data', (d: Buffer) => c.push(d)); res.on('end', () => cb(null, Buffer.concat(c))); }).expect(200);
+    expect(text((await get('?script=cyr')).body)).toContain('ШАХСУС-');
+    const dlLat = text((await get('?script=lat')).body);
+    expect(dlLat).toContain('SHAXSUS-'); expect(dlLat).toContain('{{sabab_matni}}');          // {{майдон}} белгилари ўзгармайди
+    await a.get(`${T}/buyruq-rag/download?script=greek`).expect(404);
+
+    await acc.delete(`${T}/buyruq-rag`).expect(403);
+    await a.delete(`${T}/buyruq-rag`).expect(204);
+    await a.delete(`${T}/buyruq-rag`).expect(404);
+    expect(await gen3('lat')).not.toContain('SHAXSUS');                                    // standart shablon
 
     // oldingi yuklangan versiyani tiklash
-    expect((await a.get('/api/documents/templates').expect(200)).body.find((t: any) => t.lang === 'lat' && t.name === 'buyruq-rag').hasPrevious).toBe(true);
-    await acc.post('/api/documents/templates/lat/buyruq-rag/restore').expect(403);
-    await a.post('/api/documents/templates/lat/buyruq-rag/restore').expect(204);
-    const r3 = await gen('buyruq-rag', { orderDate: '2026-07-03', reason: 'x', basis: 'y', rewardText: 'z' }).expect(201);
-    expect(text(await fileOf(r3.body.id))).toContain('MAXSUS-R-');
-    await a.delete('/api/documents/templates/lat/buyruq-rag').expect(204);   // keyingi testlarga ta'sir qilmasin
-    await a.post('/api/documents/templates/lat/nomalum/restore').expect(404);
+    expect((await a.get(T).expect(200)).body.find((t: any) => t.name === 'buyruq-rag').hasPrevious).toBe(true);
+    await acc.post(`${T}/buyruq-rag/restore`).expect(403);
+    await a.post(`${T}/buyruq-rag/restore`).expect(204);
+    expect(await gen3('lat')).toContain('SHAXSUS-');
+    // LOTIN shablon yuklansa — yozuv 'lat' deb aniqlanadi va kirill hujjat avtomatik hosil bo'ladi; yangisi oldingisini almashtiradi
+    const latSrc = new PizZip(readFileSync(join(bundled, 'lat', 'buyruq-rag.docx')));
+    latSrc.file('word/document.xml', latSrc.file('word/document.xml')!.asText().replace('{{buyruq_raqami}}', 'MAXSUS-{{buyruq_raqami}}'));
+    const okLat = await put('buyruq-rag', latSrc.generate({ type: 'nodebuffer' })).expect(200);
+    expect(okLat.body.script).toBe('lat');
+    expect((await a.get(T).expect(200)).body.find((t: any) => t.name === 'buyruq-rag')).toMatchObject({ masterScript: 'lat', scripts: { cyr: 'auto', lat: 'custom', 'lat-new': 'auto' } });
+    expect(await gen3('cyr')).toContain('МАХСУС-');
+    await a.delete(`${T}/buyruq-rag`).expect(204);   // keyingi testlarga ta'sir qilmasin
+    await a.post(`${T}/nomalum/restore`).expect(404);
+  });
+
+  it("standart shablon yangi alifboda: butun hujjat avtomatik o'giriladi (Ş Ç Ö Ğ)", async () => {
+    const g = await a.post('/api/documents/generate/obyektivka').send({ employeeId: empId, params: { lang: 'lat-new' } }).expect(201);
+    const t = text(await fileOf(g.body.id));
+    expect(t).toContain('Tuğilgan yili');                      // Tug'ilgan → Tuğilgan
+    expect(t).toContain('MAʼLUMOTNOMA');
+    expect(t).not.toMatch(/[А-Яа-я]/);
+    expect(t).not.toMatch(/\bsh|\bch|oʻ|gʻ/i);
+  });
+
+  it("DOCX konvertor: butun Word fayl matni kirill/lotin/yangi alifboga (format va {{maydon}} saqlanadi)", async () => {
+    const src = readFileSync(join(bundled, 'cyr', 'obyektivka.docx'));
+    const conv = async (to: string, file: Buffer = src, name = 'shablon.docx', ag: any = a) => ag.post('/api/translit/docx').field('to', to).attach('file', file, name)
+      .buffer(true).parse((res: any, cb: any) => { const c: Buffer[] = []; res.on('data', (d: Buffer) => c.push(d)); res.on('end', () => cb(null, Buffer.concat(c))); });
+    await request(app.getHttpServer()).post('/api/translit/docx').field('to', 'lat').attach('file', src, 'x.docx').expect(401);
+    await conv('greek').then((r: any) => expect(r.status).toBe(400));
+    await conv('lat', Buffer.from('oddiy matn'), 'x.docx').then((r: any) => expect(r.status).toBe(400));
+    await conv('lat', src, 'x.pdf').then((r: any) => expect(r.status).toBe(400));
+    const r = await conv('lat');
+    expect(r.status).toBe(201);
+    expect(r.headers['content-disposition']).toContain('shablon-lat.docx');
+    const before = new PizZip(src), after = new PizZip(r.body);
+    const xml = (z: PizZip) => z.file('word/document.xml')!.asText();
+    const t = text(r.body);
+    expect(t).toContain('MAʼLUMOTNOMA'); expect(t).toContain('{{xodim_fish}}'); expect(t).not.toMatch(/[А-Яа-я]/);
+    // форматлаш: бўлаклар (run), қалин ва жадвал сони ўзгармайди; расм сақланади
+    for (const tag of ['<w:r>', '<w:r ', '<w:b/>', '<w:tbl>', '<w:tr ', '<w:tc>']) expect(xml(after).split(tag).length).toBe(xml(before).split(tag).length);
+    expect(Object.keys(after.files).sort()).toEqual(Object.keys(before.files).sort());
+    // янги алифбо ва ортга: лотин → кирилл қайта ўгирилганда {{майдон}} ва матн сақланади
+    expect(text((await conv('lat-new')).body)).toContain('Tuğilgan');
+    const back = text((await conv('cyr', r.body, 'orqaga.docx')).body);
+    expect(back).toContain('{{xodim_fish}}'); expect(back).toContain('МАЪЛУМОТНОМА');
   });
 
   it('bazada buyruq raqami yil ichida noyob (unique indeks), eski jurnal yozuvlari tozalanadi', async () => {
@@ -255,10 +309,11 @@ describe('Yangi buyruqlar, tahrirlash, raqamlash, shablon yuklash, eksport, foyd
     // буйруқ: тури ва рақами қўшилади (ҳужжат ва «Буйруқлар» рўйхатидан юклаш бир хил)
     const o = await a.post('/api/documents/generate/buyruq-rag').send({ employeeId: emp.id, params: { lang: 'cyr', orderDate: '2026-08-01', reason: 'x', basis: 'y', rewardText: 'z' } }).expect(201);
     const od = await a.get(`/api/documents/generated/${o.body.id}/download`).buffer(true).parse((res, cb) => { const c: Buffer[] = []; res.on('data', (d: Buffer) => c.push(d)); res.on('end', () => cb(null, Buffer.concat(c))); }).expect(200);
-    expect(fname(od.headers['content-disposition'])).toBe('12_Muratbayev_Zakarya_Baxtiyar_uli_“Ijro_gov_uz”_menejer_buyruq-rag-R-1.docx');
-    const ord = (await a.get('/api/orders?type=ragbatlantirish').expect(200)).body.find((x: any) => x.orderNumber === 'Р-1' && x.employee.id === emp.id);
+    const rn = String(o.body.number).replace('Р', 'R');      // кирилл «Р-» префикси файл номида лотинда
+    expect(fname(od.headers['content-disposition'])).toBe(`12_Muratbayev_Zakarya_Baxtiyar_uli_“Ijro_gov_uz”_menejer_buyruq-rag-${rn}.docx`);
+    const ord = (await a.get('/api/orders?type=ragbatlantirish').expect(200)).body.find((x: any) => x.orderNumber === o.body.number && x.employee.id === emp.id);
     const oo = await a.get(`/api/orders/${ord.id}/download`).buffer(true).parse((res, cb) => { const c: Buffer[] = []; res.on('data', (d: Buffer) => c.push(d)); res.on('end', () => cb(null, Buffer.concat(c))); }).expect(200);
-    expect(fname(oo.headers['content-disposition'])).toBe('12_Muratbayev_Zakarya_Baxtiyar_uli_“Ijro_gov_uz”_menejer_buyruq-rag-R-1.docx');
+    expect(fname(oo.headers['content-disposition'])).toBe(`12_Muratbayev_Zakarya_Baxtiyar_uli_“Ijro_gov_uz”_menejer_buyruq-rag-${rn}.docx`);
   });
 
   it('транслитератор API: кирилл/лотин/янги алифбо, кириш талаб қилинади, журналга ёзилмайди', async () => {

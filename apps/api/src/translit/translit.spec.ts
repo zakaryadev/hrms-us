@@ -1,4 +1,4 @@
-import { detectScript, transliterate as t } from './translit';
+import { detectScript, transliterate as t, transliteratePieces } from './translit';
 
 describe('transliterator', () => {
   const O = 'ʻ', T = 'ʼ';
@@ -30,6 +30,7 @@ describe('transliterator', () => {
       ['SHAHAR CHORSU', 'ШАҲАР ЧОРСУ'],
       ['Yangi yil, yoz, yuz', 'Янги йил, ёз, юз'],
       ['Ming, tong, ongli', 'Минг, тонг, онгли'],
+      [`MA${T}LUMOT, MAʼLUMOT, Ma'lumot`, 'МАЪЛУМОТ, МАЪЛУМОТ, Маълумот'],
     ])('%s', (src, exp) => expect(t(src, 'cyr')).toBe(exp));
   });
 
@@ -76,6 +77,31 @@ describe('transliterator', () => {
     expect(detectScript('Özbek')).toBe('lat-new');
     expect(detectScript('Salom Салом')).toBe('mixed');
     expect(detectScript('123 .,')).toBe('none');
+  });
+});
+
+describe('бўлаклар бўйича ўгириш (DOCX run форматини сақлаш учун)', () => {
+  it('натижа бошланғич ҳарфлар бўйича бўлинади ва йиғиндиси тўлиқ ўгириш билан тенг', () => {
+    for (const [src, to] of [['Муратбаев Закарья Шаҳар', 'lat'], ['Ўзбекистон Чорсу', 'lat-new'], ['Toshkent shahri, Oʻzbekiston', 'cyr'], ['ЕРИМКУЛОВА Цирк', 'lat']] as const) {
+      const p = transliteratePieces(src, to);
+      expect(p.length).toBe([...src].length);
+      expect(p.join('')).toBe(t(src, to));
+    }
+  });
+  it('кўп ҳарфли натижа биринчи ҳарфга бириктирилади (ш → sh)', () => {
+    expect(transliteratePieces('Шаҳар', 'lat')).toEqual(['Sh', 'a', 'h', 'a', 'r']);
+    expect(transliteratePieces('shahar', 'cyr')).toEqual(['ш', '', 'а', 'ҳ', 'а', 'р']);
+  });
+  it('сўз бўлакларга бўлинса ҳам контекст сақланади: «Алие|в» → Aliyev, «Е|рим» → Yerim', () => {
+    const word = 'Алиев', pieces = transliteratePieces(word, 'lat');
+    expect(pieces.slice(0, 4).join('') + '|' + pieces.slice(4).join('')).toBe('Aliye|v');   // «е» — «ye» (unlidan keyin), bo'laklarga bo'linsa ham
+    expect(transliteratePieces('Ерим', 'lat').join('')).toBe('Yerim');
+  });
+  it('қўштирноқ ичидаги лотин ном кирилга ўтмайди (protectQuotedLatin)', () => {
+    const src = 'Ташкилот “UNICON-SOFT” ва “Ijro.gov.uz” сайти, Toshkent';
+    expect(t(src, 'cyr', { protectQuotedLatin: true })).toBe('Ташкилот “UNICON-SOFT” ва “Ijro.gov.uz” сайти, Тошкент');
+    expect(t('“UNICON-SOFT” Toshkent', 'cyr')).toBe('“УНИКОН-СОФТ” Тошкент'.replace('УНИКОН', 'УНИЦОН'));
+    expect(t('«Нукус Принт» "Data Life"', 'lat', { protectQuotedLatin: true })).toBe('«Nukus Print» "Data Life"');   // лотинга ўтишда ҳимоя йўқ
   });
 });
 

@@ -3,13 +3,14 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Download, FilePlus2, Pencil, Plus, Save } from 'lucide-react';
 import { useState } from 'react';
 import { useAuth } from '../auth/AuthContext';
+import { transliterate } from '../lib/translit';
 import { api, fmtDate, onUnauthorized } from '../lib/api';
 import { Empty, Field, Modal, SectionTitle } from './ui';
 import { Button, Checkbox, DatePicker, Input, Select, Textarea, buttonStyles, cn } from './kit';
 
 export type DocType = 'obyektivka' | 'ariza' | 'kelishuv' | 'buyruq-otkazish' | 'buyruq-tatil' | 'buyruq-qabul' | 'buyruq-bosh' | 'buyruq-rag';
 type Edit = { id: string; params: any };
-type Lang = 'cyr' | 'lat';
+type Lang = 'cyr' | 'lat' | 'lat-new';
 
 const DOCS: { type: DocType; title: string; desc: string }[] = [
   { type: 'obyektivka', title: 'Маълумотнома (Т-2)', desc: 'Объективка: шахсий маълумот, меҳнат фаолияти, қариндошлар' },
@@ -101,7 +102,7 @@ function LangPicker({ lang, setLang }: { lang: Lang; setLang: (l: Lang) => void 
       <label className="flex items-center gap-2 text-sm text-slate-600">
         Ҳужжат тили
         <Select className="!h-8 !w-auto !px-2 text-xs" value={lang} onChange={(v) => setLang(v as Lang)}>
-          <option value="cyr">Кирилл</option><option value="lat">Лотин</option>
+          <option value="cyr">Кирилл</option><option value="lat">Лотин</option><option value="lat-new">Лотин (янги алифбо)</option>
         </Select>
       </label>
     </div>
@@ -136,7 +137,7 @@ export function DocModal({ type, employee, onClose, edit }: { type: Exclude<DocT
     ...Object.fromEntries(Object.entries(edit?.params ?? {}).map(([k, v]) => [k, typeof v === 'number' ? String(v) : v])),
   });
   const [save, setSave] = useState(true);
-  const [lang, setLang] = useState<Lang>(edit?.params?.lang === 'lat' ? 'lat' : 'cyr');
+  const [lang, setLang] = useState<Lang>(edit?.params?.lang === 'lat' || edit?.params?.lang === 'lat-new' ? edit.params.lang : 'cyr');
   const set = (k: string) => (e: React.ChangeEvent<any>) => setF({ ...f, [k]: e.target.value });
   const needsTarget = ['ariza', 'kelishuv', 'buyruq-otkazish'].includes(type);
 
@@ -284,7 +285,7 @@ export function LeaveModal({ employee, onClose, edit }: { employee: any; onClose
     ...(ep.basicDays != null && { basicDays: String(ep.basicDays) }), ...(ep.extraDays != null && { extraDays: String(ep.extraDays) }),
   });
   const [save, setSave] = useState(true);
-  const [lang, setLang] = useState<Lang>(ep.lang === 'lat' ? 'lat' : 'cyr');
+  const [lang, setLang] = useState<Lang>(ep.lang === 'lat' || ep.lang === 'lat-new' ? ep.lang : 'cyr');
   const set = (k: keyof typeof f) => (e: React.ChangeEvent<any>) => setF({ ...f, [k]: e.target.value });
   const settings = useQuery({ queryKey: ['settings'], queryFn: () => api<any>('/settings') });
   const days = (Number(f.basicDays) || 0) + (Number(f.extraDays) || 0);
@@ -297,7 +298,8 @@ export function LeaveModal({ employee, onClose, edit }: { employee: any; onClose
   // Иш йили: фойдаланувчи ўзгартирмагунча — автоматик (қабул санаси ва таътил бошланишидан)
   const wyStart = f.workYearStart || calc.data?.workYear?.start || '';
   const wyEnd = f.workYearEnd || calc.data?.workYear?.end || '';
-  const D = DEFAULTS[lang];
+  // янги алифбо учун асос/имзоловчи матнлари лотиндан ўгирилади
+  const D = lang === 'lat-new' ? { basis: transliterate(DEFAULTS.lat.basis, 'lat-new'), signer: transliterate(DEFAULTS.lat.signer, 'lat-new') } : DEFAULTS[lang];
 
   const submit = useGenerate('buyruq-tatil', employee, onClose, save, lang, () => ({
     startDate: f.startDate, orderDate: f.orderDate, basicDays: Number(f.basicDays) || 0, extraDays: Number(f.extraDays) || 0,

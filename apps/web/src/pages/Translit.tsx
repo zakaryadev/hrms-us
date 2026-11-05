@@ -1,13 +1,61 @@
-import { ArrowLeftRight, Check, Copy, Eraser } from 'lucide-react';
+import { ArrowLeftRight, Check, Copy, Download, Eraser, FileText } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { Button, Select, Textarea } from '../components/kit';
 import { PageHeader } from '../components/ui';
-import { api } from '../lib/api';
+import { api, onUnauthorized } from '../lib/api';
 
 type Target = 'cyr' | 'lat' | 'lat-new';
 type Script = 'cyr' | 'lat' | 'lat-new' | 'mixed' | 'none';
 const TARGETS: [Target, string][] = [['cyr', 'Кирилл'], ['lat', 'Лотин (1995)'], ['lat-new', 'Лотин (янги алифбо)']];
 const SCRIPT_LABEL: Record<Script, string> = { cyr: 'кирилл', lat: 'лотин (1995)', 'lat-new': 'лотин (янги алифбо)', mixed: 'аралаш', none: '—' };
+
+/** Word (.docx) файлни юклаб, БУТУН матнини танланган ёзувга ўгириб қайтаради (форматлаш, жадвал, расм сақланади) */
+function DocxConverter() {
+  const [file, setFile] = useState<File | null>(null);
+  const [to, setTo] = useState<Target>('lat');
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  const input = useRef<HTMLInputElement>(null);
+
+  const run = async () => {
+    if (!file) return;
+    setBusy(true); setMsg(null);
+    try {
+      const f = new FormData(); f.append('file', file); f.append('to', to);
+      const res = await fetch('/api/translit/docx', { method: 'POST', body: f });
+      if (res.status === 401) onUnauthorized();
+      if (!res.ok) { const b = await res.json().catch(() => ({})); throw new Error((Array.isArray(b.message) ? b.message.join(', ') : b.message) || `Хатолик (${res.status})`); }
+      const cd = res.headers.get('Content-Disposition') ?? '';
+      const name = decodeURIComponent(/filename\*=UTF-8''([^;]+)/i.exec(cd)?.[1] ?? /filename="([^"]+)"/.exec(cd)?.[1] ?? file.name.replace(/\.docx$/i, `-${to}.docx`));
+      const url = URL.createObjectURL(await res.blob());
+      Object.assign(document.createElement('a'), { href: url, download: name }).click();
+      setTimeout(() => URL.revokeObjectURL(url), 5000);
+      setMsg({ ok: true, text: `Тайёр: ${name}` });
+    } catch (e) { setMsg({ ok: false, text: (e as Error).message }); }
+    finally { setBusy(false); }
+  };
+
+  return (
+    <div className="card space-y-3 p-4">
+      <div>
+        <h2 className="text-sm font-semibold text-slate-900">Word (DOCX) файлни ўгириш</h2>
+        <p className="mt-1 text-sm text-slate-600">Файлдаги <b>барча матн</b> (жадваллар, юқори/пастки колонтитул, матн қутилари ҳам) танланган ёзувга ўгирилади. Форматлаш, шрифт, жадвал ва расмлар ўзгармайди; <code className="rounded bg-slate-100 px-1 text-xs">{'{{майдон}}'}</code> белгилари сақланади.</p>
+      </div>
+      <div className="flex flex-wrap items-center gap-3">
+        <input ref={input} type="file" hidden accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document" onChange={(e) => { setFile(e.target.files?.[0] ?? null); setMsg(null); }} />
+        <Button variant="secondary" type="button" onClick={() => input.current?.click()}><FileText size={16} /> {file ? 'Бошқа файл' : 'Файл танлаш'}</Button>
+        {file && <span className="min-w-0 break-all text-sm text-slate-700">{file.name} <span className="text-slate-400">({(file.size / 1024).toFixed(0)} KB)</span></span>}
+      </div>
+      <div className="flex flex-wrap items-center gap-3">
+        <Select plain className="!w-auto" value={to} onChange={(v) => setTo(v as Target)}>
+          {TARGETS.map(([k, label]) => <option key={k} value={k}>{label}</option>)}
+        </Select>
+        <Button variant="primary" type="button" disabled={!file || busy} onClick={run}><Download size={16} /> {busy ? 'Ўгирилмоқда…' : 'Ўгириб юклаб олиш'}</Button>
+      </div>
+      {msg && <p role={msg.ok ? 'status' : 'alert'} className={`text-sm ${msg.ok ? 'text-emerald-700' : 'text-red-600'}`}>{msg.text}</p>}
+    </div>
+  );
+}
 
 export default function Translit() {
   const [text, setText] = useState('');
@@ -86,6 +134,8 @@ export default function Translit() {
           {error && <p className="mt-2 text-xs text-red-600" role="alert">{error}</p>}
         </div>
       </div>
+
+      <DocxConverter />
 
       <div className="card space-y-3 p-4 text-sm text-slate-600">
         <h2 className="text-sm font-semibold text-slate-900">Янги лотин алифбоси</h2>

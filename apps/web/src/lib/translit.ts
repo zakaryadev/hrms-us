@@ -8,7 +8,13 @@
  */
 export type Target = 'cyr' | 'lat' | 'lat-new';
 export type Apostrophe = 'modifier' | 'ascii' | 'none';
-export interface Options { apostrophe?: Apostrophe }
+export interface Options {
+  apostrophe?: Apostrophe;
+  /** Кирилга ўгирилганда қўштирноқ ичидаги лотин ном (бренд, сайт: “UNICON-SOFT”, “Ijro.gov.uz”) ўзгартирилмайди */
+  protectQuotedLatin?: boolean;
+  /** {{майдон}} белгилари (шаблон ичидаги) ўзгартирилмайди */
+  protectTags?: boolean;
+}
 export type Script = 'cyr' | 'lat' | 'lat-new' | 'mixed' | 'none';
 
 const TURN = 'ʻ';   // ʻ  — oʻ, gʻ
@@ -29,6 +35,12 @@ const CYR2LAT: Record<string, string> = {
   ң: 'ng', ә: 'a', ө: 'o' + TURN, ү: 'u',
 };
 
+/** Ҳарф + у қайси бошланғич ҳарфдан ҳосил бўлгани (DOCX матн бўлаклари форматини сақлаш учун) */
+interface Cell { c: string; src: number }
+const toCells = (text: string): Cell[] => [...text].map((c, src) => ({ c, src }));
+/** Кўп ҳарфли натижани ҳарфларга ёради (ҳар бири ўша src билан) — кейинги босқич битта ҳарфдан ишлайди */
+const expand = (cells: Cell[]): Cell[] => cells.flatMap((x) => ([...x.c].length === 1 ? [x] : [...x.c].map((c) => ({ c, src: x.src }))));
+
 /** Кўп ҳарфли натижада катта-кичик ҳарф: «Ш»→«Sh», «ШАХАР»→«SHAXAR» */
 function caseLike(src: string, out: string, prev: string | undefined, next: string | undefined): string {
   if (!out) return out;
@@ -38,87 +50,82 @@ function caseLike(src: string, out: string, prev: string | undefined, next: stri
 }
 
 /** Кирилл ҳарфлар → эски лотин (бошқа белгилар ўзгармайди) */
-function cyrToLat(text: string): string {
-  const chars = [...text];
-  let out = '';
-  for (let i = 0; i < chars.length; i++) {
-    const c = chars[i], l = lower(c), prev = chars[i - 1], next = chars[i + 1];
-    const wordStart = !isLetter(prev) || prev === undefined;
+function cyrToLat(cells: Cell[]): Cell[] {
+  const out: Cell[] = [];
+  for (let i = 0; i < cells.length; i++) {
+    const c = cells[i].c, l = lower(c), prev = cells[i - 1]?.c, next = cells[i + 1]?.c;
+    const wordStart = !isLetter(prev);
     const pl = lower(prev);
     let r: string | undefined;
     if (l === 'е') r = wordStart || CYR_VOWELS.includes(pl) || pl === 'ъ' || pl === 'ь' ? 'ye' : 'e';
     else if (l === 'ц') r = wordStart || !CYR_VOWELS.includes(pl) ? 's' : 'ts';
     else r = CYR2LAT[l];
-    if (r === undefined) { out += c; continue; }
-    out += caseLike(c, r, prev, next);
+    out.push({ c: r === undefined ? c : caseLike(c, r, prev, next), src: cells[i].src });
   }
   return out;
 }
 
 /** Янги алифбо ҳарфлари → эски лотин рақамлари: Ş→Sh, Ç→Ch, Ö→Oʻ, Ğ→Gʻ */
-function newToOld(text: string): string {
-  const chars = [...text];
-  let out = '';
+function newToOld(cells: Cell[]): Cell[] {
   const MAP: Record<string, string> = { ş: 'sh', ç: 'ch', ö: 'o' + TURN, ğ: 'g' + TURN };
-  for (let i = 0; i < chars.length; i++) {
-    const c = chars[i], l = c === 'Ş' ? 'ş' : c === 'Ç' ? 'ç' : c === 'Ö' ? 'ö' : c === 'Ğ' ? 'ğ' : c;
+  return cells.map((x, i) => {
+    const l = x.c === 'Ş' ? 'ş' : x.c === 'Ç' ? 'ç' : x.c === 'Ö' ? 'ö' : x.c === 'Ğ' ? 'ğ' : x.c;
     const r = MAP[l];
-    if (!r) { out += c; continue; }
-    out += c === l ? r : caseLike('A', r, chars[i - 1], chars[i + 1]);
-  }
-  return out;
+    if (!r) return x;
+    return { c: x.c === l ? r : caseLike('A', r, cells[i - 1]?.c, cells[i + 1]?.c), src: x.src };
+  });
 }
 
 /** Апостроф ўхшаш белгилар: o/g дан кейин — ʻ (oʻ, gʻ), бошқа ҳолда — тутуқ ʼ */
-function normalizeApostrophes(text: string): string {
-  const chars = [...text];
-  return chars.map((c, i) => (APOS.test(c) ? (/[oOgG]/.test(chars[i - 1] ?? '') ? TURN : TUTUQ) : c)).join('');
+function normalizeApostrophes(cells: Cell[]): Cell[] {
+  return cells.map((x, i) => (APOS.test(x.c) ? { c: /[oOgG]/.test(cells[i - 1]?.c ?? '') ? TURN : TUTUQ, src: x.src } : x));
 }
 
 /** Эски лотин → кирилл (ички шаклдаги ʻ ва ʼ билан) */
-function latToCyr(text: string): string {
-  const s = [...text];
-  let out = '';
+function latToCyr(cells: Cell[]): Cell[] {
+  const out: Cell[] = [];
   const DI: [string, string][] = [['sh', 'ш'], ['ch', 'ч'], ['ng', 'нг'], ['yo', 'ё'], ['yu', 'ю'], ['ya', 'я'], ['ye', 'е'], ['ts', 'ц'], ['o' + TURN, 'ў'], ['g' + TURN, 'ғ']];
   const ONE: Record<string, string> = {
     a: 'а', b: 'б', d: 'д', f: 'ф', g: 'г', h: 'ҳ', i: 'и', j: 'ж', k: 'к', l: 'л', m: 'м', n: 'н', o: 'о', p: 'п', q: 'қ', r: 'р',
     s: 'с', t: 'т', u: 'у', v: 'в', w: 'в', x: 'х', y: 'й', z: 'з', c: 'ц', [TUTUQ]: 'ъ', [TURN]: 'ъ',
   };
-  for (let i = 0; i < s.length; ) {
-    const c = s[i];
-    const two = (c + (s[i + 1] ?? '')).toLowerCase();
+  for (let i = 0; i < cells.length; ) {
+    const c = cells[i].c, src = cells[i].src;
+    const two = (c + (cells[i + 1]?.c ?? '')).toLowerCase();
     const di = DI.find(([k]) => k === two);
     if (di) {
-      const next = s[i + 2], prev = s[i - 1];
-      out += caseLike(c, di[1], prev, next ?? undefined);
+      const prev = cells[i - 1]?.c, next = cells[i + 2]?.c;
+      let r = caseLike(c, di[1], prev, next);
       // «SH», «NG» каби ҳарф-ҳарф катта ёзилган бирикма
-      if (isUpper(c) && isUpper(s[i + 1]) && di[1].length === 1) out = out.slice(0, -1) + di[1].toUpperCase();
+      if (isUpper(c) && isUpper(cells[i + 1]?.c)) r = di[1].toUpperCase();
+      out.push({ c: r, src });
       i += 2; continue;
     }
-    const l = lower(c);
+    const l = lower(c), prev = cells[i - 1]?.c, next = cells[i + 1]?.c;
     if (l === 'e') {
-      const pl = lower(s[i - 1]);
-      const startOrVowel = !isLetter(s[i - 1]) && s[i - 1] !== TURN && s[i - 1] !== TUTUQ ? true : LAT_VOWELS.includes(pl);
-      out += caseLike(c, startOrVowel ? 'э' : 'е', s[i - 1], s[i + 1]);
-    } else if (ONE[l] !== undefined) out += caseLike(c, ONE[l], s[i - 1], s[i + 1]);
-    else out += c;
+      const startOrVowel = !isLetter(prev) && prev !== TURN && prev !== TUTUQ ? true : LAT_VOWELS.includes(lower(prev));
+      out.push({ c: caseLike(c, startOrVowel ? 'э' : 'е', prev, next), src });
+    } else if (c === TUTUQ || c === TURN) {
+      // тутуқ катта ҳарфли сўз ичида катта «Ъ» бўлади: МАЪЛУМОТ
+      out.push({ c: isUpper(prev) && isUpper(next) ? 'Ъ' : 'ъ', src });
+    } else if (ONE[l] !== undefined) out.push({ c: caseLike(c, ONE[l], prev, next), src });
+    else out.push(cells[i]);
     i++;
   }
   return out;
 }
 
 /** Эски лотин → янги алифбо: sh→ş, ch→ç, oʻ→ö, gʻ→ğ */
-function oldToNew(text: string): string {
-  const s = [...text];
-  let out = '';
-  for (let i = 0; i < s.length; ) {
-    const c = s[i], l = lower(c), n = lower(s[i + 1]);
+function oldToNew(cells: Cell[]): Cell[] {
+  const out: Cell[] = [];
+  for (let i = 0; i < cells.length; ) {
+    const c = cells[i].c, l = lower(c), n = lower(cells[i + 1]?.c), src = cells[i].src;
     const up = isUpper(c);
-    if (l === 's' && n === 'h') { out += up ? 'Ş' : 'ş'; i += 2; continue; }
-    if (l === 'c' && n === 'h') { out += up ? 'Ç' : 'ç'; i += 2; continue; }
-    if (l === 'o' && s[i + 1] === TURN) { out += up ? 'Ö' : 'ö'; i += 2; continue; }
-    if (l === 'g' && s[i + 1] === TURN) { out += up ? 'Ğ' : 'ğ'; i += 2; continue; }
-    out += c; i++;
+    if (l === 's' && n === 'h') { out.push({ c: up ? 'Ş' : 'ş', src }); i += 2; continue; }
+    if (l === 'c' && n === 'h') { out.push({ c: up ? 'Ç' : 'ç', src }); i += 2; continue; }
+    if (l === 'o' && cells[i + 1]?.c === TURN) { out.push({ c: up ? 'Ö' : 'ö', src }); i += 2; continue; }
+    if (l === 'g' && cells[i + 1]?.c === TURN) { out.push({ c: up ? 'Ğ' : 'ğ', src }); i += 2; continue; }
+    out.push(cells[i]); i++;
   }
   return out;
 }
@@ -142,11 +149,62 @@ export function detectScript(text: string): Script {
   return neu ? 'lat-new' : 'lat';
 }
 
+function convert(text: string, to: Target): Cell[] {
+  let cells = expand(toCells(text));
+  cells = expand(newToOld(cells));                       // янги алифбо ҳарфлари аввал эски лотинга келтирилади
+  if (to === 'cyr') return expand(latToCyr(expand(normalizeApostrophes(cells))));
+  cells = expand(normalizeApostrophes(expand(cyrToLat(cells))));
+  return to === 'lat-new' ? expand(oldToNew(cells)) : cells;
+}
+
+/** Ўгирилмайдиган оралиқлар: қўштирноқ ичидаги соф лотин матн (бренд/сайт номи) ва {{майдон}} белгилари */
+function protectedMask(text: string, quoted: boolean, tags: boolean): boolean[] {
+  const chars = [...text];
+  const mask = chars.map(() => false);
+  if (tags) {
+    const tre = /\{\{[^}]*\}\}/g;
+    let t: RegExpExecArray | null;
+    while ((t = tre.exec(text)) !== null) {
+      const from = [...text.slice(0, t.index)].length, len = [...t[0]].length;
+      for (let k = 0; k < len; k++) mask[from + k] = true;
+    }
+  }
+  if (!quoted) return mask;
+  const re = /[“«"]([^”»"]*)[”»"]/g;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(chars.join(''))) !== null) {
+    const inner = m[1];
+    if (!/[A-Za-z]/.test(inner) || /[Ѐ-ӿ]/.test(inner)) continue;
+    // m.index — UTF-16 бўйича; ҳарф индексига ўтказамиз
+    const startCp = [...chars.join('').slice(0, m.index + 1)].length;
+    const len = [...inner].length;
+    for (let k = 0; k < len; k++) mask[startCp + k] = true;
+  }
+  return mask;
+}
+
+/**
+ * Матнни ўгириб, НАТИЖАНИ ҲАР БИР БОШЛАНҒИЧ ҲАРФ БЎЙИЧА қайтаради (индекс — кодпоинт). Бу DOCX да матн бўлаклари (run)
+ * ўз форматини сақлаб қолиши учун керак: pieces.slice(a, b).join('') — бошланғич матннинг [a, b) қисми натижаси.
+ */
+export function transliteratePieces(text: string, to: Target, opts: Options = {}): string[] {
+  const apos: Apostrophe = opts.apostrophe ?? 'modifier';
+  const chars = [...text];
+  const pieces: string[] = chars.map(() => '');
+  const quoted = to === 'cyr' && !!opts.protectQuotedLatin;
+  const mask = quoted || opts.protectTags ? protectedMask(text, quoted, !!opts.protectTags) : chars.map(() => false);
+  // ҳимояланмаган ораликлар алоҳида ўгирилади (контекст чегарада узилади)
+  for (let i = 0; i < chars.length; ) {
+    if (mask[i]) { pieces[i] = chars[i]; i++; continue; }
+    let j = i;
+    while (j < chars.length && !mask[j]) j++;
+    for (const x of convert(chars.slice(i, j).join(''), to)) pieces[i + x.src] += x.c;
+    i = j;
+  }
+  return pieces.map((p) => formatApostrophes(p, apos));
+}
+
 /** Матнни керакли ёзувга ўгиради. Манба ёзув ҳарф-ҳарф аниқланади (аралаш матн ҳам ишлайди). */
 export function transliterate(text: string, to: Target, opts: Options = {}): string {
-  const apos: Apostrophe = opts.apostrophe ?? 'modifier';
-  if (to === 'cyr') return latToCyr(normalizeApostrophes(newToOld(text)));
-  // лотин: кирилл ва янги ҳарфларни эски лотинга келтирамиз
-  const old = normalizeApostrophes(cyrToLat(newToOld(text)));
-  return formatApostrophes(to === 'lat-new' ? oldToNew(old) : old, apos);
+  return transliteratePieces(text, to, opts).join('');
 }

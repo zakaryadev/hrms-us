@@ -1,7 +1,7 @@
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { randomUUID } from 'crypto';
-import { copyFileSync, existsSync, mkdirSync, readFileSync, renameSync, statSync, unlinkSync, writeFileSync } from 'fs';
+import { existsSync, mkdirSync, readFileSync, unlinkSync, writeFileSync } from 'fs';
 import { basename, join, resolve } from 'path';
 import { workYear, calcLeave } from '../calendar/leave';
 import { UPLOAD_DIR } from '../documents/documents.controller';
@@ -10,11 +10,9 @@ import { CalendarService } from '../calendar/calendar.service';
 import { SettingsService } from '../settings/settings.service';
 import { TimesheetService } from '../timesheet/timesheet.service';
 import ExcelJS from 'exceljs';
-import Docxtemplater from 'docxtemplater';
-import PizZip from 'pizzip';
 import { DocxService } from './docx.service';
 import { docFileName } from './filename';
-import { dayOf, fmtDate, fmtDayMonth, fmtMoney, fmtYear, monthName, toLang } from './format';
+import { baseLang, dayOf, fmtDate, fmtDayMonth, fmtMoney, fmtYear, monthName, toLang } from './format';
 import { DOC_STRINGS } from './strings';
 
 export const DOC_TYPES = ['obyektivka', 'ariza', 'kelishuv', 'buyruq-otkazish', 'buyruq-tatil', 'buyruq-qabul', 'buyruq-bosh', 'buyruq-rag'] as const;
@@ -110,7 +108,7 @@ export class DocumentsService {
 
   private async build(type: DocType, employeeId: string, params: Params, persist: boolean, selfFile?: string) {
     const lang = toLang(params.lang);
-    const L = DOC_STRINGS[lang];
+    const L = DOC_STRINGS[baseLang(lang)];   // матнлар кирилл ёки лотинда; янги алифбо — охирида бутун ҳужжат ўгирилади
     const e = await this.employee(employeeId);
     const s = await this.settings.getAll();
     const cur = DocumentsService.names(e.department);
@@ -458,93 +456,6 @@ export class DocumentsService {
     const p = resolve(GENERATED_DIR, name);
     if (!p.startsWith(GENERATED_DIR) || !existsSync(p)) return;
     try { unlinkSync(p); } catch { /* файл йўқ ёки банд — ёзув барибир ўчирилган */ }
-  }
-
-  /** Word шаблонлар рўйхати: тил, ном, ўлчам, сана, ичидаги {{майдонлар}} ва «юкланган» белгиси. */
-  listTemplates() {
-    const out: { lang: string; name: string; label: string; size: number; modifiedAt: Date; fields: string[]; custom: boolean; hasPrevious: boolean }[] = [];
-    for (const lang of ['lat', 'cyr']) {
-      for (const name of DOC_TYPES) {
-        const full = this.docx.effectivePath(lang, name);
-        if (!existsSync(full)) continue;
-        const st = statSync(full);
-        out.push({ lang, name, label: TEMPLATE_LABEL[name] ?? name, size: st.size, modifiedAt: st.mtime, fields: this.templateFields(readFileSync(full)), custom: full === this.docx.customPath(lang, name), hasPrevious: existsSync(this.prevPath(lang, name)) });
-      }
-    }
-    return out;
-  }
-
-  private templateFields(buf: Buffer): string[] {
-    try {
-      const zip = new PizZip(buf);
-      const set = new Set<string>();
-      for (const file of Object.keys(zip.files).filter((n) => /^word\/(document|header\d*|footer\d*)\.xml$/.test(n))) {
-        const text = zip.file(file)!.asText().replace(/<[^>]+>/g, '');
-        for (const m of text.matchAll(/\{\{\s*([^{}]+?)\s*\}\}/g)) set.add(m[1].replace(/^[#/^]\s*/, ''));
-      }
-      return [...set];
-    } catch { return []; }
-  }
-
-  private checkTemplateName(lang: string, name: string) {
-    if (!['lat', 'cyr'].includes(lang) || !(DOC_TYPES as readonly string[]).includes(name)) throw new NotFoundException('Шаблон топилмади');
-  }
-
-  templateFile(lang: string, name: string, original = false) {
-    this.checkTemplateName(lang, name);
-    const path = original ? this.docx.bundledPath(lang, name) : this.docx.effectivePath(lang, name);
-    if (!existsSync(path)) throw new NotFoundException('Шаблон топилмади');
-    return { path, name: `${name}-${lang}.docx` };
-  }
-
-  /** Янги Word шаблонни юклайди: тузилиши ва {{белгилари}} текширилади, яроқсиз файл рад этилади. */
-  uploadTemplate(lang: string, name: string, buf: Buffer) {
-    this.checkTemplateName(lang, name);
-    if (buf.length < 4 || buf[0] !== 0x50 || buf[1] !== 0x4b) throw new BadRequestException('Файл Word (.docx) эмас');
-    let zip: PizZip;
-    try { zip = new PizZip(buf); } catch { throw new BadRequestException('Файл бузилган ёки Word (.docx) эмас'); }
-    if (!zip.file('word/document.xml')) throw new BadRequestException('Файл Word (.docx) ҳужжати эмас');
-    try {
-      const d = new Docxtemplater(new PizZip(buf), { delimiters: { start: '{{', end: '}}' }, paragraphLoop: true, linebreaks: true, nullGetter: () => '' });
-      d.render({});
-    } catch (e: any) {
-      const errs = e?.properties?.errors as { properties?: { explanation?: string } }[] | undefined;
-      throw new BadRequestException(`Шаблонда хато: ${errs?.map((x) => x.properties?.explanation).filter(Boolean).join('; ') || e?.message}`);
-    }
-    const fields = this.templateFields(buf);
-    const known = new Set<string>();
-    for (const l of ['lat', 'cyr']) for (const n of DOC_TYPES) {
-      const bp = this.docx.bundledPath(l, n);
-      if (n === name && existsSync(bp)) this.templateFields(readFileSync(bp)).forEach((f) => known.add(f));
-    }
-    const unknownFields = fields.filter((f) => !known.has(f));
-    const path = this.docx.customPath(lang, name);
-    mkdirSync(join(path, '..'), { recursive: true });
-    if (existsSync(path)) copyFileSync(path, this.prevPath(lang, name));   // oldingi yuklangan versiya saqlanadi
-    writeFileSync(path, buf);
-    return { lang, name, fields, unknownFields };
-  }
-
-  private prevPath(lang: string, name: string) { return join(join(this.docx.customPath(lang, name), '..'), `${name}.prev.docx`); }
-
-  /** Юкланган шаблонни ўчириб, стандартига қайтаради (олдинги версия сақланиб қолади). */
-  resetTemplate(lang: string, name: string) {
-    this.checkTemplateName(lang, name);
-    const p = this.docx.customPath(lang, name);
-    if (!existsSync(p)) throw new NotFoundException('Бу шаблон стандарт ҳолатда');
-    copyFileSync(p, this.prevPath(lang, name));
-    unlinkSync(p);
-  }
-
-  /** Олдинги юкланган версияни тиклайди (жорийси «олдинги» бўлиб қолади — яна алмаштириш мумкин). */
-  restoreTemplate(lang: string, name: string) {
-    this.checkTemplateName(lang, name);
-    const prev = this.prevPath(lang, name), cur = this.docx.customPath(lang, name);
-    if (!existsSync(prev)) throw new NotFoundException('Олдинги версия йўқ');
-    const keep = existsSync(cur) ? readFileSync(cur) : null;
-    mkdirSync(join(cur, '..'), { recursive: true });
-    renameSync(prev, cur);
-    if (keep) writeFileSync(prev, keep);
   }
 }
 

@@ -1,8 +1,5 @@
-import { BadRequestException, Body, Controller, Delete, Get, HttpCode, NotFoundException, Param, Post, Put, Query, Req, Res, StreamableFile, UploadedFile, UseInterceptors } from '@nestjs/common';
-import { FileInterceptor } from '@nestjs/platform-express';
+import { BadRequestException, Body, Controller, Delete, Get, HttpCode, NotFoundException, Param, Post, Put, Query, Req, Res, StreamableFile } from '@nestjs/common';
 import { IsObject, IsOptional, IsUUID } from 'class-validator';
-import { memoryStorage } from 'multer';
-import { Roles } from '../auth/decorators';
 import type { Response } from 'express';
 import { existsSync } from 'fs';
 import { calcLeave, workYear } from '../calendar/leave';
@@ -72,42 +69,6 @@ export class DocumentsGenController {
   @Delete('orders/:id')
   @HttpCode(204)
   async removeOrder(@Param('id') id: string, @Req() req: any) { req.auditSummary = await this.svc.removeOrder(id); }
-
-  @Get('documents/templates')
-  templates() { return this.svc.listTemplates(); }
-
-  @Get('documents/templates/:lang/:name/download')
-  templateDownload(@Param('lang') lang: string, @Param('name') name: string, @Query('source') source: string | undefined, @Res() res: Response) {
-    const f = this.svc.templateFile(lang, name, source === 'default');
-    return res.download(f.path, f.name);
-  }
-
-  @Roles('superadmin')
-  @Put('documents/templates/:lang/:name')
-  @UseInterceptors(FileInterceptor('file', { storage: memoryStorage(), limits: { fileSize: 5 * 1024 * 1024, files: 1 } }))
-  uploadTemplate(@Param('lang') lang: string, @Param('name') name: string, @UploadedFile() file: { buffer: Buffer; originalname: string } | undefined, @Req() req: any) {
-    if (!file) throw new BadRequestException('Файл танланмаган');
-    if (!/\.docx$/i.test(file.originalname)) throw new BadRequestException('Фақат .docx файл қабул қилинади');
-    const r = this.svc.uploadTemplate(lang, name, file.buffer);
-    req.auditSummary = `Шаблон юкланди: ${lang}/${name}`;
-    return r;
-  }
-
-  @Roles('superadmin')
-  @Delete('documents/templates/:lang/:name')
-  @HttpCode(204)
-  resetTemplate(@Param('lang') lang: string, @Param('name') name: string, @Req() req: any) {
-    this.svc.resetTemplate(lang, name);
-    req.auditSummary = `Шаблон стандартга қайтарилди: ${lang}/${name}`;
-  }
-
-  @Roles('superadmin')
-  @Post('documents/templates/:lang/:name/restore')
-  @HttpCode(204)
-  restoreTemplate(@Param('lang') lang: string, @Param('name') name: string, @Req() req: any) {
-    this.svc.restoreTemplate(lang, name);
-    req.auditSummary = `Шаблоннинг олдинги версияси тикланди: ${lang}/${name}`;
-  }
 
   @Put('documents/generated/:id')
   async updateGenerated(@Param('id') id: string, @Body() dto: UpdateDto, @Req() req: any) {

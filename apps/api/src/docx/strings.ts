@@ -1,4 +1,4 @@
-import { Lang } from './format';
+import { Base } from './format';
 
 /** Hujjatlarga avtomatik qo'yiladigan qat'iy matnlar (shablonlardan tashqari). */
 export const DOC_STRINGS = {
@@ -34,4 +34,4 @@ export const DOC_STRINGS = {
     awardMoney: (m: string) => `${m} сўм миқдорида пул мукофоти берилсин`,
     basisLeave: (fish: string) => `${fish}нинг аризаси ва ЎзР Меҳнат кодексининг 216, 217, 221-моддалари`,
   },
-} satisfies Record<Lang, unknown>;
+} satisfies Record<Base, unknown>;

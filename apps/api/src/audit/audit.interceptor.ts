@@ -16,7 +16,7 @@ export class AuditInterceptor implements NestInterceptor {
     if (READ.has(req.method)) return next.handle();
     const res = ctx.switchToHttp().getResponse();
     const path: string = String(req.originalUrl ?? req.url).split('?')[0].replace(/^\/api/, '');
-    if (path === '/translit') return next.handle();   // ўзгартирмайди, фақат ҳисоблайди
+    if (path === '/translit' || path.startsWith('/translit/')) return next.handle();   // ўзгартирмайди, фақат ҳисоблайди
     const isLogin = path === '/auth/login';
 
     const write = (status: number, failed: boolean) => {
