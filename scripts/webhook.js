@@ -34,7 +34,9 @@ function verifySignature(payload, signature) {
   const hmac = crypto.createHmac('sha256', SECRET);
   hmac.update(payload);
   const expected = `sha256=${hmac.digest('hex')}`;
-  return crypto.timingSafeEqual(Buffer.from(expected), Buffer.from(signature));
+  // uzunliklar teng bo'lmasa timingSafeEqual xato tashlab, butun serverni yiqitadi — avval uzunlikni solishtiramiz
+  const a = Buffer.from(expected), b = Buffer.from(String(signature));
+  return a.length === b.length && crypto.timingSafeEqual(a, b);
 }
 
 // ── Fon deploy jarayoni ────────────────────────────────────────────────────
@@ -108,8 +110,15 @@ const server = http.createServer((req, res) => {
       return;
     }
 
+    // GitHub «Content type» application/json yoki (standart) application/x-www-form-urlencoded bo'lishi mumkin:
+    // ikkinchisida JSON `payload=` maydoni ichida keladi. Imzo xom matn bo'yicha allaqachon tekshirilgan.
+    let raw = body;
+    if (String(req.headers['content-type'] || '').includes('application/x-www-form-urlencoded')) {
+      raw = new URLSearchParams(body).get('payload') || '';
+    }
     let payload;
-    try { payload = JSON.parse(body); } catch (_) {
+    try { payload = JSON.parse(raw); } catch (_) {
+      log(`⛔ Webhook matni JSON emas (content-type: ${req.headers['content-type'] || '?'}).`);
       res.writeHead(400);
       res.end('Bad JSON');
       return;
