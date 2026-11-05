@@ -5,7 +5,7 @@ import {
 import { FileInterceptor } from '@nestjs/platform-express';
 import { randomUUID } from 'crypto';
 import type { Response } from 'express';
-import { existsSync, mkdirSync, unlink, writeFileSync } from 'fs';
+import { existsSync, mkdirSync, unlinkSync, writeFileSync } from 'fs';
 import { memoryStorage } from 'multer';
 import { join, resolve } from 'path';
 import { PrismaService } from '../prisma/prisma.service';
@@ -27,7 +27,7 @@ function store(file: Express.Multer.File | undefined, allowed: DetectedType[], m
   writeFileSync(join(UPLOAD_DIR, name), file.buffer);
   return name;
 }
-const removeFile = (name?: string | null) => { if (name && SAFE_NAME.test(name)) unlink(join(UPLOAD_DIR, name), () => undefined); };
+const removeFile = (name?: string | null) => { if (name && SAFE_NAME.test(name)) { try { unlinkSync(join(UPLOAD_DIR, name)); } catch { /* файл аллақачон йўқ */ } } };
 
 @Controller()
 export class DocumentsController {
