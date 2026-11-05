@@ -135,6 +135,31 @@ describe('Yangi buyruqlar, tahrirlash, raqamlash, shablon yuklash, eksport, foyd
     await a.delete('/api/documents/templates/lat/buyruq-rag').expect(404);
     const r2 = await gen('buyruq-rag', { orderDate: '2026-07-02', reason: 'x', basis: 'y', rewardText: 'z' }).expect(201);
     expect(text(await fileOf(r2.body.id))).not.toContain('MAXSUS');
+
+    // oldingi yuklangan versiyani tiklash
+    expect((await a.get('/api/documents/templates').expect(200)).body.find((t: any) => t.lang === 'lat' && t.name === 'buyruq-rag').hasPrevious).toBe(true);
+    await acc.post('/api/documents/templates/lat/buyruq-rag/restore').expect(403);
+    await a.post('/api/documents/templates/lat/buyruq-rag/restore').expect(204);
+    const r3 = await gen('buyruq-rag', { orderDate: '2026-07-03', reason: 'x', basis: 'y', rewardText: 'z' }).expect(201);
+    expect(text(await fileOf(r3.body.id))).toContain('MAXSUS-R-');
+    await a.delete('/api/documents/templates/lat/buyruq-rag').expect(204);   // keyingi testlarga ta'sir qilmasin
+    await a.post('/api/documents/templates/lat/nomalum/restore').expect(404);
+  });
+
+  it('bazada buyruq raqami yil ichida noyob (unique indeks), eski jurnal yozuvlari tozalanadi', async () => {
+    const { PrismaService } = await import('../prisma/prisma.service');
+    const { AuditService } = await import('../audit/audit.service');
+    const prisma = app.get(PrismaService);
+    const idx = await prisma.$queryRaw<{ n: number }[]>`SELECT 1 AS n FROM pg_indexes WHERE indexname = 'orders_number_year_key'`;
+    expect(idx.length).toBe(1);
+    await expect(prisma.order.create({ data: { orderNumber: 'Q-2', orderDate: new Date('2026-12-01'), orderType: 'ishga_qabul', employeeId: empId } })).rejects.toThrow();
+    await prisma.order.create({ data: { orderNumber: 'Q-2', orderDate: new Date('2030-12-01'), orderType: 'ishga_qabul', employeeId: empId } });   // boshqa yil — mumkin
+
+    await prisma.auditLog.create({ data: { createdAt: new Date('2020-01-01'), action: 'delete', entity: 'x', method: 'DELETE', path: '/x', status: 200 } });
+    process.env.AUDIT_RETENTION_DAYS = '365';
+    expect(await app.get(AuditService).purgeOld()).toBeGreaterThanOrEqual(1);
+    expect(await prisma.auditLog.count({ where: { entity: 'x' } })).toBe(0);
+    expect(await prisma.auditLog.count()).toBeGreaterThan(0);
   });
 
   it('eksport: xodimlar va buyruqlar Excel fayl sifatida (bugalter ham ko\'ra oladi)', async () => {

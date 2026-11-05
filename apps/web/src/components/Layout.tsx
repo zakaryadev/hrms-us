@@ -6,7 +6,7 @@ import {
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
-import { useAuth } from '../auth/AuthContext';
+import { useAuth, useCan } from '../auth/AuthContext';
 import { api, ROLE_LABEL } from '../lib/api';
 import ChangePassword from './ChangePassword';
 import GlobalSearch from './GlobalSearch';
@@ -61,6 +61,7 @@ function LogoMark({ className }: { className?: string }) {
 function SidebarNav({ collapsed, onNavigate }: { collapsed: boolean; onNavigate?: () => void }) {
   const { user } = useAuth();
   const isAdmin = user?.role === 'superadmin';
+  const can = useCan();
   const stats = useQuery({ queryKey: ['stats'], queryFn: () => api<any>('/dashboard/stats'), staleTime: 60_000 });
   const [closed, setClosed] = useState<Record<string, boolean>>(() => store.get('nav-closed', {}));
   const toggle = (id: string) => setClosed((c) => { const n = { ...c, [id]: !c[id] }; store.set('nav-closed', n); return n; });
@@ -69,7 +70,7 @@ function SidebarNav({ collapsed, onNavigate }: { collapsed: boolean; onNavigate?
   return (
     <nav className="flex-1 space-y-3 overflow-y-auto px-3 py-4" aria-label="Асосий меню">
       {GROUPS.map((g) => {
-        const items = g.items.filter((i) => (i.to !== '/users' && i.to !== '/audit') || isAdmin);
+        const items = g.items.filter((i) => ((i.to !== '/users' && i.to !== '/audit') || isAdmin) && (i.to !== '/import' || can.write));
         if (!items.length) return null;
         // Фаол саҳифа ётган гуруҳ ҳеч қачон бекилмайди
         const hasActive = items.some((i) => (i.end ? location.pathname === i.to : location.pathname.startsWith(i.to)));
@@ -125,6 +126,7 @@ function UserBlock({ collapsed, onLogout }: { collapsed: boolean; onLogout: () =
 
 export default function Layout() {
   const { user, logout } = useAuth();
+  const can = useCan();
   const [pwd, setPwd] = useState(false);
   const [drawer, setDrawer] = useState(false);
   const [collapsed, setCollapsed] = useState<boolean>(() => store.get('sidebar-collapsed', false));
@@ -165,7 +167,7 @@ export default function Layout() {
           <button type="button" aria-label="Менюни очиш" onClick={() => setDrawer(true)} className="rounded-md p-2 text-slate-600 hover:bg-slate-100 lg:hidden"><Menu size={20} /></button>
           <GlobalSearch />
           <div className="ml-auto flex items-center gap-3">
-            <Link to="/employees?new=1" className={cn(buttonStyles({ variant: 'primary', size: 'sm' }), 'h-8')}><Plus size={15} /><span className="hidden sm:inline">Янги ходим</span><span className="sr-only sm:hidden">Янги ходим</span></Link>
+            {can.write && <Link to="/employees?new=1" className={cn(buttonStyles({ variant: 'primary', size: 'sm' }), 'h-8')}><Plus size={15} /><span className="hidden sm:inline">Янги ходим</span><span className="sr-only sm:hidden">Янги ходим</span></Link>}
             <span className="hidden h-6 w-px bg-slate-200 sm:block" aria-hidden />
             <Popover.Root>
               <Popover.Trigger asChild>

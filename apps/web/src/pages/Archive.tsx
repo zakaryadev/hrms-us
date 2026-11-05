@@ -4,8 +4,10 @@ import { Link } from 'react-router-dom';
 import { PageHeader } from '../components/ui';
 import { api, fmtDate, fullName } from '../lib/api';
 import { Button } from '../components/kit';
+import { useCan } from '../auth/AuthContext';
 
 export default function Archive() {
+  const can = useCan();
   const qc = useQueryClient();
   const q = useQuery({ queryKey: ['employees', 'archived'], queryFn: () => api<any>('/employees?archived=true&pageSize=200') });
   const restore = useMutation({
@@ -24,7 +26,7 @@ export default function Archive() {
                 <td className="td font-mono">{e.tabNumber}</td>
                 <td className="td"><Link className="font-medium text-slate-950 hover:underline" to={`/employees/${e.id}`}>{fullName(e)}</Link></td>
                 <td className="td">{e.position.title}</td><td className="td text-slate-500">{e.department.name}</td><td className="td">{fmtDate(e.hireDate)}</td>
-                <td className="td text-right"><Button variant="secondary" size="sm"  onClick={() => restore.mutate(e.id)}><RotateCcw size={14} /> Қайтариш</Button></td>
+                <td className="td text-right">{can.write && <Button variant="secondary" size="sm"  onClick={() => restore.mutate(e.id)}><RotateCcw size={14} /> Қайтариш</Button>}</td>
               </tr>
             ))}
             {q.data?.items.length === 0 && <tr><td colSpan={6} className="td py-10 text-center text-slate-500">Архив бўш</td></tr>}

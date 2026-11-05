@@ -1,7 +1,7 @@
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { randomUUID } from 'crypto';
-import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, unlinkSync, writeFileSync } from 'fs';
+import { copyFileSync, existsSync, mkdirSync, readFileSync, renameSync, statSync, unlinkSync, writeFileSync } from 'fs';
 import { join, resolve } from 'path';
 import { workYear, calcLeave } from '../calendar/leave';
 import { PrismaService } from '../prisma/prisma.service';
@@ -255,17 +255,18 @@ export class DocumentsService {
         throw new BadRequestException(`Номаълум ҳужжат тури: ${type}`);
     }
 
-    return { lang, data, number, order, params, e };
+    return { lang, data, number, order, params, e, fish };
   }
 
   async generate(type: DocType, employeeId: string, params: Params = {}, persist = true) {
     return this.locked(async () => {
-    const { lang, data, number, order, params: p, e } = await this.build(type, employeeId, params, persist);
+    const { lang, data, number, order, params: p, e, fish } = await this.build(type, employeeId, params, persist);
+    const who = `${TEMPLATE_LABEL[type] ?? type}${number ? ' № ' + number : ''}, ${fish} (${e.tabNumber})`;
     params = p;
 
     const buffer = this.docx.render(lang, type, data);
     if (!persist) {
-      return { buffer, fileName: `${type}-${e.tabNumber}${number ? '-' + number.replace(/[^\w-]/g, '_') : ''}.docx` };
+      return { buffer, summary: `Ҳужжат юклаб олинди (сақланмади): ${who}`, fileName: `${type}-${e.tabNumber}${number ? '-' + number.replace(/[^\w-]/g, '_') : ''}.docx` };
     }
     mkdirSync(GENERATED_DIR, { recursive: true });
     const fileName = `${randomUUID()}.docx`;
@@ -294,7 +295,7 @@ export class DocumentsService {
     if (type === 'buyruq-tatil' && params.calculated) {
       await this.timesheet.applyLeave(employeeId, params.startDate, params.calculated.endDate);
     }
-    return { id: doc.id, type, number, downloadUrl: `/api/documents/generated/${doc.id}/download` };
+    return { id: doc.id, type, number, summary: `Ҳужжат яратилди: ${who}`, downloadUrl: `/api/documents/generated/${doc.id}/download` };
     });
   }
 
@@ -328,7 +329,7 @@ export class DocumentsService {
         await this.releaseLeave(d.employeeId, old);
         if (params.calculated) await this.timesheet.applyLeave(d.employeeId, params.startDate, params.calculated.endDate);
       }
-      return { id, type, number: built.number, downloadUrl: `/api/documents/generated/${id}/download` };
+      return { id, type, number: built.number, summary: `Ҳужжат таҳрирланди: ${TEMPLATE_LABEL[type] ?? type}${built.number ? ' № ' + built.number : ''}, ${built.fish} (${built.e.tabNumber})`, downloadUrl: `/api/documents/generated/${id}/download` };
     });
   }
 
@@ -427,13 +428,13 @@ export class DocumentsService {
 
   /** Word шаблонлар рўйхати: тил, ном, ўлчам, сана, ичидаги {{майдонлар}} ва «юкланган» белгиси. */
   listTemplates() {
-    const out: { lang: string; name: string; label: string; size: number; modifiedAt: Date; fields: string[]; custom: boolean }[] = [];
+    const out: { lang: string; name: string; label: string; size: number; modifiedAt: Date; fields: string[]; custom: boolean; hasPrevious: boolean }[] = [];
     for (const lang of ['lat', 'cyr']) {
       for (const name of DOC_TYPES) {
         const full = this.docx.effectivePath(lang, name);
         if (!existsSync(full)) continue;
         const st = statSync(full);
-        out.push({ lang, name, label: TEMPLATE_LABEL[name] ?? name, size: st.size, modifiedAt: st.mtime, fields: this.templateFields(readFileSync(full)), custom: full === this.docx.customPath(lang, name) });
+        out.push({ lang, name, label: TEMPLATE_LABEL[name] ?? name, size: st.size, modifiedAt: st.mtime, fields: this.templateFields(readFileSync(full)), custom: full === this.docx.customPath(lang, name), hasPrevious: existsSync(this.prevPath(lang, name)) });
       }
     }
     return out;
@@ -485,16 +486,31 @@ export class DocumentsService {
     const unknownFields = fields.filter((f) => !known.has(f));
     const path = this.docx.customPath(lang, name);
     mkdirSync(join(path, '..'), { recursive: true });
+    if (existsSync(path)) copyFileSync(path, this.prevPath(lang, name));   // oldingi yuklangan versiya saqlanadi
     writeFileSync(path, buf);
     return { lang, name, fields, unknownFields };
   }
 
-  /** Юкланган шаблонни ўчириб, стандартига қайтаради. */
+  private prevPath(lang: string, name: string) { return join(join(this.docx.customPath(lang, name), '..'), `${name}.prev.docx`); }
+
+  /** Юкланган шаблонни ўчириб, стандартига қайтаради (олдинги версия сақланиб қолади). */
   resetTemplate(lang: string, name: string) {
     this.checkTemplateName(lang, name);
     const p = this.docx.customPath(lang, name);
     if (!existsSync(p)) throw new NotFoundException('Бу шаблон стандарт ҳолатда');
+    copyFileSync(p, this.prevPath(lang, name));
     unlinkSync(p);
+  }
+
+  /** Олдинги юкланган версияни тиклайди (жорийси «олдинги» бўлиб қолади — яна алмаштириш мумкин). */
+  restoreTemplate(lang: string, name: string) {
+    this.checkTemplateName(lang, name);
+    const prev = this.prevPath(lang, name), cur = this.docx.customPath(lang, name);
+    if (!existsSync(prev)) throw new NotFoundException('Олдинги версия йўқ');
+    const keep = existsSync(cur) ? readFileSync(cur) : null;
+    mkdirSync(join(cur, '..'), { recursive: true });
+    renameSync(prev, cur);
+    if (keep) writeFileSync(prev, keep);
   }
 }
 

@@ -7,17 +7,19 @@ import { DocModal } from '../components/GenerateDocs';
 import { PageHeader } from '../components/ui';
 import { api, fmtDate, fullName } from '../lib/api';
 import { buttonStyles, cn } from '../components/kit';
+import { useCan } from '../auth/AuthContext';
 
 export default function Certificates() {
+  const can = useCan();
   const [emp, setEmp] = useState<any>(null);
   const q = useQuery({ queryKey: ['generated', 'obyektivka'], queryFn: () => api<any[]>('/documents/generated?type=obyektivka') });
   return (
     <div className="space-y-4">
       <PageHeader title="Маълумотнома" hint="Ходимлар учун яратилган Т-2 маълумотномалар" />
-      <div className="card flex flex-wrap items-center gap-3 p-4">
+      {can.write && <div className="card flex flex-wrap items-center gap-3 p-4">
         <span className="text-sm text-slate-600">Янги маълумотнома (Т-2):</span>
         <EmployeePicker onPick={setEmp} />
-      </div>
+      </div>}
       <div className="card overflow-x-auto">
         <table className="w-full">
           <thead className="border-b border-slate-200"><tr><th className="th">Сана</th><th className="th">Ходим</th><th className="th">Табель</th><th /></tr></thead>

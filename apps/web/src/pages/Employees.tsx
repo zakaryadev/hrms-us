@@ -6,8 +6,10 @@ import EmployeeForm from '../components/EmployeeForm';
 import { PageHeader, StatusBadge } from '../components/ui';
 import { api, EMP_TYPE_LABEL, fullName, photoSrc } from '../lib/api';
 import { Avatar, Button, Input, Select, buttonStyles, cn } from '../components/kit';
+import { useCan } from '../auth/AuthContext';
 
 export default function Employees() {
+  const can = useCan();
   const [q, setQ] = useState('');
   const [departmentId, setDepartmentId] = useState('');
   const [page, setPage] = useState(1);
@@ -29,7 +31,7 @@ export default function Employees() {
     <div className="space-y-4">
       <PageHeader title="Ходимлар" hint="Ишлаётган ходимлар рўйхати: қидирув, бўлим бўйича фильтр, янги ходим қўшиш">
           <a href={`/api/employees/export?${new URLSearchParams({ archived: 'false', ...(q && { q }), ...(departmentId && { departmentId }) })}`} className={cn(buttonStyles({ variant: 'secondary' }))}><Download size={16} /> Excel’га чиқариш</a>
-          <Link to="/import" className={cn(buttonStyles({ variant: 'secondary' }))}><Upload size={16} /> Excel’дан юклаш</Link>
+          {can.write && <Link to="/import" className={cn(buttonStyles({ variant: 'secondary' }))}><Upload size={16} /> Excel’дан юклаш</Link>}
         </PageHeader>
       <div className="card flex flex-wrap items-center gap-3 p-3">
         <div className="relative min-w-[220px] flex-1">
@@ -69,7 +71,7 @@ export default function Employees() {
           <Button variant="secondary"  disabled={page >= totalPages} onClick={() => setPage(page + 1)}>Кейинги</Button>
         </div>
       </div>
-      {creating && <EmployeeForm onClose={() => setCreating(false)} />}
+      {creating && can.write && <EmployeeForm onClose={() => setCreating(false)} />}
     </div>
   );
 }

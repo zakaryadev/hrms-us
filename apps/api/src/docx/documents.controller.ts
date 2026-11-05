@@ -21,11 +21,11 @@ export class DocumentsGenController {
 
   @Post('documents/generate/:type')
   async generate(@Param('type') type: string, @Body() dto: GenerateDto, @Res({ passthrough: true }) res: Response, @Req() req: any) {
-    req.auditSummary = `Ҳужжат яратилди: ${type}, ходим ${dto.employeeId}`;
     if (!DOC_TYPES.includes(type as DocType)) throw new NotFoundException(`Номаълум ҳужжат тури: ${type}`);
     // save:false — hujjat bazaga yozilmaydi, faylning o'zi qaytariladi
     const persist = dto.params?.save !== false;
     const r = await this.svc.generate(type as DocType, dto.employeeId, dto.params, persist);
+    req.auditSummary = r.summary;
     if ('buffer' in r && r.buffer && 'fileName' in r) {
       res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
       res.setHeader('Content-Disposition', `attachment; filename="${r.fileName}"`);
@@ -101,10 +101,19 @@ export class DocumentsGenController {
     req.auditSummary = `Шаблон стандартга қайтарилди: ${lang}/${name}`;
   }
 
+  @Roles('superadmin')
+  @Post('documents/templates/:lang/:name/restore')
+  @HttpCode(204)
+  restoreTemplate(@Param('lang') lang: string, @Param('name') name: string, @Req() req: any) {
+    this.svc.restoreTemplate(lang, name);
+    req.auditSummary = `Шаблоннинг олдинги версияси тикланди: ${lang}/${name}`;
+  }
+
   @Put('documents/generated/:id')
   async updateGenerated(@Param('id') id: string, @Body() dto: UpdateDto, @Req() req: any) {
-    req.auditSummary = `Ҳужжат таҳрирланди: ${id}`;
-    return this.svc.update(id, dto.params ?? {});
+    const r = await this.svc.update(id, dto.params ?? {});
+    req.auditSummary = r.summary;
+    return r;
   }
 
   @Get('leave/calc')

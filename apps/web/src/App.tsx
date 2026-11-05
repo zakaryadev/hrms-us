@@ -35,7 +35,7 @@ export default function App() {
           <Route path="users" element={<RequireAuth roles={['superadmin']}><Users /></RequireAuth>} />
           <Route index element={<Suspense fallback={<Loading rows={6} />}><Dashboard /></Suspense>} />
           <Route path="employees" element={<Employees />} />
-          <Route path="import" element={<ImportPage />} />
+          <Route path="import" element={<RequireAuth roles={['superadmin', 'kadrlar']}><ImportPage /></RequireAuth>} />
           <Route path="archive" element={<Archive />} />
           <Route path="orders" element={<Orders />} />
           <Route path="audit" element={<RequireAuth roles={['superadmin']}><AuditLog /></RequireAuth>} />

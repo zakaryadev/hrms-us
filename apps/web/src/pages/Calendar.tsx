@@ -4,6 +4,7 @@ import { PeriodSwitch } from '../components/PeriodSwitch';
 import { ErrorNote, Loading, PageHeader } from '../components/ui';
 import { api, fmtDate } from '../lib/api';
 import { Button, Input } from '../components/kit';
+import { useCan } from '../auth/AuthContext';
 
 const MONTHS = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
 const WD = ['Ду', 'Се', 'Чо', 'Па', 'Жу', 'Ша', 'Як'];
@@ -21,6 +22,7 @@ const KINDS: { kind: 'holiday' | 'dayoff' | 'workday'; label: string; hint: stri
 ];
 
 export default function Calendar() {
+  const can = useCan();
   const qc = useQueryClient();
   const [year, setYear] = useState(new Date().getFullYear());
   const [sel, setSel] = useState<string | null>(null);
@@ -75,8 +77,9 @@ export default function Calendar() {
 
           <aside className="space-y-4">
             <div className="card sticky top-4 space-y-3 p-4">
-              {!cur && <p className="text-sm text-slate-500">Кунни танланг — унинг ҳолатини ўзгартириш мумкин.</p>}
-              {cur && (
+              {!cur && <p className="text-sm text-slate-500">{can.write ? 'Кунни танланг — унинг ҳолатини ўзгартириш мумкин.' : 'Кунни танланг — унинг ҳолати кўрсатилади.'}</p>}
+              {cur && !can.write && <div><p className="text-lg font-semibold">{fmtDate(cur.date)}</p><p className="text-sm text-slate-500">{STATUS[cur.status].label}{cur.note ? ` — ${cur.note}` : ''}</p></div>}
+              {cur && can.write && (
                 <>
                   <div>
                     <p className="text-lg font-semibold">{fmtDate(cur.date)}</p>

@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 
 export interface AuditEntry {
@@ -8,9 +8,28 @@ export interface AuditEntry {
 }
 
 @Injectable()
-export class AuditService {
+export class AuditService implements OnModuleInit, OnModuleDestroy {
   private log = new Logger('Audit');
+  private timer?: NodeJS.Timeout;
   constructor(private prisma: PrismaService) {}
+
+  /** Эски журнал ёзувларини тозалаш: AUDIT_RETENTION_DAYS (одатда 730 кун ≈ 2 йил; 0 — тозаламаслик). */
+  async purgeOld() {
+    const days = Number(process.env.AUDIT_RETENTION_DAYS ?? 730);
+    if (!days || days < 0) return 0;
+    try {
+      const { count } = await this.prisma.auditLog.deleteMany({ where: { createdAt: { lt: new Date(Date.now() - days * 86_400_000) } } });
+      if (count) this.log.log(`Журналдан ${count} та эски ёзув ўчирилди`);
+      return count;
+    } catch (err) { this.log.error(`Журнални тозалаб бўлмади: ${(err as Error).message}`); return 0; }
+  }
+  onModuleInit() {
+    if (process.env.NODE_ENV === 'test' || process.env.JEST_WORKER_ID) return;
+    void this.purgeOld();
+    this.timer = setInterval(() => void this.purgeOld(), 24 * 3600_000);
+    this.timer.unref();
+  }
+  onModuleDestroy() { if (this.timer) clearInterval(this.timer); }
 
   /** Журнал ёзуви асосий амални ҳеч қачон бузмаслиги керак. */
   async record(e: AuditEntry) {

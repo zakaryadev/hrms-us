@@ -4,8 +4,10 @@ import { useState } from 'react';
 import { Empty, ErrorNote, Field, Modal, PageHeader } from '../components/ui';
 import { api, fmtMoney } from '../lib/api';
 import { Button, Input, Select } from '../components/kit';
+import { useCan } from '../auth/AuthContext';
 
 export default function Structure() {
+  const can = useCan();
   const qc = useQueryClient();
   const [selected, setSelected] = useState<string>('');
   const [editDept, setEditDept] = useState<any | null>(null);
@@ -49,20 +51,20 @@ export default function Structure() {
                   <span className="block truncate">{d.name}</span>
                   {d.parentId && <span className={`block truncate text-[11px] text-slate-500`}>↳ {parentName(d.parentId)}</span>}
                 </button>
-                <button aria-label="Таҳрирлаш" className="opacity-60 hover:opacity-100" onClick={() => setEditDept(d)}><Pencil size={15} /></button>
-                <button aria-label="Ўчириш" className="opacity-60 hover:opacity-100" onClick={() => confirm(`«${d.name}» ўчирилсинми?`) && delDept.mutate(d.id)}><Trash2 size={15} /></button>
+                {can.write && <><button aria-label="Таҳрирлаш" className="opacity-60 hover:opacity-100" onClick={() => setEditDept(d)}><Pencil size={15} /></button>
+                <button aria-label="Ўчириш" className="opacity-60 hover:opacity-100" onClick={() => confirm(`«${d.name}» ўчирилсинми?`) && delDept.mutate(d.id)}><Trash2 size={15} /></button></>}
               </li>
             ))}
             {departments.data?.length === 0 && <li><Empty>Бўлимлар йўқ</Empty></li>}
           </ul>
-          <form className="space-y-3 border-t pt-4" onSubmit={(e) => { e.preventDefault(); addDept.mutate(); }}>
+          {can.write && <form className="space-y-3 border-t pt-4" onSubmit={(e) => { e.preventDefault(); addDept.mutate(); }}>
             <Field label="Янги бўлим номи *"><Input required value={dn.name} onChange={(e) => setDn({ ...dn, name: e.target.value })} /></Field>
             <div className="grid grid-cols-2 gap-3">
               <Field label="Код"><Input value={dn.code} onChange={(e) => setDn({ ...dn, code: e.target.value })} /></Field>
               <Field label="Юқори бўлим"><Select value={dn.parentId} onChange={(v) => setDn({ ...dn, parentId: v })}><option value="">—</option>{departments.data?.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}</Select></Field>
             </div>
             <Button variant="primary" className="w-full justify-center"  disabled={addDept.isPending}><Plus size={16} /> Бўлим қўшиш</Button>
-          </form>
+          </form>}
         </div>
 
         <div className="card p-4">
@@ -74,15 +76,15 @@ export default function Structure() {
                   <td className="td">{p.rankOrder}</td><td className="td font-medium">{p.title}</td><td className="td">{fmtMoney(p.baseSalary)}</td>
                   <td className={`td ${p.occupied > p.staffCount ? 'font-semibold text-red-600' : ''}`} title={p.occupied > p.staffCount ? 'Ходимлар штатдан кўп' : undefined}>{p.occupied} / {p.staffCount}</td>
                   <td className="td whitespace-nowrap text-right">
-                    <button aria-label="Таҳрирлаш" className="mr-3 text-slate-400 hover:text-brand" onClick={() => setEditPos(p)}><Pencil size={16} /></button>
-                    <button aria-label="Ўчириш" className="text-slate-400 hover:text-red-600" onClick={() => confirm(`«${p.title}» ўчирилсинми?`) && delPos.mutate(p.id)}><Trash2 size={16} /></button>
+                    {can.write && <><button aria-label="Таҳрирлаш" className="mr-3 text-slate-400 hover:text-brand" onClick={() => setEditPos(p)}><Pencil size={16} /></button>
+                    <button aria-label="Ўчириш" className="text-slate-400 hover:text-red-600" onClick={() => confirm(`«${p.title}» ўчирилсинми?`) && delPos.mutate(p.id)}><Trash2 size={16} /></button></>}
                   </td>
                 </tr>
               ))}
               {positions.data?.length === 0 && <tr><td colSpan={5}><Empty>Бу бўлимда лавозим йўқ</Empty></td></tr>}
             </tbody>
           </table></div>
-          {current && (
+          {current && can.write && (
             <form className="grid items-end gap-3 border-t pt-4 sm:grid-cols-5" onSubmit={(e) => { e.preventDefault(); addPos.mutate(); }}>
               <div className="sm:col-span-2"><Field label="Янги лавозим *"><Input required value={pn.title} onChange={(e) => setPn({ ...pn, title: e.target.value })} /></Field></div>
               <Field label="Тартиб"><Input type="number" value={pn.rankOrder} onChange={(e) => setPn({ ...pn, rankOrder: e.target.value })} /></Field>

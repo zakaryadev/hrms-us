@@ -32,14 +32,14 @@ export default function GenerateDocs({ employee }: { employee: any }) {
   const history = useQuery({ queryKey: ['generated', employee.id], queryFn: () => api<any[]>(`/employees/${employee.id}/generated`) });
   return (
     <div className="space-y-4">
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+      {canEdit && <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {DOCS.map((d) => (
           <button key={d.type} onClick={() => setOpen(d.type)} className="card flex items-start gap-3 p-4 text-left transition-colors hover:border-brand hover:bg-brand-soft/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40">
             <FilePlus2 className="mt-0.5 shrink-0 text-brand" size={20} />
             <span><span className="block text-sm font-semibold">{d.title}</span><span className="text-xs text-slate-500">{d.desc}</span></span>
           </button>
         ))}
-      </div>
+      </div>}
       <div className="mt-8">
         <h3 className="eyebrow mb-2">Яратилган ҳужжатлар</h3>
         <ul className="divide-y">
@@ -117,7 +117,7 @@ function ModalFooter({ save, setSave, pending, error, onClose, editing }: {
       <div className="flex flex-wrap items-center justify-between gap-3">
         {editing ? <span className="text-xs text-slate-500">Ҳужжат файли ва рақами шу ёзув устига янгиланади.</span>
           : <Checkbox checked={save} onChange={setSave}>Ҳужжатни сақлаш ҳамда юклаб олинган ҳужжатлар рўйхатига қўшиш</Checkbox>}
-        <div className="flex gap-2">
+        <div className="ml-auto flex gap-2">
           <Button variant="secondary" type="button"  onClick={onClose}>Бекор қилиш</Button>
           <Button variant="primary" disabled={pending}>{editing ? <><Save size={16} /> Сақлаш</> : <><Plus size={16} /> Докх шаклида олиш</>}</Button>
         </div>

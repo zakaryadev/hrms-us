@@ -90,6 +90,8 @@ describe('Rollar, xodimni o\'chirish, hujjat o\'chirish va audit jurnali (e2e)',
     const del = j.items.find((x: any) => x.action === 'delete' && x.entity === 'employees');
     expect(del.userLogin).toBe('admin');
     expect(del.summary).toMatch(/Ходим бутунлай ўчирилди/);
+    const created = j.items.find((x: any) => x.entity === 'documents' && x.action === 'create');
+    expect(created.summary).toMatch(/Ҳужжат яратилди: Меҳнат таътили буйруғи № T-\d+, Вали1 /);
     const docDel = j.items.find((x: any) => x.entity === 'documents' && x.action === 'delete');
     expect(docDel.userLogin).toBe('hr');
     expect(docDel.summary).toMatch(/Ҳужжат ўчирилди/);

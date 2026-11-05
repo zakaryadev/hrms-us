@@ -1,12 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Download, RotateCcw, Upload } from 'lucide-react';
+import { Download, History, RotateCcw, Upload } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { useAuth } from '../auth/AuthContext';
 import { api, fmtDate } from '../lib/api';
 import { buttonStyles, cn } from '../components/kit';
 import { PageHeader } from '../components/ui';
 
-type Tpl = { lang: 'lat' | 'cyr'; name: string; label: string; size: number; modifiedAt: string; fields: string[]; custom: boolean };
+type Tpl = { lang: 'lat' | 'cyr'; name: string; label: string; size: number; modifiedAt: string; fields: string[]; custom: boolean; hasPrevious: boolean };
 const LANG: Record<string, string> = { lat: 'Лотин', cyr: 'Кирилл' };
 
 export default function Templates() {
@@ -35,6 +35,12 @@ export default function Templates() {
     onError: (e: Error) => setMsg({ ok: false, text: e.message }),
   });
 
+  const restore = useMutation({
+    mutationFn: (t: Tpl) => api(`/documents/templates/${t.lang}/${t.name}/restore`, { method: 'POST' }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['templates'] }); setMsg({ ok: true, text: 'Олдинги версия тикланди.' }); },
+    onError: (e: Error) => setMsg({ ok: false, text: e.message }),
+  });
+
   return (
     <div className="space-y-4">
       <PageHeader title="Ҳужжат шаблонлари" hint="Ҳужжатлар шу Word (DOCX) шаблонлардан яратилади. Юклаб олиб Word’да таҳрирланг ва қайта юкланг; {{майдон}} белгиларини ўзгартирманг." />
@@ -60,6 +66,7 @@ export default function Templates() {
                   <div className="flex flex-wrap items-center justify-end gap-1">
                     <a className={cn(buttonStyles({ variant: 'secondary', size: 'sm' }))} href={`/api/documents/templates/${t.lang}/${t.name}/download`}><Download size={14} /> Юклаб олиш</a>
                     {isAdmin && <button className={cn(buttonStyles({ variant: 'secondary', size: 'sm' }))} disabled={upload.isPending} onClick={() => { target.current = t; pick.current?.click(); }}><Upload size={14} /> Алмаштириш</button>}
+                    {isAdmin && t.hasPrevious && <button className={cn(buttonStyles({ variant: 'secondary', size: 'sm' }))} disabled={restore.isPending} onClick={() => confirm('Олдинги юкланган версия тикланади. Давом этайми?') && restore.mutate(t)}><History size={14} /> Олдинги</button>}
                     {isAdmin && t.custom && <button className={cn(buttonStyles({ variant: 'secondary', size: 'sm' }))} disabled={reset.isPending} onClick={() => confirm('Юкланган шаблон ўчирилиб, стандарти тикланади. Давом этайми?') && reset.mutate(t)}><RotateCcw size={14} /> Стандарт</button>}
                   </div>
                 </td>
