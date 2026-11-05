@@ -20,3 +20,6 @@
   .td { @apply px-4 py-3 text-sm; overflow-wrap: anywhere; min-width: 6.5rem; max-width: 22rem; }
   .eyebrow { @apply text-[11px] font-semibold uppercase tracking-eyebrow text-slate-500; }
 }
+
+/* Шаблон муҳаррири: ҳужжат саҳифаси кенг майдонда марказда турсин */
+.sd-host .superdoc { width: 100%; justify-content: safe center; }

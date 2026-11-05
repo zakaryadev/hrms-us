@@ -135,7 +135,7 @@ export default function TemplateEditor() {
         <div className="card min-w-0 overflow-hidden" data-editor-state={state}>
           <div ref={bar} className="border-b border-slate-200 bg-white" />
           <div className="relative h-[calc(100vh-17rem)] min-h-[420px] overflow-auto bg-slate-100">
-            <div ref={host} className="min-h-full" />
+            <div ref={host} className="sd-host min-h-full" />
             {state === 'loading' && (
               <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-slate-100/80 p-6 text-center text-sm text-slate-600">
                 <p className="font-medium text-slate-800">Муҳаррир юкланмоқда…</p>
