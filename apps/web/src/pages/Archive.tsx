@@ -1,10 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { RotateCcw } from 'lucide-react';
+import { RotateCcw, User } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useCan } from '../auth/AuthContext';
+import DataTable, { actionBtn, iconBtn, type Column } from '../components/DataTable';
 import { PageHeader } from '../components/ui';
 import { api, fmtDate, fullName } from '../lib/api';
-import { Button } from '../components/kit';
-import { useCan } from '../auth/AuthContext';
 
 export default function Archive() {
   const can = useCan();
@@ -14,25 +14,27 @@ export default function Archive() {
     mutationFn: (id: string) => api(`/employees/${id}`, { method: 'PATCH', body: JSON.stringify({ status: 'ishlamoqda' }) }),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['employees'] }); qc.invalidateQueries({ queryKey: ['stats'] }); },
   });
+  const columns: Column<any>[] = [
+    { key: 'tab', header: 'Табель', value: (e) => e.tabNumber, cell: (e) => <span className="font-mono">{e.tabNumber}</span>, nowrap: true },
+    { key: 'fio', header: 'Ф.И.Ш.', locked: true, minWidth: '12rem', value: (e) => fullName(e), cell: (e) => <Link className="font-medium text-slate-950 hover:underline" to={`/employees/${e.id}`}>{fullName(e)}</Link> },
+    { key: 'position', header: 'Лавозим', minWidth: '10rem', value: (e) => e.position.title },
+    { key: 'department', header: 'Бўлим', minWidth: '10rem', className: 'text-slate-500', value: (e) => e.department.name },
+    { key: 'hireDate', header: 'Ишга қабул', nowrap: true, value: (e) => e.hireDate, cell: (e) => fmtDate(e.hireDate) },
+    { key: 'phone', header: 'Телефон', hidden: true, nowrap: true, value: (e) => e.phone },
+  ];
   return (
     <div className="space-y-4">
       <PageHeader title="Архив" hint="Ишдан бўшаган ходимлар. Ходим ҳолатини «Ишдан бўшаган» қилиб қўйсангиз, у шу ерга ўтади." />
-      <div className="card overflow-x-auto">
-        <table className="w-full">
-          <thead className="border-b border-slate-200"><tr><th className="th">Табель</th><th className="th">Ф.И.Ш.</th><th className="th">Лавозим</th><th className="th">Бўлим</th><th className="th">Ишга қабул</th><th /></tr></thead>
-          <tbody className="divide-y divide-slate-100">
-            {q.data?.items.map((e: any) => (
-              <tr key={e.id} className="hover:bg-slate-50">
-                <td className="td font-mono">{e.tabNumber}</td>
-                <td className="td"><Link className="font-medium text-slate-950 hover:underline" to={`/employees/${e.id}`}>{fullName(e)}</Link></td>
-                <td className="td">{e.position.title}</td><td className="td text-slate-500">{e.department.name}</td><td className="td whitespace-nowrap">{fmtDate(e.hireDate)}</td>
-                <td className="td text-right">{can.write && <Button variant="secondary" size="sm"  onClick={() => restore.mutate(e.id)}><RotateCcw size={14} /> Қайтариш</Button>}</td>
-              </tr>
-            ))}
-            {q.data?.items.length === 0 && <tr><td colSpan={6} className="td py-10 text-center text-slate-500">Архив бўш</td></tr>}
-          </tbody>
-        </table>
-      </div>
+      <DataTable
+        storageKey="archive" columns={columns} rows={q.data?.items} rowKey={(e) => e.id} loading={q.isLoading}
+        searchPlaceholder="Ф.И.Ш., табель, лавозим бўйича қидириш" emptyText="Архив бўш"
+        actions={(e) => (
+          <>
+            <Link to={`/employees/${e.id}`} className={iconBtn} title="Профилни очиш" aria-label="Профилни очиш"><User size={16} /></Link>
+            {can.write && <button type="button" className={actionBtn} disabled={restore.isPending} onClick={() => confirm(`«${fullName(e)}» ишлаётганлар рўйхатига қайтарилсинми?`) && restore.mutate(e.id)}><RotateCcw size={14} /> Қайтариш</button>}
+          </>
+        )}
+      />
     </div>
   );
 }

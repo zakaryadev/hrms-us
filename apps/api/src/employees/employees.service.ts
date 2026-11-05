@@ -39,6 +39,17 @@ export class EmployeesService {
     };
   }
 
+  /** Устун бўйича тартиблаш (рухсат этилган калитлар рўйхати); берилмаса — лавозим тартиби, сўнг фамилия. */
+  private orderOf(q: ListEmployeesQuery): Prisma.EmployeeOrderByWithRelationInput[] {
+    const d = q.sortDir === 'desc' ? 'desc' : 'asc';
+    const map: Record<string, Prisma.EmployeeOrderByWithRelationInput[]> = {
+      tabNumber: [{ tabNumber: d }], fio: [{ lastName: d }, { firstName: d }], position: [{ position: { title: d } }],
+      department: [{ department: { name: d } }], employmentType: [{ employmentType: d }], status: [{ status: d }],
+      hireDate: [{ hireDate: d }], birthDate: [{ birthDate: d }], phone: [{ phone: d }], salary: [{ salary: d }],
+    };
+    return [...(map[q.sortBy ?? ''] ?? [{ position: { rankOrder: 'asc' } }, { lastName: 'asc' }]), { id: 'asc' }];
+  }
+
   async list(q: ListEmployeesQuery) {
     const page = Math.max(q.page ?? 1, 1);
     const pageSize = Math.min(Math.max(q.pageSize ?? 20, 1), 200);
@@ -47,7 +58,7 @@ export class EmployeesService {
       this.prisma.employee.findMany({
         where,
         include: { department: true, position: true },
-        orderBy: [{ position: { rankOrder: 'asc' } }, { lastName: 'asc' }],
+        orderBy: this.orderOf(q),
         skip: (page - 1) * pageSize,
         take: pageSize,
       }),
@@ -60,7 +71,7 @@ export class EmployeesService {
   async exportXlsx(q: ListEmployeesQuery): Promise<Buffer> {
     const rows = await this.prisma.employee.findMany({
       where: this.whereOf(q), include: { department: { include: { parent: true } }, position: true },
-      orderBy: [{ position: { rankOrder: 'asc' } }, { lastName: 'asc' }], take: 5000,
+      orderBy: this.orderOf(q), take: 5000,
     });
     const iso = (d?: Date | null) => (d ? d.toISOString().slice(0, 10).split('-').reverse().join('.') : '');
     const STATUS: Record<string, string> = { ishlamoqda: 'Ишлаяпти', tatilda: 'Таътилда', ishdan_boshagan: 'Ишдан бўшаган' };

@@ -1,6 +1,6 @@
 import { Type } from 'class-transformer';
 import {
-  IsArray, IsDateString, IsEnum, IsInt, IsNumber, IsOptional, IsString, IsUUID, Length, ValidateNested,
+  IsArray, IsDateString, IsEnum, IsIn, IsInt, IsNumber, IsOptional, IsString, IsUUID, Length, ValidateNested,
 } from 'class-validator';
 import { PartialType } from '@nestjs/mapped-types';
 
@@ -76,6 +76,8 @@ export class ListEmployeesQuery {
   @IsOptional() @IsUUID() departmentId?: string;
   @IsOptional() @IsString() status?: string;
   @IsOptional() @IsString() archived?: string;
+  @IsOptional() @IsString() sortBy?: string;
+  @IsOptional() @IsIn(['asc', 'desc']) sortDir?: 'asc' | 'desc';
   @IsOptional() @Type(() => Number) @IsInt() page?: number;
   @IsOptional() @Type(() => Number) @IsInt() pageSize?: number;
 }

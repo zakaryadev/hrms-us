@@ -227,4 +227,15 @@ describe('Yangi buyruqlar, tahrirlash, raqamlash, shablon yuklash, eksport, foyd
     const gl = await gen('lat').expect(201);
     expect(text(await fileOf(gl.body.id))).toContain("MA'LUMOTNOMA");
   });
+
+  it("ходимлар рўйхати: устун бўйича тартиблаш (сервер), нотўғри калит рад этилмайди, ҳисобот шу тартибда", async () => {
+    const tabs = async (qs: string) => (await a.get(`/api/employees?pageSize=50&${qs}`).expect(200)).body.items.map((x: any) => x.tabNumber);
+    const asc = await tabs('sortBy=tabNumber&sortDir=asc'), desc = await tabs('sortBy=tabNumber&sortDir=desc');
+    expect(asc.length).toBeGreaterThanOrEqual(2);
+    expect(desc).toEqual([...asc].reverse());
+    const fio = (await a.get('/api/employees?pageSize=50&sortBy=fio&sortDir=asc').expect(200)).body.items.map((x: any) => x.lastName);
+    expect(fio).toEqual([...fio].sort((x: string, y: string) => x.localeCompare(y, 'ru')));
+    await a.get('/api/employees?sortBy=passwordHash&sortDir=asc').expect(200);          // рухсат этилмаган калит — стандарт тартиб
+    await a.get('/api/employees?sortBy=tabNumber&sortDir=sideways').expect(400);         // нотўғри йўналиш — валидация
+  });
 });

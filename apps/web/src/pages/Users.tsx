@@ -2,7 +2,8 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { KeyRound, Pencil, Plus, Save, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { useAuth } from '../auth/AuthContext';
-import { Empty, ErrorNote, Field, Loading, Modal, PageHeader } from '../components/ui';
+import DataTable, { actionBtn, iconBtn, type Column } from '../components/DataTable';
+import { ErrorNote, Field, Modal, PageHeader } from '../components/ui';
 import { api, fmtDate, ROLE_LABEL } from '../lib/api';
 import { Button, Checkbox, Input, Select } from '../components/kit';
 
@@ -18,35 +19,29 @@ export default function Users() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ['users'] }),
     onError: (e: Error) => alert(e.message),
   });
+  const columns: Column<any>[] = [
+    { key: 'fullName', header: 'Ф.И.Ш.', locked: true, minWidth: '12rem', value: (u) => u.fullName, cell: (u) => <span className="font-medium">{u.fullName}{u.id === me?.id && <span className="ml-2 text-xs text-slate-400">(сиз)</span>}</span> },
+    { key: 'login', header: 'Логин', value: (u) => u.login, cell: (u) => <span className="font-mono text-xs">{u.login}</span> },
+    { key: 'role', header: 'Роль', value: (u) => ROLE_LABEL[u.role] },
+    { key: 'active', header: 'Ҳолат', value: (u) => (u.active ? 'Фаол' : 'Ўчирилган'), cell: (u) => <span className={`whitespace-nowrap rounded-full px-2.5 py-0.5 text-xs font-medium ${u.active ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-600'}`}>{u.active ? 'Фаол' : 'Ўчирилган'}</span> },
+    { key: 'createdAt', header: 'Яратилган', nowrap: true, value: (u) => u.createdAt, cell: (u) => fmtDate(u.createdAt) },
+  ];
   return (
     <div className="space-y-4">
       <PageHeader title="Фойдаланувчилар" hint="Тизимга кирувчи ҳисоблар. Суперадмин — ҳамма нарса; Кадрлар ходими — кадрлар иши (созламалар ва журналсиз); Бухгалтер — фақат кўриш ва табел. Парол: «Таҳрирлаш» → янги парол.">
         <Button variant="primary"  onClick={() => setEdit('new')}><Plus size={16} /> Янги фойдаланувчи</Button>
       </PageHeader>
-      {q.isLoading && <Loading />}
       <ErrorNote error={q.error} />
-      {q.data && (
-        <div className="card overflow-x-auto">
-          <table className="w-full">
-            <thead className="border-b border-slate-200"><tr><th className="th">Ф.И.Ш.</th><th className="th">Логин</th><th className="th">Роль</th><th className="th">Ҳолат</th><th className="th">Яратилган</th><th /></tr></thead>
-            <tbody className="divide-y divide-slate-100">
-              {q.data.map((u) => (
-                <tr key={u.id} className="hover:bg-slate-50">
-                  <td className="td font-medium">{u.fullName}{u.id === me?.id && <span className="ml-2 text-xs text-slate-400">(сиз)</span>}</td>
-                  <td className="td font-mono text-xs">{u.login}</td><td className="td">{ROLE_LABEL[u.role]}</td>
-                  <td className="td"><span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${u.active ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-600'}`}>{u.active ? 'Фаол' : 'Ўчирилган'}</span></td>
-                  <td className="td whitespace-nowrap">{fmtDate(u.createdAt)}</td>
-                  <td className="td text-right"><div className="flex items-center justify-end gap-1">
-                    <Button variant="secondary" size="sm" onClick={() => setEdit(u)}><Pencil size={14} /> Таҳрирлаш</Button>
-                    {u.id !== me?.id && <button aria-label="Ўчириш" title="Ўчириш" className="rounded p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-600" onClick={() => confirm(`«${u.fullName}» (${u.login}) ўчирилсинми? Ўрнига «Фаол» белгисини олиб қўйиш мумкин.`) && del.mutate(u.id)}><Trash2 size={16} /></button>}
-                  </div></td>
-                </tr>
-              ))}
-              {q.data.length === 0 && <tr><td colSpan={6}><Empty>Фойдаланувчилар йўқ</Empty></td></tr>}
-            </tbody>
-          </table>
-        </div>
-      )}
+      <DataTable
+        storageKey="users" columns={columns} rows={q.data} rowKey={(u) => u.id} loading={q.isLoading}
+        searchPlaceholder="Ф.И.Ш. ёки логин бўйича қидириш" emptyText="Фойдаланувчилар йўқ"
+        actions={(u) => (
+          <>
+            <button type="button" className={actionBtn} onClick={() => setEdit(u)}><Pencil size={14} /> Таҳрирлаш</button>
+            {u.id !== me?.id && <button type="button" aria-label="Ўчириш" title="Ўчириш" className={`${iconBtn} hover:!bg-red-50 hover:!text-red-600`} onClick={() => confirm(`«${u.fullName}» (${u.login}) ўчирилсинми? Ўрнига «Фаол» белгисини олиб қўйиш мумкин.`) && del.mutate(u.id)}><Trash2 size={16} /></button>}
+          </>
+        )}
+      />
       {edit && <UserModal user={edit === 'new' ? null : edit} onClose={() => setEdit(null)} />}
     </div>
   );

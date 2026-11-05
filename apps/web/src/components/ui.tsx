@@ -22,7 +22,7 @@ export function Progress({ value, max, color = '#f54900', label }: { value: numb
 /** Ҳолат: тўлдирилган кичик бейдж (shadcn Badge) */
 export function StatusBadge({ status }: { status: string }) {
   const cls = status === 'ishlamoqda' ? 'bg-emerald-600 text-white' : status === 'tatilda' ? 'bg-amber-400 text-slate-950' : 'bg-slate-200 text-slate-700';
-  return <span className={`inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium ${cls}`}>{STATUS_LABEL[status] ?? status}</span>;
+  return <span className={`inline-flex items-center whitespace-nowrap rounded-md px-2 py-0.5 text-xs font-medium ${cls}`}>{STATUS_LABEL[status] ?? status}</span>;
 }
 
 /** Юкланиш ҳолати: жадваллар ўрнида скелет қаторлар */

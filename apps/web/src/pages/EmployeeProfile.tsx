@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft, FileText, Pencil, Trash2 } from 'lucide-react';
 import { useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useParams, useSearchParams } from 'react-router-dom';
 import EmployeeForm from '../components/EmployeeForm';
 import GenerateDocs from '../components/GenerateDocs';
 import { ErrorNote, Field, Loading, StatusBadge } from '../components/ui';
@@ -23,7 +23,9 @@ export default function EmployeeProfile() {
   const can = useCan();
   const { id } = useParams();
   const qc = useQueryClient();
-  const [tab, setTab] = useState<(typeof TABS)[number]>(TABS[0]);
+  // /employees/:id?tab=docs — ҳужжат яратиш бўлимини тўғридан-тўғри очади
+  const [sp] = useSearchParams();
+  const [tab, setTab] = useState<(typeof TABS)[number]>(sp.get('tab') === 'docs' ? TABS[4] : TABS[0]);
   const [editing, setEditing] = useState(false);
   const { data: e, isLoading, error } = useQuery({ queryKey: ['employee', id], queryFn: () => api(`/employees/${id}`) });
   const refresh = () => qc.invalidateQueries({ queryKey: ['employee', id] });
