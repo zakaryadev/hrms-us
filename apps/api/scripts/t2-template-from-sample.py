@@ -17,6 +17,7 @@ N = {'w': W}
 q = lambda t: '{%s}%s' % (W, t)
 XML_SPACE = '{http://www.w3.org/XML/1998/namespace}space'
 COL2 = 4248       # twips: иккинчи устун (намунада 6 та 708 twips'лик табулация)
+HIST_TAB = 1370     # twips: «-» белгиси жойи = осилган чегара (1498) − «- » кенглиги (~128)
 PHOTO_GAP = 1950   # twips: фото кенглиги + бўш жой
 OUT = Path(__file__).resolve().parent.parent / 'templates'
 
@@ -61,7 +62,7 @@ def clone_with(p, text):
 def loop(p, name, content):
     """{{#name}} / {{/name}} алоҳида абзацларда — бўш бўлса ёки такрорланса абзацлар тўлиқ олинади/кўпаяди"""
     op, cl = clone_with(p, '{{#%s}}' % name), clone_with(p, '{{/%s}}' % name)
-    fill(p, content)
+    if content is not None: fill(p, content)
     p.addprevious(op); p.addnext(cl)
 
 AFTER = ('contextualSpacing', 'mirrorIndents', 'suppressOverlap', 'jc', 'textDirection', 'textAlignment', 'textboxTightWrap', 'outlineLvl', 'divId', 'cnfStyle', 'rPr', 'sectPr', 'pPrChange')
@@ -142,7 +143,25 @@ def build(sample: Path, lang: str):
     # 3) меҳнат фаолияти: 3 та сатр → битта такрорланувчи абзац (охиргисининг ҳанging-indent'и сақланади)
     rows = [x for x in body.iter(q('p')) if re.match(r'^(2021|2023|2026)[- ]', txt(x))]
     assert len(rows) == 3
-    loop(rows[2], 'ish_joylari', '{{davr}} - {{joy}}')
+    # Намунада тире («-») ҳамма қаторда бир устунда туради (учинчи қаторда бунга қўшимча пробеллар билан эришилган);
+    # биз буни аниқ табуляция билан қиламиз: давр → [табуляция] → «- матн». Матн ва ўралган сатр бир хил жойдан бошланади.
+    wp = rows[2]
+    runs = wp.findall('w:r', N)
+    for r in runs[1:]: wp.remove(r)
+    first = runs[0]
+    fill(wp, '{{davr}}')
+    tab_run = copy.deepcopy(first)
+    for t in tab_run.findall('w:t', N): tab_run.remove(t)
+    etree.SubElement(tab_run, q('tab'))
+    text_run = copy.deepcopy(first)
+    settext(text_run.find('w:t', N), '- {{joy}}')
+    first.addnext(tab_run); tab_run.addnext(text_run)
+    ppr = wp.find('w:pPr', N)
+    tabs = etree.Element(q('tabs')); tb = etree.SubElement(tabs, q('tab')); tb.set(q('val'), 'left'); tb.set(q('pos'), str(HIST_TAB))
+    nxt = next((c for c in ppr if etree.QName(c).localname in PPR_AFTER_TABS), None)
+    nxt.addprevious(tabs) if nxt is not None else ppr.append(tabs)
+    keep_tabs = wp   # fix_tabs бу абзацга тегмайди
+    loop(wp, 'ish_joylari', None)
     drop(rows[0]); drop(rows[1])
 
     # 4) қариндошлар сарлавҳаси
@@ -160,7 +179,8 @@ def build(sample: Path, lang: str):
     first_p(tcs[0], '{{#qarindoshlar}}{{qarindoshligi}}'); first_p(tcs[1], '{{fish}}'); first_p(tcs[2], '{{tugilgan_yil_joy}}')
     first_p(tcs[3], '{{ish_joyi}}'); first_p(tcs[4], '{{manzili}}{{/qarindoshlar}}')
 
-    for p in list(body.findall('w:p', N)): fix_tabs(p)
+    for p in list(body.findall('w:p', N)):
+        if p is not keep_tabs: fix_tabs(p)
 
     # 6) лотин: ёрлиқлар + тил белгиси
     if lang == 'lat':
