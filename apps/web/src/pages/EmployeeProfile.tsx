@@ -58,6 +58,11 @@ export default function EmployeeProfile() {
             <Row k="Телефон" v={e.phone} /><Row k="Манзил" v={e.addressResidential} />
             <Row k="ЖШШИР" v={e.pinfl} /><Row k="Паспорт" v={e.passportSeriesNumber} />
             <Row k="Берилган санаси" v={fmtDate(e.passportGivenDate)} /><Row k="Ким томонидан" v={e.passportGivenBy} />
+            <h3 className="eyebrow mb-2 mt-6">Қўшимча (Т-2)</h3>
+            <Row k="Маълумоти" v={e.educationLevel} /><Row k="Чет тиллари" v={e.foreignLanguages} />
+            <Row k="Илмий даражаси" v={e.academicDegree} /><Row k="Илмий унвони" v={e.academicTitle} />
+            <Row k="Ҳарбий унвони" v={e.militaryRank} /><Row k="Давлат мукофотлари" v={e.stateAwards} />
+            <Row k="Депутатлик" v={e.deputyStatus} />
           </div>
           <div>
             <h3 className="eyebrow mb-2">Иш</h3>

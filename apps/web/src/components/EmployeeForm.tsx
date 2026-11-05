@@ -8,7 +8,8 @@ import { Button, DatePicker, ImageUploader, Input, Select } from './kit';
 
 const DATE_KEYS = ['birthDate', 'passportGivenDate', 'hireDate', 'contractDate'];
 const NUM_KEYS = ['probationMonths', 'salary', 'annualLeaveBasicDays', 'annualLeaveExtraDays'];
-const ALL_KEYS = ['tabNumber', 'lastName', 'firstName', 'middleName', 'birthDate', 'birthPlace', 'gender', 'nationality', 'partyMembership', 'phone', 'addressResidential', 'pinfl', 'passportSeriesNumber', 'passportGivenDate', 'passportGivenBy', 'departmentId', 'positionId', 'employmentType', 'hireDate', 'contractNumber', 'contractDate', 'contractDurationType', 'status', ...NUM_KEYS];
+const ALL_KEYS = ['tabNumber', 'lastName', 'firstName', 'middleName', 'birthDate', 'birthPlace', 'gender', 'nationality', 'partyMembership', 'educationLevel', 'foreignLanguages', 'academicDegree', 'academicTitle', 'militaryRank', 'stateAwards', 'deputyStatus', 'phone', 'addressResidential', 'pinfl', 'passportSeriesNumber', 'passportGivenDate', 'passportGivenBy', 'departmentId', 'positionId', 'employmentType', 'hireDate', 'contractNumber', 'contractDate', 'contractDurationType', 'status', ...NUM_KEYS];
+const T2_KEYS = ['educationLevel', 'foreignLanguages', 'academicDegree', 'academicTitle', 'militaryRank', 'stateAwards', 'deputyStatus'];
 const toInput = (d?: string | null) => (d ? d.slice(0, 10) : '');
 
 export default function EmployeeForm({ employee, onClose }: { employee?: any; onClose: () => void }) {
@@ -16,7 +17,7 @@ export default function EmployeeForm({ employee, onClose }: { employee?: any; on
   const navigate = useNavigate();
   const [f, setF] = useState<any>(() => ({
     tabNumber: '', lastName: '', firstName: '', middleName: '', birthDate: '', birthPlace: '', gender: '',
-    nationality: '', partyMembership: '', phone: '', addressResidential: '', pinfl: '', passportSeriesNumber: '',
+    nationality: '', partyMembership: '', educationLevel: '', foreignLanguages: '', academicDegree: '', academicTitle: '', militaryRank: '', stateAwards: '', deputyStatus: '', phone: '', addressResidential: '', pinfl: '', passportSeriesNumber: '',
     passportGivenDate: '', passportGivenBy: '', departmentId: '', positionId: '', employmentType: 'shtat',
     hireDate: '', contractNumber: '', contractDate: '', contractDurationType: 'muddatsiz', probationMonths: 0,
     salary: 0, annualLeaveBasicDays: 21, annualLeaveExtraDays: 6, status: 'ishlamoqda',
@@ -40,6 +41,8 @@ export default function EmployeeForm({ employee, onClose }: { employee?: any; on
       const body: any = {};
       for (const k of ALL_KEYS) if (f[k] !== '' && f[k] !== undefined) body[k] = NUM_KEYS.includes(k) ? Number(f[k]) : f[k];
       const existingId = employee?.id ?? createdId;
+      // Қўшимча (Т-2) матнларни тозалаш мумкин бўлиши учун таҳрирда бўш қиймат ҳам юборилади
+      if (existingId) for (const k of T2_KEYS) if (f[k] === '') body[k] = '';
       let saved: any;
       if (existingId) saved = await api(`/employees/${existingId}`, { method: 'PATCH', body: JSON.stringify(body) });
       else { saved = await api('/employees', { method: 'POST', body: JSON.stringify(body) }); setCreatedId(saved.id); }
@@ -87,6 +90,16 @@ export default function EmployeeForm({ employee, onClose }: { employee?: any; on
             {inp('phone', 'Телефон')}
             <div className="md:col-span-2">{inp('addressResidential', 'Яшаш манзили')}</div>
           </div>
+        </section>
+        <section>
+          <SectionTitle>Қўшимча маълумотлар (Т-2 маълумотномага автоматик тушади)</SectionTitle>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            {inp('educationLevel', 'Маълумоти (олий, ўрта махсус…)')}{inp('foreignLanguages', 'Қайси чет тилларини билади')}
+            {inp('academicDegree', 'Илмий даражаси')}{inp('academicTitle', 'Илмий унвони')}
+            {inp('militaryRank', 'Ҳарбий (махсус) унвони')}{inp('stateAwards', 'Давлат мукофотлари (қайси)')}
+            <div className="md:col-span-2">{inp('deputyStatus', 'Халқ депутатлари Кенгаши депутатими ёки бошқа сайланадиган орган аъзосими')}</div>
+          </div>
+          <p className="mt-2 text-xs text-slate-500">Бўш қолдирилса маълумотномада «йўқ» ёзилади.</p>
         </section>
 
         <section>

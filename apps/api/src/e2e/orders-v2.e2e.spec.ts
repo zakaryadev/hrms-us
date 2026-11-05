@@ -199,12 +199,12 @@ describe('Yangi buyruqlar, tahrirlash, raqamlash, shablon yuklash, eksport, foyd
     };
     const e = (await a.post('/api/employees').send({
       tabNumber: '77', firstName: 'Закарья', lastName: 'Муратбаев', middleName: 'Бахтияр улы', departmentId: deptId, positionId: posId, salary: 5000000,
-      hireDate: '2026-07-01', birthDate: '2003-10-13', birthPlace: 'Қорақалпоғистон Республикаси, Нукус шаҳри', nationality: 'қорақалпоқ',
+      hireDate: '2026-07-01', birthDate: '2003-10-13', educationLevel: 'олий', foreignLanguages: 'Рус тили', academicDegree: 'фан номзоди', stateAwards: '“Дўстлик” ордени', birthPlace: 'Қорақалпоғистон Республикаси, Нукус шаҳри', nationality: 'қорақалпоқ',
       education: [{ institutionName: 'Нукус давлат техника университети', speciality: 'Дастурий инжиниринг', studyType: 'кундузги', endYear: 2025 }],
       workHistory: [{ organizationName: 'Data Life', positionTitle: 'график дизайнери', startDate: '2021-01-01', endDate: '2023-12-31' }],
       relatives: [{ relativeType: 'Отаси', fullName: 'Бердибаев Бахтияр', birthYearPlace: '1974 йил, Нукус', workPlacePosition: 'Тадбиркор', livingAddress: 'Нукус, Жасарат 92' }],
     }).expect(201)).body;
-    const gen = (lang: string) => a.post('/api/documents/generate/obyektivka').send({ employeeId: e.id, params: { lang, malumoti: 'олий', chetTillari: 'Рус тили' } });
+    const gen = (lang: string) => a.post('/api/documents/generate/obyektivka').send({ employeeId: e.id, params: { lang } });
     // фотосиз: шаблондаги рамка қолади
     const g0 = await gen('cyr').expect(201);
     const z0 = new PizZip(await fileOf(g0.body.id));
@@ -216,9 +216,14 @@ describe('Yangi buyruqlar, tahrirlash, raqamlash, shablon yuklash, eksport, foyd
     const t = text(buf);
     expect(z.file('word/media/photo.png')).toBeTruthy();
     for (const x of ['Муратбаев Закарья Бахтияр улы'.replace('Муратбаев Закарья', 'Муратбаев Закарья'), '2026 йил 01 июлдан', '13.10.2003', 'Қорақалпоғистон Республикаси,', 'Нукус шаҳри', 'қорақалпоқ',
-      '2025 й. Нукус давлат техника университети (кундузги)', 'Дастурий инжиниринг', 'Рус тили', '2021-2023 йй.', 'Data Life - график дизайнери', '2026 й. - ҳ.в.', 'Бердибаев Бахтияр', 'Жасарат 92'])
+      '2025 й. Нукус давлат техника университети (кундузги)', 'Дастурий инжиниринг', 'Рус тили', 'фан номзоди', '“Дўстлик” ордени', 'олий', '2021-2023 йй.', 'Data Life - график дизайнери', '2026 й. - ҳ.в.', 'Бердибаев Бахтияр', 'Жасарат 92'])
       expect(t).toContain(x);
     expect(t).not.toMatch(/\{\{|\}\}/);
+    // профилдаги қиймат тозаланса — «йўқ»; профилда бўлмаган майдонлар доим «йўқ»
+    await a.patch(`/api/employees/${e.id}`).send({ foreignLanguages: '', stateAwards: '' }).expect(200);
+    const t2 = text(await fileOf((await gen('cyr').expect(201)).body.id));
+    expect(t2).not.toContain('Рус тили'); expect(t2).not.toContain('Дўстлик'); expect(t2).toContain('фан номзоди');
+    expect(t2).toMatch(/Қайси чет тилларини билади:[\s\S]*йўқ/);
     const gl = await gen('lat').expect(201);
     expect(text(await fileOf(gl.body.id))).toContain("MA'LUMOTNOMA");
   });

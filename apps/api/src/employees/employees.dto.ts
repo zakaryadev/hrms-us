@@ -35,6 +35,13 @@ export class CreateEmployeeDto {
   @IsOptional() @IsEnum(['erkak', 'ayol']) gender?: 'erkak' | 'ayol';
   @IsOptional() @IsString() nationality?: string;
   @IsOptional() @IsString() partyMembership?: string;
+  @IsOptional() @IsString() educationLevel?: string;
+  @IsOptional() @IsString() foreignLanguages?: string;
+  @IsOptional() @IsString() academicDegree?: string;
+  @IsOptional() @IsString() academicTitle?: string;
+  @IsOptional() @IsString() militaryRank?: string;
+  @IsOptional() @IsString() stateAwards?: string;
+  @IsOptional() @IsString() deputyStatus?: string;
   @IsOptional() @IsString() phone?: string;
   @IsOptional() @IsString() addressResidential?: string;
   @IsOptional() @IsString() @Length(14, 14) pinfl?: string;

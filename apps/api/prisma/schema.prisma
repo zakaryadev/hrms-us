@@ -85,6 +85,14 @@ model Employee {
   gender               Gender?
   nationality          String?
   partyMembership      String?              @map("party_membership")
+  // Т-2 маълумотномага автоматик тушадиган қўшимча маълумотлар
+  educationLevel       String?              @map("education_level")
+  foreignLanguages     String?              @map("foreign_languages")
+  academicDegree       String?              @map("academic_degree")
+  academicTitle        String?              @map("academic_title")
+  militaryRank         String?              @map("military_rank")
+  stateAwards          String?              @map("state_awards")
+  deputyStatus         String?              @map("deputy_status")
   phone                String?
   addressResidential   String?              @map("address_residential")
   pinfl                String?              @db.VarChar(14)

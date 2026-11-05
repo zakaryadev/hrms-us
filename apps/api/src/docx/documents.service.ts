@@ -141,12 +141,13 @@ export class DocumentsService {
           ...base,
           ishga_kirish_matn: hire ? L.hireLine(hire.getUTCFullYear(), String(hire.getUTCDate()).padStart(2, '0'), monthName(hire, lang)) : '',
           tugilgan_sana: fmtDate(e.birthDate), tugilgan_joy_1: place1, tugilgan_joy_2: place2,
-          millati: e.nationality ?? '', partiyaviyligi: e.partyMembership || L.none, malumoti: params.malumoti ?? '',
+          millati: e.nationality ?? '', partiyaviyligi: e.partyMembership || L.none, malumoti: params.malumoti || e.educationLevel || '',
           tamomlagan: edu ? [[edu.endYear ? `${edu.endYear} ${yy}` : '', edu.institutionName].filter(Boolean).join(' '), edu.studyType ? `(${edu.studyType})` : ''].filter(Boolean).join(' ') : '',
           mutaxassisligi: edu?.speciality ?? '',
-          ilmiy_daraja: params.ilmiyDaraja || L.none, ilmiy_unvon: params.ilmiyUnvon || L.none,
-          chet_tillari: params.chetTillari || L.none, harbiy_unvoni: params.harbiyUnvoni || L.none,
-          mukofotlar: params.mukofotlar || L.none, deputatlik: params.deputatlik || L.none,
+          // Ходим профилидаги қиймат; параметр (қўлда) берилса — шу устун; иккаласи ҳам бўш бўлса «йўқ»
+          ilmiy_daraja: params.ilmiyDaraja || e.academicDegree || L.none, ilmiy_unvon: params.ilmiyUnvon || e.academicTitle || L.none,
+          chet_tillari: params.chetTillari || e.foreignLanguages || L.none, harbiy_unvoni: params.harbiyUnvoni || e.militaryRank || L.none,
+          mukofotlar: params.mukofotlar || e.stateAwards || L.none, deputatlik: params.deputatlik || e.deputyStatus || L.none,
           ish_joylari: history,
           qarindoshlar: e.relatives.map((r) => ({
             qarindoshligi: r.relativeType, fish: r.fullName, tugilgan_yil_joy: r.birthYearPlace ?? '',
