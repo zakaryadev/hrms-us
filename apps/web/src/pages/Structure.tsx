@@ -60,7 +60,7 @@ export default function Structure() {
           {can.write && <form className="space-y-3 border-t pt-4" onSubmit={(e) => { e.preventDefault(); addDept.mutate(); }}>
             <Field label="Янги бўлим номи *"><Input required value={dn.name} onChange={(e) => setDn({ ...dn, name: e.target.value })} /></Field>
             <div className="grid grid-cols-2 gap-3">
-              <Field label="Код"><Input value={dn.code} onChange={(e) => setDn({ ...dn, code: e.target.value })} /></Field>
+              <Field label="Код"><Input translit={false} value={dn.code} onChange={(e) => setDn({ ...dn, code: e.target.value })} /></Field>
               <Field label="Юқори бўлим"><Select value={dn.parentId} onChange={(v) => setDn({ ...dn, parentId: v })}><option value="">—</option>{departments.data?.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}</Select></Field>
             </div>
             <Button variant="primary" className="w-full justify-center"  disabled={addDept.isPending}><Plus size={16} /> Бўлим қўшиш</Button>
@@ -112,7 +112,7 @@ function DeptModal({ dept, all, onClose, onSaved }: { dept: any; all: any[]; onC
       <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); save.mutate(); }}>
         <Field label="Номи *"><Input required value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} /></Field>
         <div className="grid grid-cols-2 gap-4">
-          <Field label="Код"><Input value={f.code} onChange={(e) => setF({ ...f, code: e.target.value })} /></Field>
+          <Field label="Код"><Input translit={false} value={f.code} onChange={(e) => setF({ ...f, code: e.target.value })} /></Field>
           <Field label="Юқори бўлим"><Select value={f.parentId} onChange={(v) => setF({ ...f, parentId: v })}><option value="">—</option>{all.filter((d) => d.id !== dept.id).map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}</Select></Field>
         </div>
         {save.error && <p className="text-sm text-red-600" role="alert">{(save.error as Error).message}</p>}

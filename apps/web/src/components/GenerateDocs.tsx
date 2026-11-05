@@ -200,7 +200,7 @@ export function DocModal({ type, employee, onClose, edit }: { type: Exclude<DocT
           <section>
             <SectionTitle>Буйруқ</SectionTitle>
             <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-              <Field label="Буйруқ рақами"><Input placeholder="Бўш қолса автоматик" value={f.orderNumber} onChange={set('orderNumber')} /></Field>
+              <Field label="Буйруқ рақами"><Input translit={false} placeholder="Бўш қолса автоматик" value={f.orderNumber} onChange={set('orderNumber')} /></Field>
               <Field label="Буйруқ санаси *"><DatePicker required value={f.orderDate} onChange={(v) => setF({ ...f, orderDate: v })} /></Field>
               <div className="md:col-span-3"><Field label="Асос *"><Textarea required rows={3} placeholder="Ходимнинг аризаси, қўшимча келишув ҳамда ЎзР Меҳнат кодексининг 138, 140-моддалари" value={f.basis} onChange={set('basis')} /></Field></div>
             </div>
@@ -211,7 +211,7 @@ export function DocModal({ type, employee, onClose, edit }: { type: Exclude<DocT
           <section>
             <SectionTitle>Ишга қабул</SectionTitle>
             <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-              <Field label="Буйруқ рақами"><Input placeholder="Бўш қолса автоматик" value={f.orderNumber} onChange={set('orderNumber')} /></Field>
+              <Field label="Буйруқ рақами"><Input translit={false} placeholder="Бўш қолса автоматик" value={f.orderNumber} onChange={set('orderNumber')} /></Field>
               <Field label="Буйруқ санаси *"><DatePicker required value={f.orderDate} onChange={(v) => setF({ ...f, orderDate: v })} /></Field>
               <Field label="Ишга қабул санаси *"><DatePicker required value={f.hireDate} onChange={(v) => setF({ ...f, hireDate: v })} /></Field>
               <Field label="Ойлик иш ҳақи (сўм)"><Input type="number" min={0} value={f.salary} onChange={set('salary')} /></Field>
@@ -225,7 +225,7 @@ export function DocModal({ type, employee, onClose, edit }: { type: Exclude<DocT
           <section>
             <SectionTitle>Ишдан бўшатиш</SectionTitle>
             <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-              <Field label="Буйруқ рақами"><Input placeholder="Бўш қолса автоматик" value={f.orderNumber} onChange={set('orderNumber')} /></Field>
+              <Field label="Буйруқ рақами"><Input translit={false} placeholder="Бўш қолса автоматик" value={f.orderNumber} onChange={set('orderNumber')} /></Field>
               <Field label="Буйруқ санаси *"><DatePicker required value={f.orderDate} onChange={(v) => setF({ ...f, orderDate: v })} /></Field>
               <Field label="Бўшатиш санаси *"><DatePicker required value={f.dismissalDate} onChange={(v) => setF({ ...f, dismissalDate: v })} /></Field>
               <div className="md:col-span-3"><Field label="Асос *"><Textarea required rows={2} placeholder="Ходимнинг аризаси ва ЎзР Меҳнат кодексининг 99-моддаси" value={f.basis} onChange={set('basis')} /></Field></div>
@@ -239,7 +239,7 @@ export function DocModal({ type, employee, onClose, edit }: { type: Exclude<DocT
           <section>
             <SectionTitle>Рағбатлантириш</SectionTitle>
             <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-              <Field label="Буйруқ рақами"><Input placeholder="Бўш қолса автоматик" value={f.orderNumber} onChange={set('orderNumber')} /></Field>
+              <Field label="Буйруқ рақами"><Input translit={false} placeholder="Бўш қолса автоматик" value={f.orderNumber} onChange={set('orderNumber')} /></Field>
               <Field label="Буйруқ санаси *"><DatePicker required value={f.orderDate} onChange={(v) => setF({ ...f, orderDate: v })} /></Field>
               <Field label="Пул мукофоти (сўм)"><Input type="number" min={0} value={f.amount} onChange={set('amount')} /></Field>
               <div className="md:col-span-3"><Field label="Нима учун *"><Input required placeholder="намунали меҳнат ва юқори натижаларга эришгани" value={f.reason} onChange={set('reason')} /></Field></div>
@@ -349,7 +349,7 @@ export function LeaveModal({ employee, onClose, edit }: { employee: any; onClose
           <div className="md:col-span-2"><Field label="Асос"><Textarea rows={2} placeholder="Меҳнат кодексининг 217, 219... моддалари ҳамда ходим аризаси" value={f.basis || D.basis} onChange={set('basis')} /></Field></div>
           <Field label="Имзоловчи"><Textarea rows={2} value={f.signer || D.signer} onChange={set('signer')} /></Field>
           <Field label="Буйруқ санаси"><DatePicker required value={f.orderDate} onChange={(v) => setF({ ...f, orderDate: v })} /></Field>
-          <Field label="Буйруқ рақами"><Input placeholder="Бўш қолса автоматик" value={f.orderNumber} onChange={set('orderNumber')} /></Field>
+          <Field label="Буйруқ рақами"><Input translit={false} placeholder="Бўш қолса автоматик" value={f.orderNumber} onChange={set('orderNumber')} /></Field>
         </section>
 
         <ModalFooter save={save} setSave={setSave} pending={submit.isPending} error={submit.error as Error | null} onClose={onClose} editing={!!edit} />

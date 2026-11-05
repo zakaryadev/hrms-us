@@ -9,6 +9,7 @@ import { Button, DatePicker, ImageUploader, Input, Select } from './kit';
 const DATE_KEYS = ['birthDate', 'passportGivenDate', 'hireDate', 'contractDate'];
 const NUM_KEYS = ['probationMonths', 'salary', 'annualLeaveBasicDays', 'annualLeaveExtraDays'];
 const ALL_KEYS = ['tabNumber', 'lastName', 'firstName', 'middleName', 'birthDate', 'birthPlace', 'gender', 'nationality', 'partyMembership', 'educationLevel', 'foreignLanguages', 'academicDegree', 'academicTitle', 'militaryRank', 'stateAwards', 'deputyStatus', 'phone', 'addressResidential', 'pinfl', 'passportSeriesNumber', 'passportGivenDate', 'passportGivenBy', 'departmentId', 'positionId', 'employmentType', 'hireDate', 'contractNumber', 'contractDate', 'contractDurationType', 'status', ...NUM_KEYS];
+const NO_TRANSLIT = ['tabNumber', 'phone', 'pinfl', 'passportSeriesNumber', 'contractNumber'];   // рақам/код майдонлари
 const T2_KEYS = ['educationLevel', 'foreignLanguages', 'academicDegree', 'academicTitle', 'militaryRank', 'stateAwards', 'deputyStatus'];
 const toInput = (d?: string | null) => (d ? d.slice(0, 10) : '');
 
@@ -68,7 +69,7 @@ export default function EmployeeForm({ employee, onClose }: { employee?: any; on
     <Field label={label + (required ? ' *' : '')}>
       {type === 'date'
         ? <DatePicker required={required} value={f[k]} onChange={(v) => setF({ ...f, [k]: v })} />
-        : <Input required={required} type={type} value={f[k]} onChange={set(k)} />}
+        : <Input required={required} type={type} translit={NO_TRANSLIT.includes(k) ? false : undefined} value={f[k]} onChange={set(k)} />}
     </Field>
   );
   const sel = (k: string, label: string, opts: [string, string][], empty?: string) => (

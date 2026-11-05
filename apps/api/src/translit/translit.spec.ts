@@ -78,3 +78,11 @@ describe('transliterator', () => {
     expect(detectScript('123 .,')).toBe('none');
   });
 });
+
+// Веб (apps/web/src/lib/translit.ts) сервердаги модулнинг айнан нусхаси бўлиши шарт — фарқ қилиб қолмаслиги учун
+it('веб ва сервер транслитератори айнан бир хил', () => {
+  const { readFileSync } = require('fs'); const { join } = require('path');
+  const server = readFileSync(join(__dirname, 'translit.ts'), 'utf8');
+  const web = readFileSync(join(__dirname, '..', '..', '..', 'web', 'src', 'lib', 'translit.ts'), 'utf8');
+  expect(web).toBe(server);
+});
