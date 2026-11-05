@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Download, Wand2 } from 'lucide-react';
+import { Download, Eraser, Wand2 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { PeriodSwitch } from '../components/PeriodSwitch';
 import { Loading, PageHeader } from '../components/ui';
@@ -31,6 +31,10 @@ export default function Timesheet() {
   const [departmentId, setDepartmentId] = useState('');
   const [menu, setMenu] = useState<{ emp: string; day: number; x: number; y: number } | null>(null);
   const [msg, setMsg] = useState('');
+  // «Бўёқ» режими: танланган код (ёки 'clear') катакларга босиш/судраш билан қўлланади
+  const [brush, setBrush] = useState<string | null>(null);
+  const [sweep, setSweep] = useState<Set<string>>(new Set());
+  const sweepRef = useRef<Set<string> | null>(null);
   const key = ['timesheet', year, month, departmentId];
 
   const departments = useQuery({ queryKey: ['departments'], queryFn: () => api<any[]>('/departments') });
@@ -56,6 +60,55 @@ export default function Timesheet() {
     setMsg('');
     save.mutate({ emp, daysData });
   };
+
+  /** Бир нечта катакни бир йўла ўзгартиради; ҳар ходим учун биттадан сақлайди */
+  const paintCells = (cells: { emp: string; day: number }[], code: string | null) => {
+    if (!cells.length) return;
+    const byEmp = new Map<string, number[]>();
+    cells.forEach((c) => byEmp.set(c.emp, [...(byEmp.get(c.emp) ?? []), c.day]));
+    const next = new Map<string, Record<string, string>>();
+    q.data.rows.forEach((r: any) => {
+      const days = byEmp.get(r.employeeId);
+      if (!days) return;
+      const dd = { ...r.daysData };
+      days.forEach((d) => { if (code) dd[String(d)] = code; else delete dd[String(d)]; });
+      next.set(r.employeeId, dd);
+    });
+    qc.setQueryData(key, { ...q.data, rows: q.data.rows.map((r: any) => (next.has(r.employeeId) ? { ...r, daysData: next.get(r.employeeId) } : r)) });
+    setMsg('');
+    next.forEach((daysData, emp) => save.mutate({ emp, daysData }));
+  };
+  const brushCode = brush === 'clear' ? null : brush;
+
+  const cellAt = (x: number, y: number) => {
+    const el = (document.elementFromPoint(x, y) as HTMLElement | null)?.closest('[data-cell]') as HTMLElement | null;
+    return el ? { emp: el.dataset.emp!, day: Number(el.dataset.day), off: el.dataset.off === '1', k: el.dataset.cell! } : null;
+  };
+  const startSweep = (e: React.PointerEvent) => {
+    if (!brush || e.button !== 0) return;
+    const c = cellAt(e.clientX, e.clientY); if (!c) return;
+    e.preventDefault();
+    sweepRef.current = new Set([c.k]); setSweep(new Set(sweepRef.current));
+  };
+  // Судраш: сичқонча/бармоқ ўтган катаклар йиғилади, қўйиб юборилганда қўлланади
+  useEffect(() => {
+    if (!brush) return;
+    const move = (e: PointerEvent) => {
+      if (!sweepRef.current) return;
+      const c = cellAt(e.clientX, e.clientY);
+      if (c && !sweepRef.current.has(c.k)) { sweepRef.current.add(c.k); setSweep(new Set(sweepRef.current)); }
+    };
+    const up = () => {
+      const picked = sweepRef.current; sweepRef.current = null; setSweep(new Set());
+      if (!picked) return;
+      const cells = [...picked].map((k) => { const el = document.querySelector(`[data-cell="${k}"]`) as HTMLElement | null; return el ? { emp: el.dataset.emp!, day: Number(el.dataset.day), off: el.dataset.off === '1' } : null; }).filter(Boolean) as { emp: string; day: number; off: boolean }[];
+      // Битта катак — ҳар доим қўлланади; судралганда дам олиш/байрам кунлари ўтказилади (тозалашдан ташқари)
+      paintCells(cells.length > 1 && brushCode ? cells.filter((c) => !c.off) : cells, brushCode);
+    };
+    const esc = (e: KeyboardEvent) => e.key === 'Escape' && (sweepRef.current = null, setSweep(new Set()), setBrush(null));
+    window.addEventListener('pointermove', move); window.addEventListener('pointerup', up); window.addEventListener('keydown', esc);
+    return () => { window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); window.removeEventListener('keydown', esc); };
+  });
 
   const autofill = useMutation({
     mutationFn: () => api<{ updated: number }>('/timesheet/autofill', { method: 'POST', body: JSON.stringify({ year, month, ...(departmentId && { departmentId }) }) }),
@@ -101,9 +154,22 @@ export default function Timesheet() {
       {t?.holidaysWarning && <p className="card border-amber-300 bg-amber-50 p-3 text-sm text-amber-800">{year}-йил учун ҳайит кунлари киритилмаган (<a className="underline" href="/calendar">Иш календари</a>): иш кунлари ва ойлик нотўғри ҳисобланиши мумкин.</p>}
       {msg && <p className="card p-3 text-sm">{msg}</p>}
 
-      <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-600">
-        {CODES.filter((c) => c.code !== '7.2').map((c) => <span key={c.code} className="flex items-center gap-1.5"><span className={`rounded px-1.5 py-0.5 font-semibold ${c.cls}`}>{c.code}</span>{c.label}</span>)}
-        <span className="text-slate-400">· Катакни танлаб 8, 7, M, K, B, S, T, X тугмалари ёки стрелкалар билан ишланг</span>
+      <div className="card flex flex-wrap items-center gap-2 p-3" role="toolbar" aria-label="Бўёқ режими">
+        <span className="mr-1 text-xs font-medium text-slate-500">Бўёқ:</span>
+        {CODES.filter((c) => c.code !== '7.2').map((c) => (
+          <button key={c.code} type="button" aria-pressed={brush === c.code} title={`${c.label} (тугма: ${c.key.toUpperCase()})`} onClick={() => setBrush(brush === c.code ? null : c.code)}
+            className={cn('inline-flex h-8 items-center gap-1.5 rounded-lg border bg-white px-2 text-xs font-medium text-slate-700 transition hover:bg-slate-50', brush === c.code ? 'border-navy ring-2 ring-navy ring-offset-1' : 'border-slate-200')}>
+            <span className={`rounded px-1.5 py-0.5 font-semibold ${c.cls}`}>{c.code}</span><span className="hidden sm:inline">{c.label}</span>
+          </button>
+        ))}
+        <button type="button" aria-pressed={brush === 'clear'} onClick={() => setBrush(brush === 'clear' ? null : 'clear')}
+          className={cn('inline-flex h-8 items-center gap-1.5 rounded-lg border bg-white px-2 text-xs font-medium text-slate-700 transition hover:bg-slate-50', brush === 'clear' ? 'border-navy ring-2 ring-navy ring-offset-1' : 'border-slate-200')}><Eraser size={14} /> Тозалаш</button>
+        {brush && <button type="button" className="ml-auto text-xs text-slate-500 underline hover:text-slate-800" onClick={() => setBrush(null)}>Режимдан чиқиш (Esc)</button>}
+        <p className="basis-full text-xs text-slate-500">
+          {brush
+            ? <>Катакни босинг ёки <b>судраб ўтинг</b> — {brush === 'clear' ? 'тозаланади' : <>«<b>{brush}</b>» қўйилади</>}. Судрашда дам олиш ва байрам кунлари ўтказилади (битта катакни босиш — доим қўлланади).{sweep.size > 1 && <b className="ml-1 text-navy">Белгиланган: {sweep.size} катак</b>}</>
+            : <>Кодни танланг ва катакларни босиб ёки судраб бўяйсиз. Ёки катакни танлаб <b>8, 7, M, K, B, S, T, X</b> тугмалари ва стрелкалардан фойдаланинг.</>}
+        </p>
       </div>
 
       {q.isLoading && <Loading />}
@@ -132,8 +198,10 @@ export default function Timesheet() {
                       <td key={d.day} className={`border-b p-0 ${d.off && !v ? 'bg-slate-100' : ''}`}>
                         <button
                           id={`c-${ri}-${d.day}`} title={CODES.find((c) => c.code === v)?.label}
-                          className={`h-8 w-7 text-center text-[11px] font-semibold outline-none focus:ring-2 focus:ring-inset focus:ring-navy ${cls(v)}`}
-                          onClick={(e) => { const b = (e.currentTarget as HTMLElement).getBoundingClientRect(); setMenu({ emp: r.employeeId, day: d.day, x: b.left, y: b.bottom }); }}
+                          data-cell={`${ri}-${d.day}`} data-emp={r.employeeId} data-day={d.day} data-off={d.off ? '1' : '0'}
+                          className={cn(`h-8 w-7 select-none text-center text-[11px] font-semibold outline-none focus:ring-2 focus:ring-inset focus:ring-navy ${cls(v)}`, brush && 'cursor-crosshair touch-none', sweep.has(`${ri}-${d.day}`) && 'ring-2 ring-inset ring-blue-600 !bg-blue-100')}
+                          onPointerDown={startSweep}
+                          onClick={(e) => { if (brush) return; const b = (e.currentTarget as HTMLElement).getBoundingClientRect(); setMenu({ emp: r.employeeId, day: d.day, x: b.left, y: b.bottom }); }}
                           onKeyDown={(e) => onKey(e, ri, r, d.day, t.daysInMonth)}
                         >{v}</button>
                       </td>
