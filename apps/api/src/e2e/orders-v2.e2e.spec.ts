@@ -272,4 +272,29 @@ describe('Yangi buyruqlar, tahrirlash, raqamlash, shablon yuklash, eksport, foyd
     const j = (await a.get('/api/audit?q=translit').expect(200)).body;
     expect(j.items.some((x: any) => x.entity === 'translit')).toBe(false);
   });
+
+  it("Т-2: бўлим номида ташкилот номи бор бўлса такрорланмайди; энг сўнгги таълим тушади", async () => {
+    const org = '“UNICON-SOFT” масъулияти чекланган жамиятининг';
+    await a.put('/api/settings').send({ tashkilot_nomi: org }).expect(200);
+    const dept = (await a.post('/api/departments').send({ name: `${org} Қорақалпоғистон Республикаси филиали` }).expect(201)).body;
+    const pos = (await a.post('/api/positions').send({ title: 'Мижозлар билан ишлаш бўйича менежер', departmentId: dept.id }).expect(201)).body;
+    const emp = (await a.post('/api/employees').send({
+      tabNumber: '55', firstName: 'Закарья', lastName: 'Муратбаев', departmentId: dept.id, positionId: pos.id, salary: 1, hireDate: '2026-07-01',
+      education: [
+        { institutionName: 'Академик лицей', speciality: 'Умумий', endYear: 2019 },
+        { institutionName: 'Нукус давлат техника университети', speciality: 'Дастурий инжиниринг', studyType: 'кундузги', endYear: 2025 },
+      ],
+    }).expect(201)).body;
+    const g = await a.post('/api/documents/generate/obyektivka').send({ employeeId: emp.id, params: { lang: 'cyr' } }).expect(201);
+    const t = text(await fileOf(g.body.id));
+    // сарлавҳа сатри ва ҳозирги иш жойи — жами 2 та (олдин 4 та бўларди)
+    expect((t.match(/UNICON-SOFT/g) ?? []).length).toBe(2);
+    expect(t).toContain('2025 й. Нукус давлат техника университети (кундузги)');
+    expect(t).toContain('Дастурий инжиниринг');
+    expect(t).not.toContain('Академик лицей');
+    // таълим рўйхатини таҳрирлаш: PATCH қаторларни алмаштиради
+    await a.patch(`/api/employees/${emp.id}`).send({ education: [{ institutionName: 'Янги университет', endYear: 2030 }] }).expect(200);
+    const t2 = text(await fileOf((await a.post('/api/documents/generate/obyektivka').send({ employeeId: emp.id, params: { lang: 'cyr' } }).expect(201)).body.id));
+    expect(t2).toContain('2030 й. Янги университет'); expect(t2).not.toContain('Нукус давлат');
+  });
 });

@@ -9,7 +9,7 @@ import { api, photoSrc, CONTRACT_LABEL, EMP_TYPE_LABEL, fmtDate, fmtMoney, fullN
 import { Avatar, Button, DatePicker, FileDropzone, Input, Select, Tabs } from '../components/kit';
 import { useCan } from '../auth/AuthContext';
 
-const TABS = ['Шахсий маълумотлар', 'Меҳнат фаолияти', 'Қариндошлари', 'Ҳужжатлар', 'Ҳужжат яратиш'] as const;
+const TABS = ['Шахсий маълумотлар', 'Меҳнат фаолияти', 'Таълим', 'Қариндошлари', 'Ҳужжатлар', 'Ҳужжат яратиш'] as const;
 const DOC_TYPES = [
   ['pasport', 'Паспорт'], ['diplom', 'Диплом'], ['mehnat_daftarchasi', 'Меҳнат дафтарчаси'],
   ['sudlanmaganlik', 'Судланмаганлик ҳақида маълумотнома'], ['boshqa', 'Бошқа'],
@@ -25,7 +25,7 @@ export default function EmployeeProfile() {
   const qc = useQueryClient();
   // /employees/:id?tab=docs — ҳужжат яратиш бўлимини тўғридан-тўғри очади
   const [sp] = useSearchParams();
-  const [tab, setTab] = useState<(typeof TABS)[number]>(sp.get('tab') === 'docs' ? TABS[4] : TABS[0]);
+  const [tab, setTab] = useState<(typeof TABS)[number]>(sp.get('tab') === 'docs' ? TABS[5] : TABS[0]);
   const [editing, setEditing] = useState(false);
   const { data: e, isLoading, error } = useQuery({ queryKey: ['employee', id], queryFn: () => api(`/employees/${id}`) });
   const refresh = () => qc.invalidateQueries({ queryKey: ['employee', id] });
@@ -78,9 +78,10 @@ export default function EmployeeProfile() {
         </dl>
       )}
       {tab === TABS[1] && <WorkHistory e={e} onSaved={refresh} />}
-      {tab === TABS[2] && <Relatives e={e} onSaved={refresh} />}
-      {tab === TABS[3] && <Documents e={e} onSaved={refresh} />}
-      {tab === TABS[4] && <GenerateDocs employee={e} />}
+      {tab === TABS[2] && <Education e={e} onSaved={refresh} />}
+      {tab === TABS[3] && <Relatives e={e} onSaved={refresh} />}
+      {tab === TABS[4] && <Documents e={e} onSaved={refresh} />}
+      {tab === TABS[5] && <GenerateDocs employee={e} />}
       </div>
       {editing && <EmployeeForm employee={e} onClose={() => setEditing(false)} />}
     </div>
@@ -88,7 +89,7 @@ export default function EmployeeProfile() {
 }
 
 /** Ro'yxat qatorlarini qo'shish/o'chirish: PATCH butun ro'yxatni almashtiradi. */
-function useListSave(e: any, key: 'workHistory' | 'relatives', onSaved: () => void) {
+function useListSave(e: any, key: 'workHistory' | 'relatives' | 'education', onSaved: () => void) {
   return useMutation({
     mutationFn: (list: any[]) => api(`/employees/${e.id}`, { method: 'PATCH', body: JSON.stringify({ [key]: list }) }),
     onSuccess: onSaved,
@@ -136,6 +137,72 @@ function WorkHistory({ e, onSaved }: { e: any; onSaved: () => void }) {
             <Field label="Лавозим"><Input value={editing.positionTitle} onChange={(x) => setEditing({ ...editing, positionTitle: x.target.value })} /></Field>
             {save.error && <p className="text-sm text-red-600" role="alert">{(save.error as Error).message}</p>}
             <div className="flex justify-end gap-2 border-t pt-4">
+              <Button variant="secondary" type="button" onClick={() => setEditing(null)}>Бекор қилиш</Button>
+              <Button variant="primary" disabled={save.isPending}>Сақлаш</Button>
+            </div>
+          </form>
+        </Modal>
+      )}
+    </div>
+  );
+}
+
+/** Таълим: Т-2 маълумотномадаги «Тамомлаган» ва «Маълумоти бўйича мутахассислиги» шу ердан олинади (энг сўнгги битирган йили бўйича) */
+function Education({ e, onSaved }: { e: any; onSaved: () => void }) {
+  const can = useCan();
+  const save = useListSave(e, 'education', onSaved);
+  const empty = { institutionName: '', speciality: '', studyType: '', startYear: '', endYear: '' };
+  const [n, setN] = useState(empty);
+  const [editing, setEditing] = useState<any>(null);
+  const clean = (r: any) => {
+    const o: any = Object.fromEntries(Object.entries(strip(r)).filter(([, v]) => v !== '' && v !== null && v !== undefined));
+    for (const k of ['startYear', 'endYear']) if (o[k] !== undefined) o[k] = Number(o[k]);
+    return o;
+  };
+  const startEdit = (r: any) => setEditing({ id: r.id, institutionName: r.institutionName ?? '', speciality: r.speciality ?? '', studyType: r.studyType ?? '', startYear: r.startYear ?? '', endYear: r.endYear ?? '' });
+  const STUDY = ['кундузги', 'сиртқи', 'кечки', 'масофавий'];
+  const fields = (v: any, set: (x: any) => void) => (
+    <>
+      <div className="sm:col-span-2"><Field label="Таълим муассасаси *"><Input required value={v.institutionName} onChange={(x) => set({ ...v, institutionName: x.target.value })} /></Field></div>
+      <div className="sm:col-span-2"><Field label="Мутахассислиги"><Input value={v.speciality} onChange={(x) => set({ ...v, speciality: x.target.value })} /></Field></div>
+      <Field label="Таълим шакли"><Input list="study-types" translit={false} value={v.studyType} onChange={(x) => set({ ...v, studyType: x.target.value })} /></Field>
+      <Field label="Бошланган йили"><Input type="number" min={1950} max={2100} value={v.startYear} onChange={(x) => set({ ...v, startYear: x.target.value })} /></Field>
+      <Field label="Тугатган йили"><Input type="number" min={1950} max={2100} value={v.endYear} onChange={(x) => set({ ...v, endYear: x.target.value })} /></Field>
+    </>
+  );
+  return (
+    <div>
+      <datalist id="study-types">{STUDY.map((x) => <option key={x} value={x} />)}</datalist>
+      <div className="mb-4 overflow-x-auto"><table className="w-full text-sm">
+        <thead><tr><th className="th">Муассаса</th><th className="th">Мутахассислиги</th><th className="th">Шакли</th><th className="th">Йиллар</th><th /></tr></thead>
+        <tbody className="divide-y divide-slate-100">
+          {e.education.map((r: any) => (
+            <tr key={r.id}><td className="td">{r.institutionName}</td><td className="td">{r.speciality}</td><td className="td">{r.studyType}</td>
+              <td className="td whitespace-nowrap">{[r.startYear, r.endYear].filter(Boolean).join(' — ')}</td>
+              <td className="td whitespace-nowrap text-right">{can.write && <>
+                <button aria-label="Таҳрирлаш" title="Таҳрирлаш" className="mr-3 text-slate-400 hover:text-brand" onClick={() => startEdit(r)}><Pencil size={16} /></button>
+                <button aria-label="Ўчириш" title="Ўчириш" className="text-slate-400 hover:text-red-600" onClick={() => confirm('Қатор ўчирилсинми?') && save.mutate(e.education.filter((x: any) => x.id !== r.id).map(clean))}><Trash2 size={16} /></button></>}</td></tr>
+          ))}
+          {e.education.length === 0 && <tr><td colSpan={5} className="td text-slate-500">Маълумот йўқ. Т-2 маълумотномада «Тамомлаган» ва «Мутахассислиги» шу ердан олинади.</td></tr>}
+        </tbody>
+      </table></div>
+      {can.write && <form className="grid grid-cols-1 items-end gap-3 sm:grid-cols-4" onSubmit={(ev) => { ev.preventDefault(); save.mutate([...e.education.map(clean), clean(n)]); setN(empty); }}>
+        {fields(n, setN)}
+        <Button variant="primary" className="justify-center" disabled={save.isPending}>Қўшиш</Button>
+      </form>}
+      {save.error && <p className="mt-2 text-sm text-red-600" role="alert">{(save.error as Error).message}</p>}
+      {editing && (
+        <Modal title="Таълимни таҳрирлаш" onClose={() => setEditing(null)}>
+          <form className="grid grid-cols-1 gap-4 sm:grid-cols-2" onSubmit={(ev) => { ev.preventDefault(); save.mutate(e.education.map((x: any) => (x.id === editing.id ? clean(editing) : clean(x))), { onSuccess: () => setEditing(null) }); }}>
+            <div className="sm:col-span-2"><Field label="Таълим муассасаси *"><Input required value={editing.institutionName} onChange={(x) => setEditing({ ...editing, institutionName: x.target.value })} /></Field></div>
+            <div className="sm:col-span-2"><Field label="Мутахассислиги"><Input value={editing.speciality} onChange={(x) => setEditing({ ...editing, speciality: x.target.value })} /></Field></div>
+            <Field label="Таълим шакли"><Input list="study-types" translit={false} value={editing.studyType} onChange={(x) => setEditing({ ...editing, studyType: x.target.value })} /></Field>
+            <div className="grid grid-cols-2 gap-4">
+              <Field label="Бошланган йили"><Input type="number" min={1950} max={2100} value={editing.startYear} onChange={(x) => setEditing({ ...editing, startYear: x.target.value })} /></Field>
+              <Field label="Тугатган йили"><Input type="number" min={1950} max={2100} value={editing.endYear} onChange={(x) => setEditing({ ...editing, endYear: x.target.value })} /></Field>
+            </div>
+            {save.error && <p className="text-sm text-red-600 sm:col-span-2" role="alert">{(save.error as Error).message}</p>}
+            <div className="flex justify-end gap-2 border-t pt-4 sm:col-span-2">
               <Button variant="secondary" type="button" onClick={() => setEditing(null)}>Бекор қилиш</Button>
               <Button variant="primary" disabled={save.isPending}>Сақлаш</Button>
             </div>

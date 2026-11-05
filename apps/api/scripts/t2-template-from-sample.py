@@ -121,7 +121,7 @@ def build(sample: Path, lang: str):
     # 1) сарлавҳа, исм, иш жойи
     fill(find(body, 'Муратбаев Закарья Бахтияр улы'), '{{xodim_fish}}')
     hire = find(body, '2026 йил'); fill(hire, '{{ishga_kirish_matn}}:'); right_indent(hire, PHOTO_GAP)
-    org = find(body, '“UNICON-SOFT” МЧЖ'); fill(org, '{{tashkilot_nomi}} {{amaldagi_filial}} {{amaldagi_bolim}} {{amaldagi_lavozim}}'); right_indent(org, PHOTO_GAP)
+    org = find(body, '“UNICON-SOFT” МЧЖ'); fill(org, '{{ish_joyi_matn}}'); right_indent(org, PHOTO_GAP)
     drop(find(body, 'тизимини жорий этиш'))
 
     # 2) шахсий маълумот (қийматлар ёрлиқдан кейинги сатрда)

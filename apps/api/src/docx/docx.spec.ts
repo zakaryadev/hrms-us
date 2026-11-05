@@ -60,7 +60,7 @@ describe.each([['lat'], ['cyr']] as const)('DOCX shablonlari (%s)', (lang) => {
   });
 
   const T2 = (over: Record<string, unknown> = {}) => ({
-    ...common, ishga_kirish_matn: '2026-yil 01 mayda', tugilgan_sana: '15.03.1992', tugilgan_joy_1: "Qo'vasoy viloyati,", tugilgan_joy_2: 'Marg\'ilon shahri',
+    ...common, ish_joyi_matn: 'ABC МЧЖ филиал Мутахассис', ishga_kirish_matn: '2026-yil 01 mayda', tugilgan_sana: '15.03.1992', tugilgan_joy_1: "Qo'vasoy viloyati,", tugilgan_joy_2: 'Marg\'ilon shahri',
     millati: "o'zbek", partiyaviyligi: DOC_STRINGS[lang].none, malumoti: 'Oliy', tamomlagan: '2015 TATU', mutaxassisligi: 'Dasturchi',
     ilmiy_daraja: DOC_STRINGS[lang].none, ilmiy_unvon: DOC_STRINGS[lang].none, chet_tillari: 'Ingliz tili', harbiy_unvoni: DOC_STRINGS[lang].none,
     mukofotlar: DOC_STRINGS[lang].none, deputatlik: DOC_STRINGS[lang].none,
@@ -74,7 +74,7 @@ describe.each([['lat'], ['cyr']] as const)('DOCX shablonlari (%s)', (lang) => {
   it('obyektivka (T-2, namunadan 1:1): tsikllar, tug\'ilgan joy ikki qator, hamma maydonlar', () => {
     const t = text(svc.render(lang, 'obyektivka', T2()));
     expect(t).not.toMatch(/\{\{|\}\}|\{#|\{\//);
-    for (const s of ['2015-2020 yy.', 'ABC - Dasturchi', 'XYZ Menejer', 'Aliyev A.', 'Aliyeva B.', "Qo'vasoy viloyati,", "Marg'ilon shahri", 'Ingliz tili', '2015 TATU', '2026-yil 01 mayda'])
+    for (const s of ['2015-2020 yy.', 'ABC - Dasturchi', 'XYZ Menejer', 'Aliyev A.', 'Aliyeva B.', "Qo'vasoy viloyati,", "Marg'ilon shahri", 'Ingliz tili', '2015 TATU', '2026-yil 01 mayda', 'ABC МЧЖ филиал Мутахассис'])
       expect(t).toContain(s);
     expect(t).toContain(lang === 'cyr' ? 'МАЪЛУМОТНОМА' : "MA'LUMOTNOMA");
     expect(t).toContain(lang === 'cyr' ? 'ҳ.в.' : 'h.v.');

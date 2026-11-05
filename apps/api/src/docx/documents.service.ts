@@ -57,6 +57,16 @@ export class DocumentsService {
     return { dept, pos };
   }
 
+  /** Бўлим номида ташкилот номи аллақачон бор бўлса (масалан «“X” МЧЖ Қорақалпоғистон филиали»), уни яна такрорламаймиз */
+  private static orgInside(org: string, ...units: string[]) {
+    const norm = (x: string) => x.toLowerCase().replace(/[“”«»"'ʻʼ`.,]/g, '').replace(/\s+/g, ' ').trim();
+    const o = norm(org);
+    if (!o) return false;
+    const brand = /[“"«]([^”"»]+)[”"»]/.exec(org)?.[1];
+    const b = brand ? norm(brand) : '';
+    return units.some((u) => { const n = norm(u ?? ''); return !!n && (n.includes(o) || (!!b && n.includes(b))); });
+  }
+
   private static names(dept: { name: string; parent: { name: string } | null }) {
     return { filial: dept.parent?.name ?? dept.name, bolim: dept.parent ? dept.name : '' };
   }
@@ -119,7 +129,8 @@ export class DocumentsService {
 
     switch (type) {
       case 'obyektivka': {
-        const edu = e.education[e.education.length - 1];
+        // Т-2 га энг сўнгги тамомланган таълим (битирган йил бўйича; йил йўқ бўлса — охирги қатор)
+        const edu = [...e.education].sort((x, y) => (x.endYear ?? 0) - (y.endYear ?? 0)).at(-1);
         const yy = L.year; // «й.» / «y.»
         const period = (start: Date | null, end: Date | null) => {
           const a = start ? start.getUTCFullYear() : null, b = end ? end.getUTCFullYear() : null;
@@ -135,11 +146,11 @@ export class DocumentsService {
         const comma = place.indexOf(',');
         const [place1, place2] = comma < 0 ? [place, ''] : [place.slice(0, comma + 1), place.slice(comma + 1).trim()];
         const hire = e.hireDate;
-        if (hire) {
-          history.push({ davr: period(hire, null), joy: [s.tashkilot_nomi, cur.filial, cur.bolim, e.position.title].filter(Boolean).join(' ') });
-        }
+        const orgDup = DocumentsService.orgInside(s.tashkilot_nomi, cur.filial, cur.bolim);
+        const workplace = [orgDup ? '' : s.tashkilot_nomi, cur.filial, cur.bolim, e.position.title].filter(Boolean).join(' ');
+        if (hire) history.push({ davr: period(hire, null), joy: workplace });
         data = {
-          ...base,
+          ...base, tashkilot_nomi: orgDup ? '' : base.tashkilot_nomi, ish_joyi_matn: workplace,
           ishga_kirish_matn: hire ? L.hireLine(hire.getUTCFullYear(), String(hire.getUTCDate()).padStart(2, '0'), monthName(hire, lang)) : '',
           tugilgan_sana: fmtDate(e.birthDate), tugilgan_joy_1: place1, tugilgan_joy_2: place2,
           millati: e.nationality ?? '', partiyaviyligi: e.partyMembership || L.none, malumoti: params.malumoti || e.educationLevel || '',
