@@ -83,6 +83,17 @@ fi
 if [ -d .git ] && [ "${NO_PULL:-0}" != "1" ]; then
   say "git pull…"; git pull --ff-only || warn "git pull bajarilmadi — mavjud kod bilan davom etiladi (NO_PULL=1 bilan o'chirish mumkin)"
 fi
+# Disk: build ~2–3 GB vaqtincha joy oladi. Joy kam bo'lsa, eski build keshi va ishlatilmayotgan image'lar tozalanadi
+# (VOLUME'lar — baza, yuklangan fayllar, hujjatlar — hech qachon o'chirilmaydi).
+DOCKER_ROOT="$(docker info -f '{{.DockerRootDir}}' 2>/dev/null || true)"; DOCKER_ROOT="${DOCKER_ROOT:-/var/lib/docker}"
+free_mb() { local v; v="$(df -Pm "$DOCKER_ROOT" 2>/dev/null | awk 'NR==2{print $4}' || true)"; echo "${v:-99999}"; }
+MIN_FREE_MB="${MIN_FREE_MB:-3000}"
+if [ "$(free_mb)" -lt "$MIN_FREE_MB" ]; then
+  warn "Diskda bo'sh joy kam ($(free_mb) MB < ${MIN_FREE_MB} MB): docker keshi tozalanmoqda…"
+  docker builder prune -af >/dev/null 2>&1 || true
+  docker image prune -af   >/dev/null 2>&1 || true
+  [ "$(free_mb)" -ge "$MIN_FREE_MB" ] || die "Diskda hali ham joy yetarli emas ($(free_mb) MB). 'df -h' va 'docker system df' bilan tekshiring; log/zaxira fayllarni tozalang."
+fi
 say "Konteynerlar build qilinib ishga tushirilmoqda (birinchi marta bir necha daqiqa)…"
 "${COMPOSE[@]}" up -d --build
 
@@ -100,6 +111,9 @@ fi
 
 IP="$(hostname -I 2>/dev/null | awk '{print $1}')"
 echo
+# Eski (osilib qolgan) image'lar va 3 kundan eski build keshi — disk to'lib ketmasligi uchun
+docker image prune -f >/dev/null 2>&1 || true
+docker builder prune -f --filter "until=72h" >/dev/null 2>&1 || true
 say "TAYYOR."
 if [ -n "$DOMAIN" ]; then
   echo "   Sayt:  https://$DOMAIN"
