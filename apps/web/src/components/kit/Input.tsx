@@ -1,4 +1,5 @@
-import { forwardRef, type InputHTMLAttributes, type ReactNode, type TextareaHTMLAttributes } from 'react';
+import { Eye, EyeOff } from 'lucide-react';
+import { forwardRef, useState, type InputHTMLAttributes, type ReactNode, type TextareaHTMLAttributes } from 'react';
 import { cn } from './cn';
 import { useFieldId } from './Field';
 import TranslitButton from './TranslitButton';
@@ -25,6 +26,20 @@ const fakeChange = (v: string) => ({ target: { value: v }, currentTarget: { valu
 
 export const Input = forwardRef<HTMLInputElement, InputProps>(function Input({ invalid, icon, translit, className, id, ...rest }, ref) {
   const fid = useFieldId(id);
+  const [show, setShow] = useState(false);
+  // Парол майдонлари: ўнгда «кўз» тугмаси — паролни кўрсатиш/яшириш
+  if (rest.type === 'password') {
+    const { type: _t, ...pr } = rest;
+    return (
+      <div className="relative">
+        <input ref={ref} id={fid} type={show ? 'text' : 'password'} aria-invalid={invalid || undefined} className={cn(inputBase, inputState(invalid), 'h-9 pl-3 pr-10', className)} {...pr} />
+        <button type="button" onClick={() => setShow((v) => !v)} aria-label={show ? 'Паролни яшириш' : 'Паролни кўрсатиш'} aria-pressed={show} title={show ? 'Паролни яшириш' : 'Паролни кўрсатиш'}
+          className="absolute right-1.5 top-1/2 inline-flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-md text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400/50">
+          {show ? <EyeOff size={16} /> : <Eye size={16} />}
+        </button>
+      </div>
+    );
+  }
   const value = String(rest.value ?? '');
   const tl = wantsTranslit(translit, { ...rest, icon }) && value.trim() !== '' && !!rest.onChange;
   const button = tl ? <TranslitButton value={value} onApply={(v) => rest.onChange!(fakeChange(v))} className="absolute right-1.5 top-1/2 -translate-y-1/2" /> : null;
