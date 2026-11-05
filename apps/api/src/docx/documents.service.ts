@@ -236,18 +236,19 @@ export class DocumentsService {
 
   /** Яратилган ҳужжатни (ва шу файлга боғлиқ буйруқни) файли билан ўчиради. */
   async removeGenerated(id: string) {
-    const d = await this.prisma.generatedDocument.findUnique({ where: { id } });
+    const d = await this.prisma.generatedDocument.findUnique({ where: { id }, include: { employee: true } });
     if (!d) throw new NotFoundException('Ҳужжат топилмади');
     await this.prisma.$transaction([
       this.prisma.order.deleteMany({ where: { docxFilePath: d.filePath } }),
       this.prisma.generatedDocument.delete({ where: { id } }),
     ]);
     this.unlinkFile(d.filePath);
+    return `Ҳужжат ўчирилди: ${TEMPLATE_LABEL[d.type] ?? d.type}${d.number ? ' № ' + d.number : ''}, ${DocumentsService.fio(d.employee)} (${d.employee.tabNumber})`;
   }
 
   /** Буйруқни (ва шу файлга боғлиқ ҳужжат ёзувини) файли билан ўчиради. */
   async removeOrder(id: string) {
-    const o = await this.prisma.order.findUnique({ where: { id } });
+    const o = await this.prisma.order.findUnique({ where: { id }, include: { employee: true } });
     if (!o) throw new NotFoundException('Буйруқ топилмади');
     const path = o.docxFilePath;
     await this.prisma.$transaction([
@@ -255,6 +256,7 @@ export class DocumentsService {
       ...(path ? [this.prisma.generatedDocument.deleteMany({ where: { filePath: path } })] : []),
     ]);
     if (path) this.unlinkFile(path);
+    return `Буйруқ ўчирилди: № ${o.orderNumber} (${o.orderType}), ${DocumentsService.fio(o.employee)} (${o.employee.tabNumber})`;
   }
 
   private unlinkFile(name: string) {

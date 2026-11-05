@@ -2,7 +2,7 @@ import * as Dialog from '@radix-ui/react-dialog';
 import * as Popover from '@radix-ui/react-popover';
 import { useQuery } from '@tanstack/react-query';
 import {
-  Archive, BookMarked, CalendarDays, CalendarRange, ChevronDown, ChevronLeft, FileSpreadsheet, FileText, KeyRound, LayoutDashboard, LogOut, Menu, Network, Palmtree, Plus, ScrollText, UserCog, Users, Wallet, FileType2,
+  Archive, BookMarked, CalendarDays, CalendarRange, ChevronDown, ChevronLeft, FileSpreadsheet, FileText, KeyRound, LayoutDashboard, LogOut, Menu, Network, Palmtree, Plus, ScrollText, UserCog, Users, Wallet, FileType2, History,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
@@ -36,6 +36,7 @@ const GROUPS: Group[] = [
   ] },
   { id: 'system', label: 'Тизим', items: [
     { to: '/users', label: 'Фойдаланувчилар', icon: UserCog },
+    { to: '/audit', label: 'Журнал', icon: History },
     { to: '/settings', label: 'Справочниклар', icon: BookMarked },
   ] },
 ];
@@ -68,7 +69,7 @@ function SidebarNav({ collapsed, onNavigate }: { collapsed: boolean; onNavigate?
   return (
     <nav className="flex-1 space-y-3 overflow-y-auto px-3 py-4" aria-label="Асосий меню">
       {GROUPS.map((g) => {
-        const items = g.items.filter((i) => i.to !== '/users' || isAdmin);
+        const items = g.items.filter((i) => (i.to !== '/users' && i.to !== '/audit') || isAdmin);
         if (!items.length) return null;
         // Фаол саҳифа ётган гуруҳ ҳеч қачон бекилмайди
         const hasActive = items.some((i) => (i.end ? location.pathname === i.to : location.pathname.startsWith(i.to)));

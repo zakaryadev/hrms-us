@@ -20,6 +20,7 @@ import EmployeeProfile from './pages/EmployeeProfile';
 import Employees from './pages/Employees';
 import Settings from './pages/Settings';
 import Structure from './pages/Structure';
+import AuditLog from './pages/AuditLog';
 import Templates from './pages/Templates';
 import Timesheet from './pages/Timesheet';
 
@@ -37,6 +38,7 @@ export default function App() {
           <Route path="import" element={<ImportPage />} />
           <Route path="archive" element={<Archive />} />
           <Route path="orders" element={<Orders />} />
+          <Route path="audit" element={<RequireAuth roles={['superadmin']}><AuditLog /></RequireAuth>} />
           <Route path="templates" element={<Templates />} />
           <Route path="certificates" element={<Certificates />} />
           <Route path="payroll" element={<Payroll />} />

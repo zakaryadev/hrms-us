@@ -20,6 +20,6 @@ export async function prepareTestDb(name = 'hrms_test') {
   process.env.DATABASE_URL = url;
   const db = new PrismaClient({ datasources: { db: { url } } });
   try {
-    await db.$executeRawUnsafe('TRUNCATE users, employees, positions, departments, settings, generated_documents, orders, timesheet, calendar_days RESTART IDENTITY CASCADE');
+    await db.$executeRawUnsafe('TRUNCATE users, employees, positions, departments, settings, generated_documents, orders, timesheet, calendar_days, audit_logs RESTART IDENTITY CASCADE');
   } finally { await db.$disconnect(); }
 }

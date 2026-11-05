@@ -240,3 +240,24 @@ model CalendarDay {
 
   @@map("calendar_days")
 }
+
+/// Тизимдаги ўзгартирувчи амаллар журнали (кимнинг, нима қилгани). Фойдаланувчи ўчирилса ҳам ёзув қолади — шунинг учун FK йўқ.
+model AuditLog {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  userId    String?  @map("user_id")
+  userLogin String?  @map("user_login")
+  userName  String?  @map("user_name")
+  action    String
+  entity    String
+  entityId  String?  @map("entity_id")
+  summary   String?
+  method    String
+  path      String
+  status    Int
+  ip        String?
+
+  @@index([createdAt])
+  @@index([entity, createdAt])
+  @@map("audit_logs")
+}

@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { CalendarModule } from './calendar/calendar.module';
+import { AuditModule } from './audit/audit.module';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { DashboardModule } from './dashboard/dashboard.module';
@@ -15,7 +16,7 @@ import { PositionsModule } from './positions/positions.module';
 import { PrismaModule } from './prisma/prisma.module';
 
 @Module({
-  imports: [ConfigModule.forRoot({ isGlobal: true }), PrismaModule, AuthModule, UsersModule, CalendarModule, DepartmentsModule, PositionsModule, EmployeesModule, DashboardModule, DocumentsModule, DocxModule, SettingsModule, TimesheetModule],
+  imports: [ConfigModule.forRoot({ isGlobal: true }), PrismaModule, AuditModule, AuthModule, UsersModule, CalendarModule, DepartmentsModule, PositionsModule, EmployeesModule, DashboardModule, DocumentsModule, DocxModule, SettingsModule, TimesheetModule],
   controllers: [HealthController],
 })
 export class AppModule {}

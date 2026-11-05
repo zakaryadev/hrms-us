@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateEmployeeDto, ListEmployeesQuery, UpdateEmployeeDto } from './employees.dto';
@@ -99,7 +99,10 @@ export class EmployeesService {
     });
   }
 
-  remove(id: string) {
+  async remove(id: string) {
+    const e = await this.prisma.employee.findUnique({ where: { id }, include: { _count: { select: { orders: true } } } });
+    if (!e) throw new NotFoundException('Ходим топилмади');
+    if (e._count.orders) throw new BadRequestException('Ходимда буйруқлар бор — бутунлай ўчириб бўлмайди. Ўрнига «Архив»га ўтказинг (ишдан бўшатилган)');
     return this.prisma.employee.delete({ where: { id } });
   }
 }

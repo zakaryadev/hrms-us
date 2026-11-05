@@ -1,4 +1,4 @@
-import { BadRequestException, Body, Controller, Delete, Get, HttpCode, NotFoundException, Param, Post, Query, Res, StreamableFile } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Delete, Get, HttpCode, NotFoundException, Param, Post, Query, Req, Res, StreamableFile } from '@nestjs/common';
 import { IsObject, IsOptional, IsUUID } from 'class-validator';
 import type { Response } from 'express';
 import { existsSync } from 'fs';
@@ -16,7 +16,8 @@ export class DocumentsGenController {
   constructor(private svc: DocumentsService, private calendar: CalendarService) {}
 
   @Post('documents/generate/:type')
-  async generate(@Param('type') type: string, @Body() dto: GenerateDto, @Res({ passthrough: true }) res: Response) {
+  async generate(@Param('type') type: string, @Body() dto: GenerateDto, @Res({ passthrough: true }) res: Response, @Req() req: any) {
+    req.auditSummary = `Ҳужжат яратилди: ${type}, ходим ${dto.employeeId}`;
     if (!DOC_TYPES.includes(type as DocType)) throw new NotFoundException(`Номаълум ҳужжат тури: ${type}`);
     // save:false — hujjat bazaga yozilmaydi, faylning o'zi qaytariladi
     const persist = dto.params?.save !== false;
@@ -54,11 +55,11 @@ export class DocumentsGenController {
 
   @Delete('documents/generated/:id')
   @HttpCode(204)
-  async removeGenerated(@Param('id') id: string) { await this.svc.removeGenerated(id); }
+  async removeGenerated(@Param('id') id: string, @Req() req: any) { req.auditSummary = await this.svc.removeGenerated(id); }
 
   @Delete('orders/:id')
   @HttpCode(204)
-  async removeOrder(@Param('id') id: string) { await this.svc.removeOrder(id); }
+  async removeOrder(@Param('id') id: string, @Req() req: any) { req.auditSummary = await this.svc.removeOrder(id); }
 
   @Get('documents/templates')
   templates() { return this.svc.listTemplates(); }
