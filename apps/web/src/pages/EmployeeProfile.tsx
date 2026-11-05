@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import EmployeeForm from '../components/EmployeeForm';
 import GenerateDocs from '../components/GenerateDocs';
-import { ErrorNote, Field, Loading, StatusBadge } from '../components/ui';
+import { ErrorNote, Field, Loading, Modal, StatusBadge } from '../components/ui';
 import { api, photoSrc, CONTRACT_LABEL, EMP_TYPE_LABEL, fmtDate, fmtMoney, fullName, GENDER_LABEL } from '../lib/api';
 import { Avatar, Button, DatePicker, FileDropzone, Input, Select, Tabs } from '../components/kit';
 import { useCan } from '../auth/AuthContext';
@@ -101,10 +101,9 @@ function WorkHistory({ e, onSaved }: { e: any; onSaved: () => void }) {
   const save = useListSave(e, 'workHistory', onSaved);
   const emptyW = { startDate: '', endDate: '', organizationName: '', positionTitle: '' };
   const [n, setN] = useState(emptyW);
-  const [editId, setEditId] = useState<string | null>(null);   // таҳрирланаётган қатор
+  const [editing, setEditing] = useState<any>(null);   // модал ойнада таҳрирланаётган қатор
   const clean = (w: any) => Object.fromEntries(Object.entries(strip(w)).filter(([, v]) => v));
-  const startEdit = (w: any) => { setEditId(w.id); setN({ startDate: w.startDate?.slice(0, 10) ?? '', endDate: w.endDate?.slice(0, 10) ?? '', organizationName: w.organizationName ?? '', positionTitle: w.positionTitle ?? '' }); };
-  const cancel = () => { setEditId(null); setN(emptyW); };
+  const startEdit = (w: any) => setEditing({ id: w.id, startDate: w.startDate?.slice(0, 10) ?? '', endDate: w.endDate?.slice(0, 10) ?? '', organizationName: w.organizationName ?? '', positionTitle: w.positionTitle ?? '' });
   return (
     <div>
       <table className="mb-4 w-full text-sm">
@@ -114,21 +113,35 @@ function WorkHistory({ e, onSaved }: { e: any; onSaved: () => void }) {
             <tr key={w.id}><td className="td whitespace-nowrap">{fmtDate(w.startDate)} — {w.endDate ? fmtDate(w.endDate) : 'ҳозиргача'}</td><td className="td">{w.organizationName}</td><td className="td">{w.positionTitle}</td>
               <td className="td whitespace-nowrap text-right">{can.write && <>
                 <button aria-label="Таҳрирлаш" title="Таҳрирлаш" className="mr-3 text-slate-400 hover:text-brand" onClick={() => startEdit(w)}><Pencil size={16} /></button>
-                <button aria-label="Ўчириш" title="Ўчириш" className="text-slate-400 hover:text-red-600" onClick={() => { if (editId === w.id) cancel(); save.mutate(e.workHistory.filter((x: any) => x.id !== w.id).map(clean)); }}><Trash2 size={16} /></button></>}</td></tr>
+                <button aria-label="Ўчириш" title="Ўчириш" className="text-slate-400 hover:text-red-600" onClick={() => confirm('Қатор ўчирилсинми?') && save.mutate(e.workHistory.filter((x: any) => x.id !== w.id).map(clean))}><Trash2 size={16} /></button></>}</td></tr>
           ))}
           {e.workHistory.length === 0 && <tr><td colSpan={4} className="td text-slate-500">Маълумот йўқ</td></tr>}
         </tbody>
       </table>
-      {can.write && <form className="grid grid-cols-1 items-end gap-3 sm:grid-cols-5" onSubmit={(ev) => { ev.preventDefault(); save.mutate(editId ? e.workHistory.map((x: any) => (x.id === editId ? clean(n) : clean(x))) : [...e.workHistory.map(clean), clean(n)]); cancel(); }}>
+      {can.write && <form className="grid grid-cols-1 items-end gap-3 sm:grid-cols-5" onSubmit={(ev) => { ev.preventDefault(); save.mutate([...e.workHistory.map(clean), clean(n)]); setN(emptyW); }}>
         <Field label="Бошланиши"><DatePicker value={n.startDate} onChange={(v) => setN({ ...n, startDate: v })} /></Field>
         <Field label="Тугаши"><DatePicker value={n.endDate} onChange={(v) => setN({ ...n, endDate: v })} /></Field>
         <Field label="Ташкилот *"><Input required value={n.organizationName} onChange={(x) => setN({ ...n, organizationName: x.target.value })} /></Field>
         <Field label="Лавозим"><Input value={n.positionTitle} onChange={(x) => setN({ ...n, positionTitle: x.target.value })} /></Field>
-        <div className="flex gap-2">
-          <Button variant="primary" className="flex-1 justify-center" disabled={save.isPending}>{editId ? 'Сақлаш' : 'Қўшиш'}</Button>
-          {editId && <Button variant="secondary" type="button" onClick={cancel}>Бекор</Button>}
-        </div>
+        <Button variant="primary" className="justify-center" disabled={save.isPending}>Қўшиш</Button>
       </form>}
+      {editing && (
+        <Modal title="Меҳнат фаолиятини таҳрирлаш" onClose={() => setEditing(null)}>
+          <form className="space-y-4" onSubmit={(ev) => { ev.preventDefault(); save.mutate(e.workHistory.map((x: any) => (x.id === editing.id ? clean(editing) : clean(x))), { onSuccess: () => setEditing(null) }); }}>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <Field label="Бошланиши"><DatePicker value={editing.startDate} onChange={(v) => setEditing({ ...editing, startDate: v })} /></Field>
+              <Field label="Тугаши"><DatePicker value={editing.endDate} onChange={(v) => setEditing({ ...editing, endDate: v })} /></Field>
+            </div>
+            <Field label="Ташкилот *"><Input required value={editing.organizationName} onChange={(x) => setEditing({ ...editing, organizationName: x.target.value })} /></Field>
+            <Field label="Лавозим"><Input value={editing.positionTitle} onChange={(x) => setEditing({ ...editing, positionTitle: x.target.value })} /></Field>
+            {save.error && <p className="text-sm text-red-600" role="alert">{(save.error as Error).message}</p>}
+            <div className="flex justify-end gap-2 border-t pt-4">
+              <Button variant="secondary" type="button" onClick={() => setEditing(null)}>Бекор қилиш</Button>
+              <Button variant="primary" disabled={save.isPending}>Сақлаш</Button>
+            </div>
+          </form>
+        </Modal>
+      )}
     </div>
   );
 }
@@ -138,10 +151,10 @@ function Relatives({ e, onSaved }: { e: any; onSaved: () => void }) {
   const save = useListSave(e, 'relatives', onSaved);
   const empty = { relativeType: '', fullName: '', birthYearPlace: '', workPlacePosition: '', livingAddress: '' };
   const [n, setN] = useState(empty);
-  const [editId, setEditId] = useState<string | null>(null);
+  const [editing, setEditing] = useState<any>(null);
   const clean = (r: any) => Object.fromEntries(Object.entries(strip(r)).filter(([, v]) => v));
-  const startEdit = (r: any) => { setEditId(r.id); setN({ relativeType: r.relativeType ?? '', fullName: r.fullName ?? '', birthYearPlace: r.birthYearPlace ?? '', workPlacePosition: r.workPlacePosition ?? '', livingAddress: r.livingAddress ?? '' }); };
-  const cancel = () => { setEditId(null); setN(empty); };
+  const startEdit = (r: any) => setEditing({ id: r.id, relativeType: r.relativeType ?? '', fullName: r.fullName ?? '', birthYearPlace: r.birthYearPlace ?? '', workPlacePosition: r.workPlacePosition ?? '', livingAddress: r.livingAddress ?? '' });
+  const FIELDS = [['relativeType', 'Қариндошлиги *', true], ['fullName', 'Ф.И.Ш. *', true], ['birthYearPlace', 'Туғилган йил, жой'], ['workPlacePosition', 'Иш жойи'], ['livingAddress', 'Манзил']] as const;
   return (
     <div>
       <div className="mb-4 overflow-x-auto"><table className="w-full text-sm">
@@ -151,20 +164,31 @@ function Relatives({ e, onSaved }: { e: any; onSaved: () => void }) {
             <tr key={r.id}><td className="td">{r.relativeType}</td><td className="td">{r.fullName}</td><td className="td">{r.birthYearPlace}</td><td className="td">{r.workPlacePosition}</td><td className="td">{r.livingAddress}</td>
               <td className="td whitespace-nowrap text-right">{can.write && <>
                 <button aria-label="Таҳрирлаш" title="Таҳрирлаш" className="mr-3 text-slate-400 hover:text-brand" onClick={() => startEdit(r)}><Pencil size={16} /></button>
-                <button aria-label="Ўчириш" title="Ўчириш" className="text-slate-400 hover:text-red-600" onClick={() => { if (editId === r.id) cancel(); save.mutate(e.relatives.filter((x: any) => x.id !== r.id).map(clean)); }}><Trash2 size={16} /></button></>}</td></tr>
+                <button aria-label="Ўчириш" title="Ўчириш" className="text-slate-400 hover:text-red-600" onClick={() => confirm('Қатор ўчирилсинми?') && save.mutate(e.relatives.filter((x: any) => x.id !== r.id).map(clean))}><Trash2 size={16} /></button></>}</td></tr>
           ))}
           {e.relatives.length === 0 && <tr><td colSpan={6} className="td text-slate-500">Маълумот йўқ</td></tr>}
         </tbody>
       </table></div>
-      {can.write && <form className="grid grid-cols-1 items-end gap-3 sm:grid-cols-6" onSubmit={(ev) => { ev.preventDefault(); save.mutate(editId ? e.relatives.map((x: any) => (x.id === editId ? clean(n) : clean(x))) : [...e.relatives.map(clean), clean(n)]); cancel(); }}>
-        {([['relativeType', 'Қариндошлиги *', true], ['fullName', 'Ф.И.Ш. *', true], ['birthYearPlace', 'Туғилган йил, жой'], ['workPlacePosition', 'Иш жойи'], ['livingAddress', 'Манзил']] as const).map(([k, label, req]) => (
+      {can.write && <form className="grid grid-cols-1 items-end gap-3 sm:grid-cols-6" onSubmit={(ev) => { ev.preventDefault(); save.mutate([...e.relatives.map(clean), clean(n)]); setN(empty); }}>
+        {FIELDS.map(([k, label, req]) => (
           <Field key={k} label={label}><Input required={!!req} value={(n as any)[k]} onChange={(x) => setN({ ...n, [k]: x.target.value })} /></Field>
         ))}
-        <div className="flex gap-2">
-          <Button variant="primary" className="flex-1 justify-center" disabled={save.isPending}>{editId ? 'Сақлаш' : 'Қўшиш'}</Button>
-          {editId && <Button variant="secondary" type="button" onClick={cancel}>Бекор</Button>}
-        </div>
+        <Button variant="primary" className="justify-center" disabled={save.isPending}>Қўшиш</Button>
       </form>}
+      {editing && (
+        <Modal title="Қариндошни таҳрирлаш" onClose={() => setEditing(null)}>
+          <form className="space-y-4" onSubmit={(ev) => { ev.preventDefault(); save.mutate(e.relatives.map((x: any) => (x.id === editing.id ? clean(editing) : clean(x))), { onSuccess: () => setEditing(null) }); }}>
+            {FIELDS.map(([k, label, req]) => (
+              <Field key={k} label={label}><Input required={!!req} value={editing[k]} onChange={(x) => setEditing({ ...editing, [k]: x.target.value })} /></Field>
+            ))}
+            {save.error && <p className="text-sm text-red-600" role="alert">{(save.error as Error).message}</p>}
+            <div className="flex justify-end gap-2 border-t pt-4">
+              <Button variant="secondary" type="button" onClick={() => setEditing(null)}>Бекор қилиш</Button>
+              <Button variant="primary" disabled={save.isPending}>Сақлаш</Button>
+            </div>
+          </form>
+        </Modal>
+      )}
     </div>
   );
 }
