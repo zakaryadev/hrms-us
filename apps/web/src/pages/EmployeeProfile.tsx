@@ -43,7 +43,7 @@ export default function EmployeeProfile() {
       </nav>
       <header className="mb-6 flex flex-wrap items-center gap-x-5 gap-y-4">
         {e.photoUrl ? (
-          <button type="button" onClick={() => setViewPhoto(true)} aria-label="Расмни катта кўриш" title="Катталаштириш" className="shrink-0 rounded-full transition hover:ring-4 hover:ring-slate-200 focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-slate-400/50">
+          <button type="button" onClick={() => setViewPhoto(true)} aria-label="Расмни катта кўриш" title="Катталаштириш" className="inline-flex h-[72px] w-[72px] shrink-0 items-center justify-center rounded-full leading-none transition hover:ring-4 hover:ring-slate-200 focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-slate-400/50">
             <Avatar size={72} src={photoSrc(e.photoUrl)} name={fullName(e)} className="cursor-zoom-in" />
           </button>
         ) : <Avatar size={72} src={null} name={fullName(e)} />}
