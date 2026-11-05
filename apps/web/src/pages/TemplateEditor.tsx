@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { Button, Input, Select, cn } from '../components/kit';
 import { api } from '../lib/api';
-import { loadSuperDoc } from '../lib/superdoc';
+import { checkVendorFiles, loadSuperDoc, measureSpeed } from '../lib/superdoc';
 
 type Script = 'cyr' | 'lat' | 'lat-new';
 type Tpl = { name: string; label: string; custom: boolean; masterScript: Script | null; fields: string[]; available: string[]; blocks: string[] };
@@ -30,19 +30,41 @@ export default function TemplateEditor() {
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [q, setQ] = useState('');
   const [reload, setReload] = useState(0);
+  const [phase, setPhase] = useState('');
+  const [elapsed, setElapsed] = useState(0);
+  const [diag, setDiag] = useState<string[]>([]);
+  // ?timeout=секунд — синов учун (одатда 120 сония)
+  const limit = Math.min(Math.max(Number(sp.get('timeout')) || 120, 5), 600);
 
   // Муҳаррирни юклаш: шу ёзувдаги шаблон (бошқа ёзувда бўлса автоматик ўгирилган) — фақат шу саҳифада
   useEffect(() => {
     let cancelled = false;
-    setState('loading'); setDirty(false); setMsg(null); setError('');
+    const started = Date.now();
+    setState('loading'); setDirty(false); setMsg(null); setError(''); setDiag([]); setElapsed(0); setPhase('Шаблон юкланмоқда…');
+    const tick = setInterval(() => setElapsed(Math.round((Date.now() - started) / 1000)), 1000);
+    // Вақт чегараси: муҳаррир тайёр бўлмаса, «юкланмоқда» да қотиб қолмасдан сабабини кўрсатади
+    const fail = async (text: string) => {
+      if (cancelled) return;
+      setError(text); setState('error');
+      const [checks, speed] = await Promise.all([checkVendorFiles(8000), measureSpeed()]);
+      if (!cancelled) setDiag([...checks.map((c) => c.line), speed, `Браузер: ${navigator.userAgent}`]);
+    };
+    const timer = setTimeout(() => fail(`Муҳаррир ${limit} сонияда очилмади. Тармоқ секин бўлиши мумкин (муҳаррир файллари ~10 МБ) — Wi-Fi да ёки компьютерда қайта уриниб кўринг.`), limit * 1000);
     (async () => {
       try {
         const res = await fetch(`/api/documents/templates/${name}/download?script=${script}`);
         if (res.status === 401) { window.location.assign('/login'); return; }
         if (!res.ok) throw new Error(res.status === 404 ? 'Шаблон топилмади' : `Шаблонни юклаб бўлмади (${res.status})`);
         const file = new File([await res.blob()], `${name}.docx`, { type: DOCX });
+        setPhase('Муҳаррир файллари текширилмоқда…');
+        const checks = await checkVendorFiles();
+        if (cancelled) return;
+        const bad = checks.filter((c) => !c.ok);
+        if (bad.length) { setDiag(checks.map((c) => c.line)); throw new Error(`Серверда муҳаррир файллари муаммоси (${bad.length}/${checks.length}): сайтни янгилаш (deploy) тугалланмаган бўлиши мумкин.`); }
+        setPhase('Муҳаррир юкланмоқда…');
         const SuperDoc = await loadSuperDoc();
         if (cancelled || !host.current) return;
+        setPhase('Ҳужжат очилмоқда…');
         let readyAt = 0;
         sd.current = new SuperDoc({
           selector: host.current,
@@ -50,13 +72,13 @@ export default function TemplateEditor() {
           documentMode: 'editing',
           telemetry: { enabled: false },   // ҳужжат очилиши ҳақидаги маълумот ташқарига юборилмайди
           ui: { toolbar: { container: bar.current! }, comments: false },
-          onReady: () => { readyAt = Date.now(); if (!cancelled) setState('ready'); },
+          onReady: () => { readyAt = Date.now(); clearTimeout(timer); if (!cancelled) setState('ready'); },
           onEditorUpdate: () => { if (readyAt && Date.now() - readyAt > 1000) setDirty(true); },
-          onException: (e: any) => console.error('SuperDoc:', e),
+          onException: (e: any) => { console.error('SuperDoc:', e); if (!readyAt) fail(`Муҳаррир хатоси: ${e?.error?.message ?? e?.message ?? 'номаълум'}`); },
         });
-      } catch (e) { if (!cancelled) { setError((e as Error).message); setState('error'); } }
+      } catch (e) { clearTimeout(timer); if (!cancelled) { setError((e as Error).message); setState('error'); } }
     })();
-    return () => { cancelled = true; try { sd.current?.destroy(); } catch { /* ҳеч нарса */ } sd.current = null; };
+    return () => { cancelled = true; clearTimeout(timer); clearInterval(tick); try { sd.current?.destroy(); } catch { /* ҳеч нарса */ } sd.current = null; };
   }, [name, script, reload]);
 
   // Сақланмаган ўзгариш бўлса, саҳифани ёпишдан олдин сўрайди
@@ -114,10 +136,19 @@ export default function TemplateEditor() {
           <div ref={bar} className="border-b border-slate-200 bg-white" />
           <div className="relative h-[calc(100vh-17rem)] min-h-[420px] overflow-auto bg-slate-100">
             <div ref={host} className="min-h-full" />
-            {state === 'loading' && <div className="absolute inset-0 flex items-center justify-center bg-slate-100/80 text-sm text-slate-600">Муҳаррир юкланмоқда…</div>}
+            {state === 'loading' && (
+              <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-slate-100/80 p-6 text-center text-sm text-slate-600">
+                <p className="font-medium text-slate-800">Муҳаррир юкланмоқда…</p>
+                <p>{phase} <span className="tnum text-slate-400">{elapsed} с</span></p>
+                {elapsed >= 15 && <p className="max-w-sm text-xs text-slate-500">Биринчи очилишда ~10 МБ файл юкланади — секин тармоқда 1–2 дақиқа кетиши мумкин. Кейинги очилишлар тезроқ.</p>}
+              </div>
+            )}
             {state === 'error' && (
-              <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-slate-100 p-6 text-center text-sm text-red-600">
-                <p>{error || 'Муҳаррирни юклаб бўлмади'}</p>
+              <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 overflow-auto bg-slate-100 p-6 text-center text-sm">
+                <p className="text-red-600">{error || 'Муҳаррирни юклаб бўлмади'}</p>
+                {diag.length > 0 && (
+                  <pre className="max-w-full overflow-x-auto whitespace-pre-wrap break-all rounded-md border border-slate-200 bg-white p-3 text-left text-[11px] leading-5 text-slate-700">{diag.join('\n')}</pre>
+                )}
                 <Button variant="secondary" onClick={() => setReload((n) => n + 1)}>Қайта уриниш</Button>
               </div>
             )}
