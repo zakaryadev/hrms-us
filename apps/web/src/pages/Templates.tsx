@@ -1,10 +1,10 @@
-import * as Popover from '@radix-ui/react-popover';
+import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ChevronDown, Download, History, Pencil, RotateCcw, Upload } from 'lucide-react';
+import { Download, History, MoreHorizontal, Pencil, RotateCcw, Upload } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useRef, useState } from 'react';
 import { useAuth } from '../auth/AuthContext';
-import DataTable, { actionBtn, type Column } from '../components/DataTable';
+import DataTable, { iconBtn, type Column } from '../components/DataTable';
 import { cn } from '../components/kit';
 import { PageHeader } from '../components/ui';
 import { api, fmtDate } from '../lib/api';
@@ -15,21 +15,47 @@ type Tpl = { name: string; label: string; custom: boolean; masterScript: Script 
 const SCRIPT_LABEL: Record<Script, string> = { cyr: 'Кирилл', lat: 'Лотин', 'lat-new': 'Янги алифбо' };
 const SOURCE: Record<Source, [string, string]> = { custom: ['юкланган', 'bg-brand-soft text-brand'], bundled: ['стандарт', 'bg-slate-100 text-slate-600'], auto: ['автомат', 'bg-emerald-50 text-emerald-700'] };
 
-function DownloadMenu({ t }: { t: Tpl }) {
+const itemCls = 'flex w-full cursor-pointer select-none items-center gap-2 rounded-md px-2 py-1.5 text-sm text-slate-800 outline-none data-[disabled]:pointer-events-none data-[disabled]:opacity-50 data-[highlighted]:bg-slate-100';
+const labelCls = 'px-2 pb-1 pt-1.5 text-[11px] font-medium uppercase tracking-wide text-slate-500';
+
+/** Қатор амаллари — битта «⋯» тугмаси ичида */
+function RowMenu({ t, isAdmin, busy, onReplace, onRestore, onReset }: { t: Tpl; isAdmin: boolean; busy: boolean; onReplace: () => void; onRestore: () => void; onReset: () => void }) {
   return (
-    <Popover.Root>
-      <Popover.Trigger asChild><button type="button" className={actionBtn}><Download size={14} /> Юклаб олиш <ChevronDown size={13} /></button></Popover.Trigger>
-      <Popover.Portal>
-        <Popover.Content align="end" sideOffset={6} className="z-50 w-56 rounded-lg border border-slate-200 bg-white p-1.5 shadow-lg">
-          <p className="px-2 pb-1 pt-1 text-[11px] font-medium uppercase tracking-wide text-slate-500">Қайси ёзувда</p>
+    <DropdownMenu.Root>
+      <DropdownMenu.Trigger asChild>
+        <button type="button" aria-label={`Амаллар: ${t.label}`} className={iconBtn}><MoreHorizontal size={18} /></button>
+      </DropdownMenu.Trigger>
+      <DropdownMenu.Portal>
+        <DropdownMenu.Content align="end" sideOffset={6} className="z-50 w-64 rounded-lg border border-slate-200 bg-white p-1.5 shadow-lg">
+          <DropdownMenu.Label className={labelCls}>Юклаб олиш</DropdownMenu.Label>
           {(Object.keys(SCRIPT_LABEL) as Script[]).map((s) => (
-            <a key={s} href={`/api/documents/templates/${t.name}/download?script=${s}`} className="flex items-center justify-between rounded-md px-2 py-1.5 text-sm text-slate-800 hover:bg-slate-100">
-              {SCRIPT_LABEL[s]}<span className={cn('rounded-full px-2 py-0.5 text-[11px] font-medium', SOURCE[t.scripts[s]][1])}>{SOURCE[t.scripts[s]][0]}</span>
-            </a>
+            <DropdownMenu.Item key={s} asChild>
+              <a href={`/api/documents/templates/${t.name}/download?script=${s}`} className={cn(itemCls, 'justify-between')}>
+                <span className="inline-flex items-center gap-2"><Download size={14} className="text-slate-500" />{SCRIPT_LABEL[s]}</span>
+                <span className={cn('rounded-full px-2 py-0.5 text-[11px] font-medium', SOURCE[t.scripts[s]][1])}>{SOURCE[t.scripts[s]][0]}</span>
+              </a>
+            </DropdownMenu.Item>
           ))}
-        </Popover.Content>
-      </Popover.Portal>
-    </Popover.Root>
+          {isAdmin && (
+            <>
+              <DropdownMenu.Separator className="my-1.5 h-px bg-slate-200" />
+              <DropdownMenu.Label className={labelCls}>Шаблон</DropdownMenu.Label>
+              <DropdownMenu.Item asChild>
+                <Link to={`/templates/${t.name}/edit?script=${t.masterScript ?? 'cyr'}`} className={itemCls}><Pencil size={14} className="text-slate-500" /> Таҳрирлаш (муҳаррир)</Link>
+              </DropdownMenu.Item>
+              <DropdownMenu.Item className={itemCls} disabled={busy} onSelect={onReplace}><Upload size={14} className="text-slate-500" /> Файл билан алмаштириш</DropdownMenu.Item>
+              {t.hasPrevious && <DropdownMenu.Item className={itemCls} disabled={busy} onSelect={onRestore}><History size={14} className="text-slate-500" /> Олдинги версияни тиклаш</DropdownMenu.Item>}
+              {t.custom && (
+                <>
+                  <DropdownMenu.Separator className="my-1.5 h-px bg-slate-200" />
+                  <DropdownMenu.Item className={cn(itemCls, 'text-red-600 data-[highlighted]:bg-red-50')} disabled={busy} onSelect={onReset}><RotateCcw size={14} /> Стандартга қайтариш</DropdownMenu.Item>
+                </>
+              )}
+            </>
+          )}
+        </DropdownMenu.Content>
+      </DropdownMenu.Portal>
+    </DropdownMenu.Root>
   );
 }
 
@@ -91,13 +117,12 @@ export default function Templates() {
         storageKey="templates2" columns={columns} rows={q.data} rowKey={(t) => t.name} loading={q.isLoading} pageSizeOptions={[10, 20]} initialPageSize={20}
         searchPlaceholder="Шаблон номи ёки майдон бўйича қидириш" emptyText="Шаблонлар топилмади"
         actions={(t) => (
-          <>
-            <DownloadMenu t={t} />
-            {isAdmin && <Link to={`/templates/${t.name}/edit?script=${t.masterScript ?? 'cyr'}`} className={actionBtn}><Pencil size={14} /> Таҳрирлаш</Link>}
-            {isAdmin && <button type="button" className={actionBtn} disabled={upload.isPending} onClick={() => { target.current = t; pick.current?.click(); }}><Upload size={14} /> Алмаштириш</button>}
-            {isAdmin && t.hasPrevious && <button type="button" className={actionBtn} disabled={restore.isPending} onClick={() => confirm('Олдинги юкланган версия тикланади. Давом этайми?') && restore.mutate(t)}><History size={14} /> Олдинги</button>}
-            {isAdmin && t.custom && <button type="button" className={actionBtn} disabled={reset.isPending} onClick={() => confirm('Юкланган шаблон ўчирилиб, стандарти тикланади. Давом этайми?') && reset.mutate(t)}><RotateCcw size={14} /> Стандарт</button>}
-          </>
+          <RowMenu
+            t={t} isAdmin={isAdmin} busy={upload.isPending || restore.isPending || reset.isPending}
+            onReplace={() => { target.current = t; pick.current?.click(); }}
+            onRestore={() => confirm('Олдинги юкланган версия тикланади. Давом этайми?') && restore.mutate(t)}
+            onReset={() => confirm('Юкланган шаблон ўчирилиб, стандарти тикланади. Давом этайми?') && reset.mutate(t)}
+          />
         )}
       />
       {!isAdmin && <p className="text-xs text-slate-500">Шаблонни алмаштириш фақат Суперадмин учун.</p>}
