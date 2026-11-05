@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft, FileText, Pencil, Trash2 } from 'lucide-react';
+import * as Dialog from '@radix-ui/react-dialog';
+import { ArrowLeft, FileText, Pencil, Trash2, X } from 'lucide-react';
 import { useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import EmployeeForm from '../components/EmployeeForm';
@@ -27,6 +28,7 @@ export default function EmployeeProfile() {
   const [sp] = useSearchParams();
   const [tab, setTab] = useState<(typeof TABS)[number]>(sp.get('tab') === 'docs' ? TABS[5] : TABS[0]);
   const [editing, setEditing] = useState(false);
+  const [viewPhoto, setViewPhoto] = useState(false);
   const { data: e, isLoading, error } = useQuery({ queryKey: ['employee', id], queryFn: () => api(`/employees/${id}`) });
   const refresh = () => qc.invalidateQueries({ queryKey: ['employee', id] });
 
@@ -40,7 +42,25 @@ export default function EmployeeProfile() {
         <span aria-hidden>/</span><span className="min-w-0 break-words text-slate-800">{fullName(e)}</span>
       </nav>
       <header className="mb-6 flex flex-wrap items-center gap-x-5 gap-y-4">
-        <Avatar size={72} src={photoSrc(e.photoUrl)} name={fullName(e)} />
+        {e.photoUrl ? (
+          <button type="button" onClick={() => setViewPhoto(true)} aria-label="Расмни катта кўриш" title="Катталаштириш" className="shrink-0 rounded-full transition hover:ring-4 hover:ring-slate-200 focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-slate-400/50">
+            <Avatar size={72} src={photoSrc(e.photoUrl)} name={fullName(e)} className="cursor-zoom-in" />
+          </button>
+        ) : <Avatar size={72} src={null} name={fullName(e)} />}
+        {viewPhoto && (
+          <Dialog.Root open onOpenChange={(o) => !o && setViewPhoto(false)}>
+            <Dialog.Portal>
+              <Dialog.Overlay className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4" onClick={() => setViewPhoto(false)}>
+                <Dialog.Content aria-describedby={undefined} className="relative max-h-full focus:outline-none" onClick={(ev) => ev.stopPropagation()}>
+                  <Dialog.Title className="sr-only">{fullName(e)}</Dialog.Title>
+                  <img src={photoSrc(e.photoUrl) ?? undefined} alt={fullName(e)} className="max-h-[85vh] max-w-[92vw] rounded-lg bg-white object-contain shadow-2xl" />
+                  <p className="mt-2 text-center text-sm text-white/90">{fullName(e)}</p>
+                  <Dialog.Close aria-label="Ёпиш" className="absolute -right-3 -top-3 rounded-full bg-white p-1.5 text-slate-700 shadow-md hover:bg-slate-100"><X size={18} /></Dialog.Close>
+                </Dialog.Content>
+              </Dialog.Overlay>
+            </Dialog.Portal>
+          </Dialog.Root>
+        )}
         <div className="min-w-[200px] flex-1">
           <p className="mb-1 text-xs font-medium text-slate-500">Табель № <span className="tnum">{e.tabNumber}</span></p>
           <h1 className="text-2xl font-bold leading-8 tracking-[-0.025em] text-slate-950">{fullName(e)}</h1>

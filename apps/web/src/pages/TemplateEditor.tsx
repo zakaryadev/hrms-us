@@ -74,7 +74,11 @@ export default function TemplateEditor() {
           ui: { toolbar: { container: bar.current! }, comments: false },
           onReady: () => { readyAt = Date.now(); clearTimeout(timer); if (!cancelled) setState('ready'); },
           onEditorUpdate: () => { if (readyAt && Date.now() - readyAt > 1000) setDirty(true); },
-          onException: (e: any) => { console.error('SuperDoc:', e); if (!readyAt) fail(`Муҳаррир хатоси: ${e?.error?.message ?? e?.message ?? 'номаълум'}`); },
+          onException: (e: any) => {
+            const msg = String(e?.error?.message ?? e?.message ?? '');
+            // Сичқонча кўрсаткичи саҳифа чизилаётган пайтга тўғри келса, SuperDoc шундай вақтинчалик хато беради — ҳужжат бузилмайди
+            if (/Pointer selection is unavailable|WorkerTransportError/.test(msg) || e?.error?.name === 'WorkerTransportError') { console.warn('SuperDoc (вақтинчалик):', msg); return; }
+            console.error('SuperDoc:', e); if (!readyAt) fail(`Муҳаррир хатоси: ${e?.error?.message ?? e?.message ?? 'номаълум'}`); },
         });
       } catch (e) { clearTimeout(timer); if (!cancelled) { setError((e as Error).message); setState('error'); } }
     })();
