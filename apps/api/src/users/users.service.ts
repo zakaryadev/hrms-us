@@ -40,4 +40,12 @@ export class UsersService {
     if (d.password) { validatePassword(d.password); data.passwordHash = await this.auth.hash(d.password); }
     return this.prisma.user.update({ where: { id }, data, select: SAFE });
   }
+
+  /** Ўзини ва охирги фаол суперадминни ўчириб бўлмайди. Журнал ёзувлари (логин/исм) сақланиб қолади. */
+  async remove(id: string, currentUserId: string) {
+    if (id === currentUserId) throw new BadRequestException('Ўз ҳисобингизни ўчириб бўлмайди');
+    await this.assertNotLastAdmin(id, { active: false });
+    const u = await this.prisma.user.delete({ where: { id }, select: SAFE });
+    return u;
+  }
 }

@@ -14,7 +14,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends openssl ca-cert
 ENV NODE_ENV=production \
     PORT=3000 \
     UPLOAD_DIR=/data/uploads \
-    GENERATED_DIR=/data/generated
+    GENERATED_DIR=/data/generated \
+    CUSTOM_TEMPLATE_DIR=/data/templates
 WORKDIR /app
 COPY package.json package-lock.json ./
 COPY apps/api/package.json apps/api/
@@ -24,10 +25,10 @@ COPY apps/api/prisma apps/api/prisma
 RUN npx -w apps/api prisma generate
 COPY --from=build /app/apps/api/dist apps/api/dist
 COPY apps/api/templates apps/api/templates
-RUN mkdir -p /data/uploads /data/generated && chown -R node:node /data
+RUN mkdir -p /data/uploads /data/generated /data/templates && chown -R node:node /data
 WORKDIR /app/apps/api
 USER node
 EXPOSE 3000
-VOLUME ["/data/uploads", "/data/generated"]
+VOLUME ["/data/uploads", "/data/generated", "/data/templates"]
 # Миграциялар автоматик қўлланади, сўнг сервер ишга тушади
 CMD ["sh", "-c", "npx prisma migrate deploy && node dist/main"]

@@ -21,7 +21,7 @@ trap 'rm -f "$DB.part" "$FILES.part"' EXIT   # xato bo'lsa yarim yozilgan faylla
 # Yarim yozilgan fayl "yaroqli zaxira" bo'lib qolmasligi uchun: avval .part ga, muvaffaqiyatda nomlanadi
 "${COMPOSE[@]}" exec -T db pg_dump -U hrms --clean --if-exists hrms | gzip > "$DB.part"
 gzip -t "$DB.part" && [ -s "$DB.part" ] && mv "$DB.part" "$DB"
-"${COMPOSE[@]}" exec -T api tar -C /data -czf - uploads generated > "$FILES.part"
+"${COMPOSE[@]}" exec -T api tar -C /data -czf - uploads generated templates > "$FILES.part"
 tar -tzf "$FILES.part" >/dev/null && mv "$FILES.part" "$FILES"
 chmod 600 "$DB" "$FILES"
 

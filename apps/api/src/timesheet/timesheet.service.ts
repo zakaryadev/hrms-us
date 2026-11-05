@@ -113,6 +113,29 @@ export class TimesheetService {
     return { marked };
   }
 
+  /** Таътил буйруғи ўчирилганда/ўзгартирилганда: оралиқдаги «MT» ни «8» га қайтаради (қолган белгилар сақланади). */
+  async clearLeave(employeeId: string, startIso: string, endIso: string) {
+    const emp = await this.prisma.employee.findUnique({ where: { id: employeeId } });
+    if (!emp) return { cleared: 0 };
+    const start = utcDate(startIso), end = utcDate(endIso);
+    const ov = await this.calendar.overrides(start.getUTCFullYear(), end.getUTCFullYear());
+    const byMonth = new Map<string, { year: number; month: number; days: number[] }>();
+    for (let d = start; d <= end; d = new Date(d.getTime() + 86_400_000)) {
+      const y = d.getUTCFullYear(), m = d.getUTCMonth() + 1, key = `${y}-${m}`;
+      if (!byMonth.has(key)) byMonth.set(key, { year: y, month: m, days: [] });
+      byMonth.get(key)!.days.push(d.getUTCDate());
+    }
+    let cleared = 0;
+    for (const { year, month, days } of byMonth.values()) {
+      const existing = await this.prisma.timesheet.findUnique({ where: { employeeId_year_month: { employeeId, year, month } } });
+      if (!existing) continue;
+      const data = { ...((existing.daysData ?? {}) as Record<string, string>) };
+      for (const day of days) if (data[String(day)] === 'MT') { data[String(day)] = '8'; cleared++; }
+      await this.persist(emp, year, month, data, ov);
+    }
+    return { cleared };
+  }
+
   /** Ish kunlariga '8' qo'yadi; mavjud kodlarni, ishga qabuldan oldingi kunlarni va dam olish kunlarini tegmaydi. */
   async autofill(year: number, month: number, departmentId?: string) {
     const emps = await this.employees(departmentId);

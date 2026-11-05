@@ -1,5 +1,6 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
+import ExcelJS from 'exceljs';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateEmployeeDto, ListEmployeesQuery, UpdateEmployeeDto } from './employees.dto';
 
@@ -20,10 +21,8 @@ export class EmployeesService {
     return data as Prisma.EmployeeUncheckedCreateInput;
   }
 
-  async list(q: ListEmployeesQuery) {
-    const page = Math.max(q.page ?? 1, 1);
-    const pageSize = Math.min(Math.max(q.pageSize ?? 20, 1), 200);
-    const where: Prisma.EmployeeWhereInput = {
+  private whereOf(q: ListEmployeesQuery): Prisma.EmployeeWhereInput {
+    return {
       ...(q.departmentId && { departmentId: q.departmentId }),
       ...(q.status && { status: q.status as any }),
       ...(q.archived === 'true' && { status: 'ishdan_boshagan' as const }),
@@ -38,6 +37,12 @@ export class EmployeesService {
         ],
       }),
     };
+  }
+
+  async list(q: ListEmployeesQuery) {
+    const page = Math.max(q.page ?? 1, 1);
+    const pageSize = Math.min(Math.max(q.pageSize ?? 20, 1), 200);
+    const where = this.whereOf(q);
     const [items, total] = await this.prisma.$transaction([
       this.prisma.employee.findMany({
         where,
@@ -49,6 +54,37 @@ export class EmployeesService {
       this.prisma.employee.count({ where }),
     ]);
     return { items, total, page, pageSize };
+  }
+
+  /** Жорий фильтр бўйича ходимлар рўйхатини Excel'га чиқариш (саҳифасиз, 5000 тагача). */
+  async exportXlsx(q: ListEmployeesQuery): Promise<Buffer> {
+    const rows = await this.prisma.employee.findMany({
+      where: this.whereOf(q), include: { department: { include: { parent: true } }, position: true },
+      orderBy: [{ position: { rankOrder: 'asc' } }, { lastName: 'asc' }], take: 5000,
+    });
+    const iso = (d?: Date | null) => (d ? d.toISOString().slice(0, 10).split('-').reverse().join('.') : '');
+    const STATUS: Record<string, string> = { ishlamoqda: 'Ишлаяпти', tatilda: 'Таътилда', ishdan_boshagan: 'Ишдан бўшаган' };
+    const wb = new ExcelJS.Workbook();
+    const ws = wb.addWorksheet('Ходимлар', { views: [{ state: 'frozen', ySplit: 1 }] });
+    ws.columns = [
+      { header: 'Табель №', key: 'tab', width: 10 }, { header: 'Ф.И.Ш.', key: 'fio', width: 38 }, { header: 'Филиал', key: 'br', width: 26 },
+      { header: 'Бўлим', key: 'dep', width: 26 }, { header: 'Лавозим', key: 'pos', width: 28 }, { header: 'Тури', key: 'type', width: 10 },
+      { header: 'Ҳолати', key: 'st', width: 14 }, { header: 'Ишга қабул', key: 'hire', width: 12 }, { header: 'Туғилган сана', key: 'birth', width: 13 },
+      { header: 'Телефон', key: 'ph', width: 16 }, { header: 'ЖШШИР', key: 'pinfl', width: 16 }, { header: 'Паспорт', key: 'pass', width: 14 },
+      { header: 'Шартнома', key: 'ct', width: 22 }, { header: 'Ойлик (сўм)', key: 'sal', width: 15 },
+    ];
+    ws.getRow(1).font = { bold: true };
+    for (const e of rows) {
+      ws.addRow({
+        tab: e.tabNumber, fio: [e.lastName, e.firstName, e.middleName].filter(Boolean).join(' '),
+        br: e.department.parent?.name ?? e.department.name, dep: e.department.parent ? e.department.name : '', pos: e.position.title,
+        type: e.employmentType === 'gpx' ? 'ГПХ' : 'Штат', st: STATUS[e.status] ?? e.status, hire: iso(e.hireDate), birth: iso(e.birthDate),
+        ph: e.phone ?? '', pinfl: e.pinfl ?? '', pass: e.passportSeriesNumber ?? '',
+        ct: [e.contractNumber, iso(e.contractDate)].filter(Boolean).join(' / '), sal: Number(e.salary),
+      });
+    }
+    ws.getColumn('sal').numFmt = '#,##0';
+    return Buffer.from(await wb.xlsx.writeBuffer());
   }
 
   get(id: string) {

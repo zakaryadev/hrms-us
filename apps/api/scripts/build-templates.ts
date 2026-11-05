@@ -62,6 +62,14 @@ const TXT: Record<Lang, Record<string, string>> = {
     l2: "2. Xodimning ta'tildan ishga chiqish sanasi {{chiqish_yili}}-yil {{ishga_chiqish_sanasi}} deb belgilansin.",
     l3: "3. Buxgalteriya bo'limi tegishli to'lovlarni amalga oshirsin.",
     l4: "{{#moddiy_yordam}}4. Xodimga ta'til uchun moddiy yordam sifatida bir oylik ish haqi miqdorida qo'shimcha to'lov to'lansin.{{/moddiy_yordam}}",
+    hireT: 'Ishga qabul qilish to\'g\'risida', fireT: "Ishdan bo'shatish to'g'risida", rewT: "Rag'batlantirish to'g'risida",
+    h_1: "1. {{xodim_fish}} {{qabul_yili}}-yil {{qabul_sanasi}}dan e'tiboran {{amaldagi_filial}} {{amaldagi_bolim}} {{amaldagi_lavozim}} lavozimiga doimiy asosda ishga qabul qilinsin.",
+    h_2: "2. Oylik ish haqi {{oylik_maosh}} so'm etib belgilansin.",
+    h_3: '{{#sinov}}3. Xodimga {{sinov_muddati}} oy sinov muddati belgilansin.{{/sinov}}',
+    f_1: "1. {{amaldagi_filial}} {{amaldagi_lavozim}}i {{xodim_fish}} bilan tuzilgan mehnat shartnomasi {{ketish_yili}}-yil {{ketish_sanasi}}dan e'tiboran bekor qilinib, ishdan bo'shatilsin.",
+    f_2: "2. Buxgalteriya bo'limi xodim bilan to'liq hisob-kitob qilsin{{#kompensatsiya}} va foydalanilmagan mehnat ta'tili uchun pul kompensatsiyasini to'lasin{{/kompensatsiya}}.",
+    r_1: "1. {{amaldagi_filial}} {{amaldagi_lavozim}}i {{xodim_fish}} {{sabab_matni}} uchun quyidagicha rag'batlantirilsin:",
+    r_2: '{{#mukofot_matni}}— {{mukofot_matni}}{{/mukofot_matni}}', r_3: '{{#summa_matni}}— {{summa_matni}}{{/summa_matni}}',
   },
   cyr: {
     obyTitle: 'МАЪЛУМОТНОМА', birth: 'Туғилган санаси', birthPlace: 'Туғилган жойи', nat: 'Миллати', party: 'Партиявийлиги', edu: 'Маълумоти',
@@ -86,6 +94,14 @@ const TXT: Record<Lang, Record<string, string>> = {
     l2: '2. Ходимнинг таътилдан ишга чиқиш санаси {{chiqish_yili}}-йил {{ishga_chiqish_sanasi}} деб белгилансин.',
     l3: '3. Бухгалтерия бўлими тегишли тўловларни амалга оширсин.',
     l4: '{{#moddiy_yordam}}4. Ходимга таътил учун моддий ёрдам сифатида бир ойлик иш ҳақи миқдорида қўшимча тўлов тўлансин.{{/moddiy_yordam}}',
+    hireT: 'Ишга қабул қилиш тўғрисида', fireT: 'Ишдан бўшатиш тўғрисида', rewT: 'Рағбатлантириш тўғрисида',
+    h_1: '1. {{xodim_fish}} {{qabul_yili}}-йил {{qabul_sanasi}}дан эътиборан {{amaldagi_filial}} {{amaldagi_bolim}} {{amaldagi_lavozim}} лавозимига доимий асосда ишга қабул қилинсин.',
+    h_2: '2. Ойлик иш ҳақи {{oylik_maosh}} сўм этиб белгилансин.',
+    h_3: '{{#sinov}}3. Ходимга {{sinov_muddati}} ой синов муддати белгилансин.{{/sinov}}',
+    f_1: '1. {{amaldagi_filial}} {{amaldagi_lavozim}}и {{xodim_fish}} билан тузилган меҳнат шартномаси {{ketish_yili}}-йил {{ketish_sanasi}}дан эътиборан бекор қилиниб, ишдан бўшатилсин.',
+    f_2: '2. Бухгалтерия бўлими ходим билан тўлиқ ҳисоб-китоб қилсин{{#kompensatsiya}} ва фойдаланилмаган меҳнат таътили учун пул компенсациясини тўласин{{/kompensatsiya}}.',
+    r_1: '1. {{amaldagi_filial}} {{amaldagi_lavozim}}и {{xodim_fish}} {{sabab_matni}} учун қуйидагича рағбатлантирилсин:',
+    r_2: '{{#mukofot_matni}}— {{mukofot_matni}}{{/mukofot_matni}}', r_3: '{{#summa_matni}}— {{summa_matni}}{{/summa_matni}}',
   },
 };
 
@@ -146,6 +162,27 @@ function templates(lang: Lang): Record<string, Document> {
       p(t.command, { bold: true, align: AlignmentType.LEFT }),
       p(t.l1, { indent: true }), p(t.l2, { indent: true }), p(t.l3, { indent: true }), p(t.l4, { indent: true }),
       p(t.basis, { indent: true }),
+      p('', { after: 240 }), left('{{imzolovchi}}: _________________ {{bosh_direktor_fish}}'),
+    ]),
+
+    'buyruq-qabul': doc([
+      center(t.order), sign(`{{buyruq_sanasi}} ${t.year}`, '№ {{buyruq_raqami}}'), center(t.hireT),
+      p(t.command, { bold: true, align: AlignmentType.LEFT }),
+      p(t.h_1, { indent: true }), p(t.h_2, { indent: true }), p(t.h_3, { indent: true }), p(t.basis, { indent: true }),
+      p('', { after: 240 }), left('{{imzolovchi}}: _________________ {{bosh_direktor_fish}}'),
+    ]),
+
+    'buyruq-bosh': doc([
+      center(t.order), sign(`{{buyruq_sanasi}} ${t.year}`, '№ {{buyruq_raqami}}'), center(t.fireT),
+      p(t.command, { bold: true, align: AlignmentType.LEFT }),
+      p(t.f_1, { indent: true }), p(t.f_2, { indent: true }), p(t.basis, { indent: true }),
+      p('', { after: 240 }), left('{{imzolovchi}}: _________________ {{bosh_direktor_fish}}'),
+    ]),
+
+    'buyruq-rag': doc([
+      center(t.order), sign(`{{buyruq_sanasi}} ${t.year}`, '№ {{buyruq_raqami}}'), center(t.rewT),
+      p(t.command, { bold: true, align: AlignmentType.LEFT }),
+      p(t.r_1, { indent: true }), p(t.r_2, { indent: true }), p(t.r_3, { indent: true }), p(t.basis, { indent: true }),
       p('', { after: 240 }), left('{{imzolovchi}}: _________________ {{bosh_direktor_fish}}'),
     ]),
   };

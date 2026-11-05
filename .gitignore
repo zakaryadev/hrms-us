@@ -5,3 +5,4 @@ uploads
 generated
 *.log
 .env.prod
+templates-custom

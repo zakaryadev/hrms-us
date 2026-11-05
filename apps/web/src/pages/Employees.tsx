@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { Search, Upload } from 'lucide-react';
+import { Download, Search, Upload } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import EmployeeForm from '../components/EmployeeForm';
@@ -28,6 +28,7 @@ export default function Employees() {
   return (
     <div className="space-y-4">
       <PageHeader title="Ходимлар" hint="Ишлаётган ходимлар рўйхати: қидирув, бўлим бўйича фильтр, янги ходим қўшиш">
+          <a href={`/api/employees/export?${new URLSearchParams({ archived: 'false', ...(q && { q }), ...(departmentId && { departmentId }) })}`} className={cn(buttonStyles({ variant: 'secondary' }))}><Download size={16} /> Excel’га чиқариш</a>
           <Link to="/import" className={cn(buttonStyles({ variant: 'secondary' }))}><Upload size={16} /> Excel’дан юклаш</Link>
         </PageHeader>
       <div className="card flex flex-wrap items-center gap-3 p-3">

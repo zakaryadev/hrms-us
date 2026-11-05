@@ -1,7 +1,8 @@
 import {
   BadRequestException, Body, Controller, Delete, Get, Param, Patch, Post, Query,
-  Req, UploadedFile, UseInterceptors,
+  Req, Res, UploadedFile, UseInterceptors,
 } from '@nestjs/common';
+import type { Response } from 'express';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Roles } from '../auth/decorators';
 import { CreateEmployeeDto, ListEmployeesQuery, UpdateEmployeeDto } from './employees.dto';
@@ -13,6 +14,14 @@ export class EmployeesController {
   constructor(private svc: EmployeesService, private importer: EmployeesImportService) {}
 
   @Get() list(@Query() q: ListEmployeesQuery) { return this.svc.list(q); }
+
+  @Get('export')
+  async export(@Query() q: ListEmployeesQuery, @Res() res: Response) {
+    const buf = await this.svc.exportXlsx(q);
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', 'attachment; filename="xodimlar.xlsx"');
+    res.send(buf);
+  }
 
   @Post('import')
   @UseInterceptors(FileInterceptor('file'))

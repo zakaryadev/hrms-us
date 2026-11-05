@@ -1,11 +1,15 @@
-import { BadRequestException, Body, Controller, Delete, Get, HttpCode, NotFoundException, Param, Post, Query, Req, Res, StreamableFile } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Delete, Get, HttpCode, NotFoundException, Param, Post, Put, Query, Req, Res, StreamableFile, UploadedFile, UseInterceptors } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { IsObject, IsOptional, IsUUID } from 'class-validator';
+import { memoryStorage } from 'multer';
+import { Roles } from '../auth/decorators';
 import type { Response } from 'express';
 import { existsSync } from 'fs';
 import { calcLeave, workYear } from '../calendar/leave';
 import { CalendarService } from '../calendar/calendar.service';
 import { DOC_TYPES, DocType, DocumentsService } from './documents.service';
 
+class UpdateDto { @IsOptional() @IsObject() params?: Record<string, any>; }
 class GenerateDto {
   @IsUUID() employeeId: string;
   @IsOptional() @IsObject() params?: Record<string, any>;
@@ -32,6 +36,14 @@ export class DocumentsGenController {
 
   @Get('documents/generated')
   all(@Query('type') type?: string) { return this.svc.listAll(type); }
+
+  @Get('orders/export')
+  async ordersExport(@Query('type') type: string | undefined, @Res() res: Response) {
+    const buf = await this.svc.exportOrdersXlsx(type);
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', 'attachment; filename="buyruqlar.xlsx"');
+    res.send(buf);
+  }
 
   @Get('orders')
   orders(@Query('type') type?: string) { return this.svc.listOrders(type); }
@@ -65,9 +77,34 @@ export class DocumentsGenController {
   templates() { return this.svc.listTemplates(); }
 
   @Get('documents/templates/:lang/:name/download')
-  templateDownload(@Param('lang') lang: string, @Param('name') name: string, @Res() res: Response) {
-    const f = this.svc.templateFile(lang, name);
+  templateDownload(@Param('lang') lang: string, @Param('name') name: string, @Query('source') source: string | undefined, @Res() res: Response) {
+    const f = this.svc.templateFile(lang, name, source === 'default');
     return res.download(f.path, f.name);
+  }
+
+  @Roles('superadmin')
+  @Put('documents/templates/:lang/:name')
+  @UseInterceptors(FileInterceptor('file', { storage: memoryStorage(), limits: { fileSize: 5 * 1024 * 1024, files: 1 } }))
+  uploadTemplate(@Param('lang') lang: string, @Param('name') name: string, @UploadedFile() file: { buffer: Buffer; originalname: string } | undefined, @Req() req: any) {
+    if (!file) throw new BadRequestException('Файл танланмаган');
+    if (!/\.docx$/i.test(file.originalname)) throw new BadRequestException('Фақат .docx файл қабул қилинади');
+    const r = this.svc.uploadTemplate(lang, name, file.buffer);
+    req.auditSummary = `Шаблон юкланди: ${lang}/${name}`;
+    return r;
+  }
+
+  @Roles('superadmin')
+  @Delete('documents/templates/:lang/:name')
+  @HttpCode(204)
+  resetTemplate(@Param('lang') lang: string, @Param('name') name: string, @Req() req: any) {
+    this.svc.resetTemplate(lang, name);
+    req.auditSummary = `Шаблон стандартга қайтарилди: ${lang}/${name}`;
+  }
+
+  @Put('documents/generated/:id')
+  async updateGenerated(@Param('id') id: string, @Body() dto: UpdateDto, @Req() req: any) {
+    req.auditSummary = `Ҳужжат таҳрирланди: ${id}`;
+    return this.svc.update(id, dto.params ?? {});
   }
 
   @Get('leave/calc')

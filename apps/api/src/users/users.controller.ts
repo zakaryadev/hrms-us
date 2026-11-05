@@ -1,7 +1,8 @@
-import { Body, Controller, Get, Param, ParseUUIDPipe, Patch, Post } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpCode, Param, ParseUUIDPipe, Patch, Post, Req } from '@nestjs/common';
 import { UserRole } from '@prisma/client';
 import { IsBoolean, IsEnum, IsOptional, IsString, Length, Matches } from 'class-validator';
-import { Roles } from '../auth/decorators';
+import { CurrentUser, Roles } from '../auth/decorators';
+import type { AuthUser } from '../auth/decorators';
 import { UsersService } from './users.service';
 
 class CreateUserDto {
@@ -24,4 +25,9 @@ export class UsersController {
   @Get() list() { return this.svc.list(); }
   @Post() create(@Body() dto: CreateUserDto) { return this.svc.create(dto); }
   @Patch(':id') update(@Param('id', ParseUUIDPipe) id: string, @Body() dto: UpdateUserDto) { return this.svc.update(id, dto); }
+  @Delete(':id') @HttpCode(204)
+  async remove(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() me: AuthUser, @Req() req: any) {
+    const u = await this.svc.remove(id, me.id);
+    req.auditSummary = `Фойдаланувчи ўчирилди: ${u.fullName} (${u.login})`;
+  }
 }

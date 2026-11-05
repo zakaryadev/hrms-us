@@ -1,12 +1,14 @@
 import DeleteDocButton from './DeleteDocButton';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Download, FilePlus2, Plus } from 'lucide-react';
+import { Download, FilePlus2, Pencil, Plus, Save } from 'lucide-react';
 import { useState } from 'react';
+import { useAuth } from '../auth/AuthContext';
 import { api, fmtDate, onUnauthorized } from '../lib/api';
 import { Empty, Field, Modal, SectionTitle } from './ui';
 import { Button, Checkbox, DatePicker, Input, Select, Textarea, buttonStyles, cn } from './kit';
 
-export type DocType = 'obyektivka' | 'ariza' | 'kelishuv' | 'buyruq-otkazish' | 'buyruq-tatil';
+export type DocType = 'obyektivka' | 'ariza' | 'kelishuv' | 'buyruq-otkazish' | 'buyruq-tatil' | 'buyruq-qabul' | 'buyruq-bosh' | 'buyruq-rag';
+type Edit = { id: string; params: any };
 type Lang = 'cyr' | 'lat';
 
 const DOCS: { type: DocType; title: string; desc: string }[] = [
@@ -15,12 +17,18 @@ const DOCS: { type: DocType; title: string; desc: string }[] = [
   { type: 'kelishuv', title: 'Қўшимча келишув', desc: 'Меҳнат шартномасига (рақам автоматик)' },
   { type: 'buyruq-otkazish', title: 'Лавозимга ўтказиш буйруғи', desc: 'Бошқа ишга доимий ўтказиш' },
   { type: 'buyruq-tatil', title: 'Меҳнат таътили буйруғи', desc: 'Байрам кунлари ҳисоби билан' },
+  { type: 'buyruq-qabul', title: 'Ишга қабул буйруғи', desc: 'Қабул санаси, ойлик ва синов муддати' },
+  { type: 'buyruq-bosh', title: 'Ишдан бўшатиш буйруғи', desc: 'Сақланганда ходим архивга ўтади' },
+  { type: 'buyruq-rag', title: 'Рағбатлантириш буйруғи', desc: 'Миннатдорчилик, пул мукофоти ва ҳ.к.' },
 ];
 const TYPE_LABEL = Object.fromEntries(DOCS.map((d) => [d.type, d.title]));
 const today = () => new Date().toISOString().slice(0, 10);
 
 export default function GenerateDocs({ employee }: { employee: any }) {
   const [open, setOpen] = useState<DocType | null>(null);
+  const [edit, setEdit] = useState<{ type: DocType; edit: Edit } | null>(null);
+  const { user } = useAuth();
+  const canEdit = user?.role !== 'buxgalter';
   const history = useQuery({ queryKey: ['generated', employee.id], queryFn: () => api<any[]>(`/employees/${employee.id}/generated`) });
   return (
     <div className="space-y-4">
@@ -41,6 +49,7 @@ export default function GenerateDocs({ employee }: { employee: any }) {
               {g.number && <span className="text-slate-500">№ {g.number}</span>}
               <span className="text-slate-500">{fmtDate(g.createdAt)}</span>
               <a className={cn(buttonStyles({ variant: 'secondary', size: 'sm' }), 'ml-auto')} href={`/api/documents/generated/${g.id}/download`}><Download size={14} /> DOCX</a>
+              {canEdit && <button aria-label="Таҳрирлаш" title="Таҳрирлаш" className="rounded p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700" onClick={() => setEdit({ type: g.type, edit: { id: g.id, params: g.payload ?? {} } })}><Pencil size={16} /></button>}
               <DeleteDocButton id={g.id} label={TYPE_LABEL[g.type] ?? 'Ҳужжат'} />
             </li>
           ))}
@@ -50,25 +59,28 @@ export default function GenerateDocs({ employee }: { employee: any }) {
       {open === 'buyruq-tatil'
         ? <LeaveModal employee={employee} onClose={() => setOpen(null)} />
         : open && <DocModal type={open} employee={employee} onClose={() => setOpen(null)} />}
+      {edit && (edit.type === 'buyruq-tatil'
+        ? <LeaveModal employee={employee} edit={edit.edit} onClose={() => setEdit(null)} />
+        : <DocModal type={edit.type as Exclude<DocType, 'buyruq-tatil'>} employee={employee} edit={edit.edit} onClose={() => setEdit(null)} />)}
     </div>
   );
 }
 
 /** Умумий: генерация сўрови. save=false бўлса ҳужжат базага ёзилмайди, файл шу заҳоти юкланади. */
-function useGenerate(type: DocType, employee: any, onClose: () => void, save: boolean, lang: Lang, build: () => Record<string, any>) {
+function useGenerate(type: DocType, employee: any, onClose: () => void, save: boolean, lang: Lang, build: () => Record<string, any>, edit?: Edit) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async () => {
-      const params = { ...build(), lang, ...(save ? {} : { save: false }) };
-      const res = await fetch(`/api/documents/generate/${type}`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ employeeId: employee.id, params }),
+      const params = { ...build(), lang, ...(save || edit ? {} : { save: false }) };
+      const res = await fetch(edit ? `/api/documents/generated/${edit.id}` : `/api/documents/generate/${type}`, {
+        method: edit ? 'PUT' : 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(edit ? { params } : { employeeId: employee.id, params }),
       });
       if (res.status === 401) onUnauthorized();
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
         throw new Error((Array.isArray(body.message) ? body.message.join(', ') : body.message) || `Хатолик (${res.status})`);
       }
-      if (save) return (await res.json()) as { downloadUrl: string };
+      if (save || edit) return (await res.json()) as { downloadUrl: string };
       const name = /filename="([^"]+)"/.exec(res.headers.get('Content-Disposition') ?? '')?.[1] ?? `${type}.docx`;
       const url = URL.createObjectURL(await res.blob());
       Object.assign(document.createElement('a'), { href: url, download: name }).click();
@@ -77,7 +89,7 @@ function useGenerate(type: DocType, employee: any, onClose: () => void, save: bo
     },
     onSuccess: (r) => {
       qc.invalidateQueries({ queryKey: ['generated'] }); qc.invalidateQueries({ queryKey: ['orders'] }); qc.invalidateQueries({ queryKey: ['timesheet'] }); qc.invalidateQueries({ queryKey: ['stats'] });
-      if (r) window.location.href = r.downloadUrl;
+      if (r && !edit) window.location.href = r.downloadUrl;
       onClose();
     },
   });
@@ -96,17 +108,18 @@ function LangPicker({ lang, setLang }: { lang: Lang; setLang: (l: Lang) => void 
   );
 }
 
-function ModalFooter({ save, setSave, pending, error, onClose }: {
-  save: boolean; setSave: (v: boolean) => void; pending: boolean; error: Error | null; onClose: () => void;
+function ModalFooter({ save, setSave, pending, error, onClose, editing }: {
+  save: boolean; setSave: (v: boolean) => void; pending: boolean; error: Error | null; onClose: () => void; editing?: boolean;
 }) {
   return (
     <div className="mt-2 space-y-3 border-t pt-4">
       {error && <p className="text-sm text-red-600">{error.message}</p>}
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <Checkbox checked={save} onChange={setSave}>Ҳужжатни сақлаш ҳамда юклаб олинган ҳужжатлар рўйхатига қўшиш</Checkbox>
+        {editing ? <span className="text-xs text-slate-500">Ҳужжат файли ва рақами шу ёзув устига янгиланади.</span>
+          : <Checkbox checked={save} onChange={setSave}>Ҳужжатни сақлаш ҳамда юклаб олинган ҳужжатлар рўйхатига қўшиш</Checkbox>}
         <div className="flex gap-2">
           <Button variant="secondary" type="button"  onClick={onClose}>Бекор қилиш</Button>
-          <Button variant="primary"  disabled={pending}><Plus size={16} /> Докх шаклида олиш</Button>
+          <Button variant="primary" disabled={pending}>{editing ? <><Save size={16} /> Сақлаш</> : <><Plus size={16} /> Докх шаклида олиш</>}</Button>
         </div>
       </div>
     </div>
@@ -114,13 +127,16 @@ function ModalFooter({ save, setSave, pending, error, onClose }: {
 }
 
 /** Ариза, келишув, ўтказиш буйруғи, маълумотнома */
-export function DocModal({ type, employee, onClose }: { type: Exclude<DocType, 'buyruq-tatil'>; employee: any; onClose: () => void }) {
+export function DocModal({ type, employee, onClose, edit }: { type: Exclude<DocType, 'buyruq-tatil'>; employee: any; onClose: () => void; edit?: Edit }) {
   const [f, setF] = useState<any>({
     newDepartmentId: '', newPositionId: '', transferDate: '', applicationDate: today(), agreementDate: today(),
     newSalary: '', poaText: '', orderNumber: '', orderDate: today(), basis: '', malumoti: '', harbiyUnvoni: '',
+    hireDate: employee.hireDate?.slice(0, 10) ?? '', salary: employee.salary != null ? String(Number(employee.salary)) : '', probationMonths: String(employee.probationMonths ?? 0),
+    dismissalDate: '', compensation: false, reason: '', rewardText: '', amount: '',
+    ...Object.fromEntries(Object.entries(edit?.params ?? {}).map(([k, v]) => [k, typeof v === 'number' ? String(v) : v])),
   });
   const [save, setSave] = useState(true);
-  const [lang, setLang] = useState<Lang>('cyr');
+  const [lang, setLang] = useState<Lang>(edit?.params?.lang === 'lat' ? 'lat' : 'cyr');
   const set = (k: string) => (e: React.ChangeEvent<any>) => setF({ ...f, [k]: e.target.value });
   const needsTarget = ['ariza', 'kelishuv', 'buyruq-otkazish'].includes(type);
 
@@ -135,9 +151,12 @@ export function DocModal({ type, employee, onClose }: { type: Exclude<DocType, '
     if (type === 'ariza') copy('applicationDate');
     if (type === 'kelishuv') { copy('agreementDate', 'poaText'); params.newSalary = Number(f.newSalary); }
     if (type === 'buyruq-otkazish') copy('orderNumber', 'orderDate', 'basis');
+    if (type === 'buyruq-qabul') { copy('orderNumber', 'orderDate', 'hireDate', 'basis'); params.salary = Number(f.salary) || 0; params.probationMonths = Number(f.probationMonths) || 0; }
+    if (type === 'buyruq-bosh') { copy('orderNumber', 'orderDate', 'dismissalDate', 'basis'); params.compensation = !!f.compensation; }
+    if (type === 'buyruq-rag') { copy('orderNumber', 'orderDate', 'reason', 'rewardText', 'basis'); if (f.amount !== '') params.amount = Number(f.amount); }
     if (type === 'obyektivka') copy('malumoti', 'harbiyUnvoni');
     return params;
-  });
+  }, edit);
 
   const cur = `${employee.department.name}, ${employee.position.title}`;
   return (
@@ -189,6 +208,49 @@ export function DocModal({ type, employee, onClose }: { type: Exclude<DocType, '
           </section>
         )}
 
+        {type === 'buyruq-qabul' && (
+          <section>
+            <SectionTitle>Ишга қабул</SectionTitle>
+            <div className="grid gap-4 md:grid-cols-3">
+              <Field label="Буйруқ рақами"><Input placeholder="Бўш қолса автоматик" value={f.orderNumber} onChange={set('orderNumber')} /></Field>
+              <Field label="Буйруқ санаси *"><DatePicker required value={f.orderDate} onChange={(v) => setF({ ...f, orderDate: v })} /></Field>
+              <Field label="Ишга қабул санаси *"><DatePicker required value={f.hireDate} onChange={(v) => setF({ ...f, hireDate: v })} /></Field>
+              <Field label="Ойлик иш ҳақи (сўм)"><Input type="number" min={0} value={f.salary} onChange={set('salary')} /></Field>
+              <Field label="Синов муддати (ой)"><Input type="number" min={0} value={f.probationMonths} onChange={set('probationMonths')} /></Field>
+              <div className="md:col-span-3"><Field label="Асос"><Textarea rows={2} placeholder="Бўш қолса: ходимнинг аризаси ва меҳнат шартномаси" value={f.basis} onChange={set('basis')} /></Field></div>
+            </div>
+          </section>
+        )}
+
+        {type === 'buyruq-bosh' && (
+          <section>
+            <SectionTitle>Ишдан бўшатиш</SectionTitle>
+            <div className="grid gap-4 md:grid-cols-3">
+              <Field label="Буйруқ рақами"><Input placeholder="Бўш қолса автоматик" value={f.orderNumber} onChange={set('orderNumber')} /></Field>
+              <Field label="Буйруқ санаси *"><DatePicker required value={f.orderDate} onChange={(v) => setF({ ...f, orderDate: v })} /></Field>
+              <Field label="Бўшатиш санаси *"><DatePicker required value={f.dismissalDate} onChange={(v) => setF({ ...f, dismissalDate: v })} /></Field>
+              <div className="md:col-span-3"><Field label="Асос *"><Textarea required rows={2} placeholder="Ходимнинг аризаси ва ЎзР Меҳнат кодексининг 99-моддаси" value={f.basis} onChange={set('basis')} /></Field></div>
+              <div className="md:col-span-3"><Checkbox checked={!!f.compensation} onChange={(v) => setF({ ...f, compensation: v })}>Фойдаланилмаган таътил учун пул компенсацияси тўлансин</Checkbox></div>
+            </div>
+            {!edit && <p className="mt-2 text-xs font-medium text-amber-700">Ҳужжат сақланганда ходим автоматик «Архив»га ўтказилади (ишдан бўшаган).</p>}
+          </section>
+        )}
+
+        {type === 'buyruq-rag' && (
+          <section>
+            <SectionTitle>Рағбатлантириш</SectionTitle>
+            <div className="grid gap-4 md:grid-cols-3">
+              <Field label="Буйруқ рақами"><Input placeholder="Бўш қолса автоматик" value={f.orderNumber} onChange={set('orderNumber')} /></Field>
+              <Field label="Буйруқ санаси *"><DatePicker required value={f.orderDate} onChange={(v) => setF({ ...f, orderDate: v })} /></Field>
+              <Field label="Пул мукофоти (сўм)"><Input type="number" min={0} value={f.amount} onChange={set('amount')} /></Field>
+              <div className="md:col-span-3"><Field label="Нима учун *"><Input required placeholder="намунали меҳнат ва юқори натижаларга эришгани" value={f.reason} onChange={set('reason')} /></Field></div>
+              <div className="md:col-span-3"><Field label="Рағбатлантириш тури (пул мукофотидан ташқари)"><Input placeholder="Миннатдорчилик эълон қилинсин" value={f.rewardText} onChange={set('rewardText')} /></Field></div>
+              <div className="md:col-span-3"><Field label="Асос *"><Textarea required rows={2} value={f.basis} onChange={set('basis')} /></Field></div>
+            </div>
+            <p className="mt-2 text-xs text-slate-500">Камида биттаси керак: рағбатлантириш тури ёки пул мукофоти.</p>
+          </section>
+        )}
+
         {type === 'obyektivka' && (
           <section className="grid gap-4 md:grid-cols-2">
             <Field label="Маълумоти"><Input placeholder="Олий" value={f.malumoti} onChange={set('malumoti')} /></Field>
@@ -196,7 +258,7 @@ export function DocModal({ type, employee, onClose }: { type: Exclude<DocType, '
           </section>
         )}
 
-        <ModalFooter save={save} setSave={setSave} pending={submit.isPending} error={submit.error as Error | null} onClose={onClose} />
+        <ModalFooter save={save} setSave={setSave} pending={submit.isPending} error={submit.error as Error | null} onClose={onClose} editing={!!edit} />
       </form>
     </Modal>
   );
@@ -214,13 +276,16 @@ const DEFAULTS = {
 };
 
 /** «Меҳнат таътили бериш ҳақида буйруқ» */
-export function LeaveModal({ employee, onClose }: { employee: any; onClose: () => void }) {
+export function LeaveModal({ employee, onClose, edit }: { employee: any; onClose: () => void; edit?: Edit }) {
+  const ep = edit?.params ?? {};
   const [f, setF] = useState({
     workYearStart: '', workYearEnd: '', startDate: '', basicDays: String(employee.annualLeaveBasicDays), extraDays: String(employee.annualLeaveExtraDays),
-    basis: '', signer: '', orderDate: today(),
+    basis: '', signer: '', orderDate: today(), orderNumber: '',
+    ...Object.fromEntries(['workYearStart', 'workYearEnd', 'startDate', 'basis', 'signer', 'orderDate', 'orderNumber'].filter((k) => ep[k]).map((k) => [k, ep[k]])),
+    ...(ep.basicDays != null && { basicDays: String(ep.basicDays) }), ...(ep.extraDays != null && { extraDays: String(ep.extraDays) }),
   });
   const [save, setSave] = useState(true);
-  const [lang, setLang] = useState<Lang>('cyr');
+  const [lang, setLang] = useState<Lang>(ep.lang === 'lat' ? 'lat' : 'cyr');
   const set = (k: keyof typeof f) => (e: React.ChangeEvent<any>) => setF({ ...f, [k]: e.target.value });
   const settings = useQuery({ queryKey: ['settings'], queryFn: () => api<any>('/settings') });
   const days = (Number(f.basicDays) || 0) + (Number(f.extraDays) || 0);
@@ -238,8 +303,8 @@ export function LeaveModal({ employee, onClose }: { employee: any; onClose: () =
   const submit = useGenerate('buyruq-tatil', employee, onClose, save, lang, () => ({
     startDate: f.startDate, orderDate: f.orderDate, basicDays: Number(f.basicDays) || 0, extraDays: Number(f.extraDays) || 0,
     ...(wyStart && { workYearStart: wyStart }), ...(wyEnd && { workYearEnd: wyEnd }),
-    basis: f.basis || D.basis, signer: f.signer || D.signer,
-  }));
+    basis: f.basis || D.basis, signer: f.signer || D.signer, ...(f.orderNumber && { orderNumber: f.orderNumber }),
+  }), edit);
 
   const s = settings.data;
   const fullName = [employee.lastName, employee.firstName, employee.middleName].filter(Boolean).join(' ');
@@ -285,9 +350,10 @@ export function LeaveModal({ employee, onClose }: { employee: any; onClose: () =
           <div className="md:col-span-2"><Field label="Асос"><Textarea rows={2} placeholder="Меҳнат кодексининг 217, 219... моддалари ҳамда ходим аризаси" value={f.basis || D.basis} onChange={set('basis')} /></Field></div>
           <Field label="Имзоловчи"><Textarea rows={2} value={f.signer || D.signer} onChange={set('signer')} /></Field>
           <Field label="Буйруқ санаси"><DatePicker required value={f.orderDate} onChange={(v) => setF({ ...f, orderDate: v })} /></Field>
+          <Field label="Буйруқ рақами"><Input placeholder="Бўш қолса автоматик" value={f.orderNumber} onChange={set('orderNumber')} /></Field>
         </section>
 
-        <ModalFooter save={save} setSave={setSave} pending={submit.isPending} error={submit.error as Error | null} onClose={onClose} />
+        <ModalFooter save={save} setSave={setSave} pending={submit.isPending} error={submit.error as Error | null} onClose={onClose} editing={!!edit} />
       </form>
     </Modal>
   );

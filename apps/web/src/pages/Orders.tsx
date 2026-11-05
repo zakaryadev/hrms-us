@@ -16,7 +16,8 @@ export default function Orders() {
   const q = useQuery({ queryKey: ['orders', type], queryFn: () => api<any[]>(`/orders${type ? `?type=${type}` : ''}`) });
   return (
     <div className="space-y-4">
-      <PageHeader title="Буйруқлар" hint="Яратилган кадрлар буйруқлари (таътил, ўтказиш). DOCX файлни қайта юклаб олиш мумкин.">
+      <PageHeader title="Буйруқлар" hint="Яратилган кадрлар буйруқлари (қабул, ўтказиш, таътил, бўшатиш, рағбатлантириш). DOCX файлни қайта юклаб олиш мумкин.">
+        <a className={cn(buttonStyles({ variant: 'secondary' }))} href={`/api/orders/export${type ? `?type=${type}` : ''}`}><Download size={16} /> Excel</a>
         <Select plain className="!w-auto" value={type} onChange={(v) => setType(v)}>
           <option value="">Барча турлар</option>{Object.entries(ORDER_LABEL).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
         </Select>
