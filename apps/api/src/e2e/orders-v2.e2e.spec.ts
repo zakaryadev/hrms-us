@@ -238,4 +238,38 @@ describe('Yangi buyruqlar, tahrirlash, raqamlash, shablon yuklash, eksport, foyd
     await a.get('/api/employees?sortBy=passwordHash&sortDir=asc').expect(200);          // рухсат этилмаган калит — стандарт тартиб
     await a.get('/api/employees?sortBy=tabNumber&sortDir=sideways').expect(400);         // нотўғри йўналиш — валидация
   });
+
+  it("DOCX файл номи: «12_Muratbayev_Zakarya_Baxtiyar_uli_“Ijro_gov_uz”_menejer.docx» шакли (сақланган ва сақланмаган юклаш)", async () => {
+    const dept = (await a.post('/api/departments').send({ name: '“Ijro.gov.uz” тизимини жорий этиш сектори' }).expect(201)).body;
+    const pos = (await a.post('/api/positions').send({ title: 'мижозлар билан ишлаш бўйича менежер', departmentId: dept.id }).expect(201)).body;
+    const emp = (await a.post('/api/employees').send({ tabNumber: '12', firstName: 'Закарья', lastName: 'Муратбаев', middleName: 'Бахтияр улы', departmentId: dept.id, positionId: pos.id, salary: 1, hireDate: '2026-07-01' }).expect(201)).body;
+    const fname = (cd: string) => decodeURIComponent(/filename\*=UTF-8''([^;]+)/i.exec(cd)![1]);
+    const want = '12_Muratbayev_Zakarya_Baxtiyar_uli_“Ijro_gov_uz”_menejer.docx';
+    // сақланмайдиган (дарҳол юклаш)
+    const pre = await a.post('/api/documents/generate/obyektivka').send({ employeeId: emp.id, params: { save: false } }).buffer(true).parse((res, cb) => { const c: Buffer[] = []; res.on('data', (d: Buffer) => c.push(d)); res.on('end', () => cb(null, Buffer.concat(c))); }).expect(201);
+    expect(fname(pre.headers['content-disposition'])).toBe(want);
+    // сақланган → «Юклаб олиш»
+    const g = await a.post('/api/documents/generate/obyektivka').send({ employeeId: emp.id, params: {} }).expect(201);
+    const dl = await a.get(`/api/documents/generated/${g.body.id}/download`).buffer(true).parse((res, cb) => { const c: Buffer[] = []; res.on('data', (d: Buffer) => c.push(d)); res.on('end', () => cb(null, Buffer.concat(c))); }).expect(200);
+    expect(fname(dl.headers['content-disposition'])).toBe(want);
+    // буйруқ: тури ва рақами қўшилади (ҳужжат ва «Буйруқлар» рўйхатидан юклаш бир хил)
+    const o = await a.post('/api/documents/generate/buyruq-rag').send({ employeeId: emp.id, params: { lang: 'cyr', orderDate: '2026-08-01', reason: 'x', basis: 'y', rewardText: 'z' } }).expect(201);
+    const od = await a.get(`/api/documents/generated/${o.body.id}/download`).buffer(true).parse((res, cb) => { const c: Buffer[] = []; res.on('data', (d: Buffer) => c.push(d)); res.on('end', () => cb(null, Buffer.concat(c))); }).expect(200);
+    expect(fname(od.headers['content-disposition'])).toBe('12_Muratbayev_Zakarya_Baxtiyar_uli_“Ijro_gov_uz”_menejer_buyruq-rag-R-1.docx');
+    const ord = (await a.get('/api/orders?type=ragbatlantirish').expect(200)).body.find((x: any) => x.orderNumber === 'Р-1' && x.employee.id === emp.id);
+    const oo = await a.get(`/api/orders/${ord.id}/download`).buffer(true).parse((res, cb) => { const c: Buffer[] = []; res.on('data', (d: Buffer) => c.push(d)); res.on('end', () => cb(null, Buffer.concat(c))); }).expect(200);
+    expect(fname(oo.headers['content-disposition'])).toBe('12_Muratbayev_Zakarya_Baxtiyar_uli_“Ijro_gov_uz”_menejer_buyruq-rag-R-1.docx');
+  });
+
+  it('транслитератор API: кирилл/лотин/янги алифбо, кириш талаб қилинади, журналга ёзилмайди', async () => {
+    await request(app.getHttpServer()).post('/api/translit').send({ text: 'x', to: 'lat' }).expect(401);
+    const run = async (text: string, to: string, extra: any = {}) => (await a.post('/api/translit').send({ text, to, ...extra }).expect(201)).body;
+    expect((await run('Ўзбекистон Шаҳар', 'lat-new')).result).toBe('Özbekiston Şahar');
+    expect(await run('Toshkent shahri', 'cyr')).toEqual({ result: 'Тошкент шаҳри', source: 'lat' });
+    expect((await run('Муратбаев', 'lat', { apostrophe: 'ascii' })).source).toBe('cyr');
+    await a.post('/api/translit').send({ text: 'x', to: 'greek' }).expect(400);
+    await a.post('/api/translit').send({ to: 'lat' }).expect(400);
+    const j = (await a.get('/api/audit?q=translit').expect(200)).body;
+    expect(j.items.some((x: any) => x.entity === 'translit')).toBe(false);
+  });
 });

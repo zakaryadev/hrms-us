@@ -28,7 +28,7 @@ export class DocumentsGenController {
     req.auditSummary = r.summary;
     if ('buffer' in r && r.buffer && 'fileName' in r) {
       res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
-      res.setHeader('Content-Disposition', `attachment; filename="${r.fileName}"`);
+      res.attachment(r.fileName);   // кирилл/махсус белгили номлар учун RFC 5987 (filename*) автоматик
       return new StreamableFile(r.buffer);
     }
     return r;

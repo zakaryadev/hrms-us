@@ -13,6 +13,7 @@ import ExcelJS from 'exceljs';
 import Docxtemplater from 'docxtemplater';
 import PizZip from 'pizzip';
 import { DocxService } from './docx.service';
+import { docFileName } from './filename';
 import { dayOf, fmtDate, fmtDayMonth, fmtMoney, fmtYear, monthName, toLang } from './format';
 import { DOC_STRINGS } from './strings';
 
@@ -287,7 +288,7 @@ export class DocumentsService {
 
     const buffer = this.docx.render(lang, type, data, { photo });
     if (!persist) {
-      return { buffer, summary: `Ҳужжат юклаб олинди (сақланмади): ${who}`, fileName: `${type}-${e.tabNumber}${number ? '-' + number.replace(/[^\w-]/g, '_') : ''}.docx` };
+      return { buffer, summary: `Ҳужжат юклаб олинди (сақланмади): ${who}`, fileName: docFileName(type, e, number) };
     }
     mkdirSync(GENERATED_DIR, { recursive: true });
     const fileName = `${randomUUID()}.docx`;
@@ -399,9 +400,10 @@ export class DocumentsService {
   }
 
   async orderFile(id: string) {
-    const o = await this.prisma.order.findUnique({ where: { id }, include: { employee: true } });
+    const o = await this.prisma.order.findUnique({ where: { id }, include: { employee: { include: { department: true, position: true } } } });
     if (!o?.docxFilePath) throw new NotFoundException();
-    return { path: join(GENERATED_DIR, o.docxFilePath), name: `buyruq-${o.orderNumber.replace(/[^\w-]/g, '_')}-${o.employee.tabNumber}.docx` };
+    const slug = { ishga_qabul: 'buyruq-qabul', lavozim_otkazish: 'buyruq-otkazish', tatil_berish: 'buyruq-tatil', ishdan_boshatish: 'buyruq-bosh', ragbatlantirish: 'buyruq-rag' }[o.orderType];
+    return { path: join(GENERATED_DIR, o.docxFilePath), name: docFileName(slug, o.employee, o.orderNumber) };
   }
 
   listForEmployee(employeeId: string) {
@@ -409,9 +411,9 @@ export class DocumentsService {
   }
 
   async file(id: string) {
-    const d = await this.prisma.generatedDocument.findUnique({ where: { id }, include: { employee: true } });
+    const d = await this.prisma.generatedDocument.findUnique({ where: { id }, include: { employee: { include: { department: true, position: true } } } });
     if (!d) throw new NotFoundException();
-    return { path: join(GENERATED_DIR, d.filePath), name: `${d.type}-${d.employee.tabNumber}${d.number ? '-' + d.number.replace(/[^\w-]/g, '_') : ''}.docx` };
+    return { path: join(GENERATED_DIR, d.filePath), name: docFileName(d.type, d.employee, d.number) };
   }
 
   /** Яратилган ҳужжатни (ва шу файлга боғлиқ буйруқни) файли билан ўчиради. */
