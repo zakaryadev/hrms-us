@@ -1,6 +1,7 @@
 import * as Popover from '@radix-ui/react-popover';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ChevronDown, Download, History, RotateCcw, Upload } from 'lucide-react';
+import { ChevronDown, Download, History, Pencil, RotateCcw, Upload } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { useRef, useState } from 'react';
 import { useAuth } from '../auth/AuthContext';
 import DataTable, { actionBtn, type Column } from '../components/DataTable';
@@ -92,6 +93,7 @@ export default function Templates() {
         actions={(t) => (
           <>
             <DownloadMenu t={t} />
+            {isAdmin && <Link to={`/templates/${t.name}/edit?script=${t.masterScript ?? 'cyr'}`} className={actionBtn}><Pencil size={14} /> Таҳрирлаш</Link>}
             {isAdmin && <button type="button" className={actionBtn} disabled={upload.isPending} onClick={() => { target.current = t; pick.current?.click(); }}><Upload size={14} /> Алмаштириш</button>}
             {isAdmin && t.hasPrevious && <button type="button" className={actionBtn} disabled={restore.isPending} onClick={() => confirm('Олдинги юкланган версия тикланади. Давом этайми?') && restore.mutate(t)}><History size={14} /> Олдинги</button>}
             {isAdmin && t.custom && <button type="button" className={actionBtn} disabled={reset.isPending} onClick={() => confirm('Юкланган шаблон ўчирилиб, стандарти тикланади. Давом этайми?') && reset.mutate(t)}><RotateCcw size={14} /> Стандарт</button>}

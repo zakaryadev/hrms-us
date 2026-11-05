@@ -31,17 +31,23 @@ export class TemplatesService {
     return null;
   }
 
-  private fieldsOf(buf: Buffer): string[] {
+  /** Шаблондаги {{майдон}} номлари; blocks — такрорланувчи/шартли блоклар ({{#ном}}…{{/ном}}) */
+  private tagsOf(buf: Buffer): { fields: string[]; blocks: string[] } {
+    const all = new Set<string>(), blocks = new Set<string>();
     try {
       const zip = new PizZip(buf);
-      const set = new Set<string>();
       for (const file of Object.keys(zip.files).filter((n) => /^word\/(document|header\d*|footer\d*)\.xml$/.test(n))) {
         const text = zip.file(file)!.asText().replace(/<[^>]+>/g, '');
-        for (const m of text.matchAll(/\{\{\s*([^{}]+?)\s*\}\}/g)) set.add(m[1].replace(/^[#/^]\s*/, ''));
+        for (const m of text.matchAll(/\{\{\s*([^{}]+?)\s*\}\}/g)) {
+          const name = m[1].replace(/^[#/^]\s*/, '');
+          all.add(name);
+          if (/^[#^]/.test(m[1])) blocks.add(name);
+        }
       }
-      return [...set];
-    } catch { return []; }
+    } catch { /* бузилган файл */ }
+    return { fields: [...all], blocks: [...blocks] };
   }
+  private fieldsOf(buf: Buffer): string[] { return this.tagsOf(buf).fields; }
 
   list() {
     return DOC_TYPES.map((name) => {
@@ -55,9 +61,12 @@ export class TemplatesService {
         const src: Source = !r || r.from !== t ? 'auto' : r.custom ? 'custom' : 'bundled';
         return [t, src];
       })) as Record<Lang, Source>;
+      // Муҳаррир палитраси: стандарт шаблондаги ҳамма оддий майдонлар (файлдан ўчирилган бўлса ҳам қайта қўшиш мумкин)
+      const std = existsSync(this.docx.bundledPath('cyr', name)) ? this.tagsOf(readFileSync(this.docx.bundledPath('cyr', name))) : { fields: [], blocks: [] };
       return {
         name, label: TEMPLATE_LABEL[name] ?? name, custom: !!master, masterScript: master, scripts, size: st.size, modifiedAt: st.mtime,
         fields: this.fieldsOf(readFileSync(path)), hasPrevious: !!this.prevOf(name),
+        available: std.fields.filter((f) => !std.blocks.includes(f)), blocks: std.blocks,
       };
     }).filter((x): x is NonNullable<typeof x> => !!x);
   }

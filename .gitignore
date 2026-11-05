@@ -6,3 +6,6 @@ generated
 *.log
 .env.prod
 templates-custom
+
+# Word муҳаррири (SuperDoc) файллари — йиғиш пайтида node_modules дан нусхаланади
+apps/web/public/vendor

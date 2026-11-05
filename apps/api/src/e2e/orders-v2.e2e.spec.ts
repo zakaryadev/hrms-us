@@ -132,6 +132,10 @@ describe('Yangi buyruqlar, tahrirlash, raqamlash, shablon yuklash, eksport, foyd
     expect(ok.body.script).toBe('cyr');                                                    // yozuv avtomatik aniqlandi
     const row = (await a.get(T).expect(200)).body.find((t: any) => t.name === 'buyruq-rag');
     expect(row).toMatchObject({ custom: true, masterScript: 'cyr', scripts: { cyr: 'custom', lat: 'auto', 'lat-new': 'auto' } });
+    // муҳаррир палитраси: стандарт шаблондаги оддий майдонлар ва алоҳида блоклар (ўчирилган майдон ҳам қайта қўшилиши учун)
+    expect(row.available).toEqual(expect.arrayContaining(['buyruq_raqami', 'sabab_matni', 'xodim_fish']));
+    expect(row.blocks).toEqual(expect.arrayContaining(['mukofot_matni', 'summa_matni']));
+    expect(row.available).not.toEqual(expect.arrayContaining(['mukofot_matni']));
 
     // shu bitta shablondan har uch yozuvda hujjat: butun matn avtomatik o'giriladi
     const gen3 = async (lang: string) => text(await fileOf((await a.post('/api/documents/generate/buyruq-rag').send({ employeeId: empId, params: { lang, orderDate: '2026-07-01', reason: 'намунали меҳнат', basis: 'Асос', rewardText: 'Миннатдорчилик' } }).expect(201)).body.id));

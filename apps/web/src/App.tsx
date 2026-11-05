@@ -23,6 +23,8 @@ import Structure from './pages/Structure';
 import AuditLog from './pages/AuditLog';
 import Translit from './pages/Translit';
 import Templates from './pages/Templates';
+// Word муҳаррири (SuperDoc) оғир — фақат шу саҳифа очилганда юкланади
+const TemplateEditor = lazy(() => import('./pages/TemplateEditor'));
 import Timesheet from './pages/Timesheet';
 
 export default function App() {
@@ -42,6 +44,7 @@ export default function App() {
           <Route path="audit" element={<RequireAuth roles={['superadmin']}><AuditLog /></RequireAuth>} />
           <Route path="translit" element={<Translit />} />
           <Route path="templates" element={<Templates />} />
+          <Route path="templates/:name/edit" element={<RequireAuth roles={['superadmin']}><Suspense fallback={<Loading rows={6} />}><TemplateEditor /></Suspense></RequireAuth>} />
           <Route path="certificates" element={<Certificates />} />
           <Route path="payroll" element={<Payroll />} />
           <Route path="leaves" element={<Leaves />} />
