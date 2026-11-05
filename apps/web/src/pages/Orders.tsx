@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { api, fmtDate, fullName } from '../lib/api';
 import { Select, buttonStyles, cn } from '../components/kit';
 import { PageHeader } from '../components/ui';
+import DeleteDocButton from '../components/DeleteDocButton';
 
 export const ORDER_LABEL: Record<string, string> = {
   ishga_qabul: 'Ишга қабул', lavozim_otkazish: 'Лавозимга ўтказиш', tatil_berish: 'Меҳнат таътили',
@@ -28,7 +29,7 @@ export default function Orders() {
               <tr key={o.id} className="hover:bg-slate-50">
                 <td className="td font-medium">{o.orderNumber}</td><td className="td">{fmtDate(o.orderDate)}</td>
                 <td className="td">{ORDER_LABEL[o.orderType] ?? o.orderType}</td><td className="td">{fullName(o.employee)}</td>
-                <td className="td text-right">{o.hasFile && <a className={cn(buttonStyles({ variant: 'secondary', size: 'sm' }))} href={`/api/orders/${o.id}/download`}><Download size={14} /> DOCX</a>}</td>
+                <td className="td text-right"><div className="flex items-center justify-end gap-1">{o.hasFile && <a className={cn(buttonStyles({ variant: 'secondary', size: 'sm' }))} href={`/api/orders/${o.id}/download`}><Download size={14} /> DOCX</a>}<DeleteDocButton id={o.id} kind="order" label={`Буйруқ № ${o.orderNumber}`} /></div></td>
               </tr>
             ))}
             {q.data?.length === 0 && <tr><td colSpan={5} className="td py-10 text-center text-slate-500">Буйруқлар йўқ. Ходим саҳифасидан «Ҳужжат яратиш» орқали яратилади.</td></tr>}

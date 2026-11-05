@@ -20,6 +20,7 @@ import EmployeeProfile from './pages/EmployeeProfile';
 import Employees from './pages/Employees';
 import Settings from './pages/Settings';
 import Structure from './pages/Structure';
+import Templates from './pages/Templates';
 import Timesheet from './pages/Timesheet';
 
 export default function App() {
@@ -36,6 +37,7 @@ export default function App() {
           <Route path="import" element={<ImportPage />} />
           <Route path="archive" element={<Archive />} />
           <Route path="orders" element={<Orders />} />
+          <Route path="templates" element={<Templates />} />
           <Route path="certificates" element={<Certificates />} />
           <Route path="payroll" element={<Payroll />} />
           <Route path="leaves" element={<Leaves />} />

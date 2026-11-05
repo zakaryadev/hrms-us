@@ -2,7 +2,7 @@ import * as Dialog from '@radix-ui/react-dialog';
 import * as Popover from '@radix-ui/react-popover';
 import { useQuery } from '@tanstack/react-query';
 import {
-  Archive, BookMarked, CalendarDays, CalendarRange, ChevronDown, ChevronLeft, FileSpreadsheet, FileText, KeyRound, LayoutDashboard, LogOut, Menu, Network, Palmtree, Plus, ScrollText, UserCog, Users, Wallet,
+  Archive, BookMarked, CalendarDays, CalendarRange, ChevronDown, ChevronLeft, FileSpreadsheet, FileText, KeyRound, LayoutDashboard, LogOut, Menu, Network, Palmtree, Plus, ScrollText, UserCog, Users, Wallet, FileType2,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
@@ -27,6 +27,7 @@ const GROUPS: Group[] = [
     { to: '/orders', label: 'Буйруқлар', icon: ScrollText },
     { to: '/certificates', label: 'Маълумотнома', icon: FileText },
     { to: '/leaves', label: 'Таътиллар', icon: Palmtree, badge: 'onLeave' },
+    { to: '/templates', label: 'Шаблонлар', icon: FileType2 },
   ] },
   { id: 'calc', label: 'Ҳисоб-китоб', items: [
     { to: '/timesheet', label: 'Табель', icon: CalendarDays },

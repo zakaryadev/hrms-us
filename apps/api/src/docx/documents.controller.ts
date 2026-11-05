@@ -1,4 +1,4 @@
-import { BadRequestException, Body, Controller, Get, NotFoundException, Param, Post, Query, Res, StreamableFile } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Delete, Get, HttpCode, NotFoundException, Param, Post, Query, Res, StreamableFile } from '@nestjs/common';
 import { IsObject, IsOptional, IsUUID } from 'class-validator';
 import type { Response } from 'express';
 import { existsSync } from 'fs';
@@ -49,6 +49,23 @@ export class DocumentsGenController {
   async download(@Param('id') id: string, @Res() res: Response) {
     const f = await this.svc.file(id);
     if (!existsSync(f.path)) throw new NotFoundException('Файл топилмади');
+    return res.download(f.path, f.name);
+  }
+
+  @Delete('documents/generated/:id')
+  @HttpCode(204)
+  async removeGenerated(@Param('id') id: string) { await this.svc.removeGenerated(id); }
+
+  @Delete('orders/:id')
+  @HttpCode(204)
+  async removeOrder(@Param('id') id: string) { await this.svc.removeOrder(id); }
+
+  @Get('documents/templates')
+  templates() { return this.svc.listTemplates(); }
+
+  @Get('documents/templates/:lang/:name/download')
+  templateDownload(@Param('lang') lang: string, @Param('name') name: string, @Res() res: Response) {
+    const f = this.svc.templateFile(lang, name);
     return res.download(f.path, f.name);
   }
 

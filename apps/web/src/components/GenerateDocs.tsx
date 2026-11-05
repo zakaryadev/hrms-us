@@ -1,3 +1,4 @@
+import DeleteDocButton from './DeleteDocButton';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Download, FilePlus2, Plus } from 'lucide-react';
 import { useState } from 'react';
@@ -40,6 +41,7 @@ export default function GenerateDocs({ employee }: { employee: any }) {
               {g.number && <span className="text-slate-500">№ {g.number}</span>}
               <span className="text-slate-500">{fmtDate(g.createdAt)}</span>
               <a className={cn(buttonStyles({ variant: 'secondary', size: 'sm' }), 'ml-auto')} href={`/api/documents/generated/${g.id}/download`}><Download size={14} /> DOCX</a>
+              <DeleteDocButton id={g.id} label={TYPE_LABEL[g.type] ?? 'Ҳужжат'} />
             </li>
           ))}
           {history.data?.length === 0 && <li><Empty>Ҳали ҳужжат яратилмаган</Empty></li>}

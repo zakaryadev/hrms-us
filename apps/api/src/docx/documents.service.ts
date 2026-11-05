@@ -1,14 +1,15 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { randomUUID } from 'crypto';
-import { mkdirSync, writeFileSync } from 'fs';
+import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, unlinkSync, writeFileSync } from 'fs';
 import { join, resolve } from 'path';
 import { workYear, calcLeave } from '../calendar/leave';
 import { PrismaService } from '../prisma/prisma.service';
 import { CalendarService } from '../calendar/calendar.service';
 import { SettingsService } from '../settings/settings.service';
 import { TimesheetService } from '../timesheet/timesheet.service';
-import { DocxService } from './docx.service';
+import PizZip from 'pizzip';
+import { DocxService, TEMPLATE_DIR } from './docx.service';
 import { dayOf, fmtDate, fmtDayMonth, fmtMoney, fmtYear, monthName, toLang } from './format';
 import { DOC_STRINGS } from './strings';
 
@@ -232,4 +233,73 @@ export class DocumentsService {
     if (!d) throw new NotFoundException();
     return { path: join(GENERATED_DIR, d.filePath), name: `${d.type}-${d.employee.tabNumber}${d.number ? '-' + d.number.replace(/[^\w-]/g, '_') : ''}.docx` };
   }
+
+  /** Яратилган ҳужжатни (ва шу файлга боғлиқ буйруқни) файли билан ўчиради. */
+  async removeGenerated(id: string) {
+    const d = await this.prisma.generatedDocument.findUnique({ where: { id } });
+    if (!d) throw new NotFoundException('Ҳужжат топилмади');
+    await this.prisma.$transaction([
+      this.prisma.order.deleteMany({ where: { docxFilePath: d.filePath } }),
+      this.prisma.generatedDocument.delete({ where: { id } }),
+    ]);
+    this.unlinkFile(d.filePath);
+  }
+
+  /** Буйруқни (ва шу файлга боғлиқ ҳужжат ёзувини) файли билан ўчиради. */
+  async removeOrder(id: string) {
+    const o = await this.prisma.order.findUnique({ where: { id } });
+    if (!o) throw new NotFoundException('Буйруқ топилмади');
+    const path = o.docxFilePath;
+    await this.prisma.$transaction([
+      this.prisma.order.delete({ where: { id } }),
+      ...(path ? [this.prisma.generatedDocument.deleteMany({ where: { filePath: path } })] : []),
+    ]);
+    if (path) this.unlinkFile(path);
+  }
+
+  private unlinkFile(name: string) {
+    const p = resolve(GENERATED_DIR, name);
+    if (!p.startsWith(GENERATED_DIR) || !existsSync(p)) return;
+    try { unlinkSync(p); } catch { /* файл йўқ ёки банд — ёзув барибир ўчирилган */ }
+  }
+
+  /** Word шаблонлар рўйхати: тил, ном, ўлчам, ўзгартирилган сана ва ичидаги {{майдонлар}}. */
+  listTemplates() {
+    const out: { lang: string; name: string; label: string; size: number; modifiedAt: Date; fields: string[] }[] = [];
+    for (const lang of ['lat', 'cyr']) {
+      const dir = join(TEMPLATE_DIR, lang);
+      if (!existsSync(dir)) continue;
+      for (const f of readdirSync(dir).filter((x) => x.endsWith('.docx')).sort()) {
+        const full = join(dir, f);
+        const st = statSync(full);
+        const name = f.replace(/\.docx$/, '');
+        out.push({ lang, name, label: TEMPLATE_LABEL[name] ?? name, size: st.size, modifiedAt: st.mtime, fields: this.templateFields(full) });
+      }
+    }
+    return out;
+  }
+
+  private templateFields(path: string): string[] {
+    try {
+      const zip = new PizZip(readFileSync(path));
+      const set = new Set<string>();
+      for (const file of Object.keys(zip.files).filter((n) => /^word\/(document|header\d*|footer\d*)\.xml$/.test(n))) {
+        const text = zip.file(file)!.asText().replace(/<[^>]+>/g, '');
+        for (const m of text.matchAll(/\{\{\s*([^{}]+?)\s*\}\}/g)) set.add(m[1].replace(/^[#/^]\s*/, ''));
+      }
+      return [...set];
+    } catch { return []; }
+  }
+
+  templateFile(lang: string, name: string) {
+    if (!['lat', 'cyr'].includes(lang) || !(DOC_TYPES as readonly string[]).includes(name)) throw new NotFoundException('Шаблон топилмади');
+    const path = join(TEMPLATE_DIR, lang, `${name}.docx`);
+    if (!existsSync(path)) throw new NotFoundException('Шаблон топилмади');
+    return { path, name: `${name}-${lang}.docx` };
+  }
 }
+
+export const TEMPLATE_LABEL: Record<string, string> = {
+  obyektivka: 'Маълумотнома (Т-2)', ariza: 'Ўтказиш ҳақида ариза', kelishuv: 'Меҳнат шартномасига келишув',
+  'buyruq-otkazish': 'Лавозимга ўтказиш буйруғи', 'buyruq-tatil': 'Меҳнат таътили буйруғи',
+};

@@ -1,3 +1,4 @@
+import DeleteDocButton from '../components/DeleteDocButton';
 import { useQuery } from '@tanstack/react-query';
 import { Download } from 'lucide-react';
 import { useState } from 'react';
@@ -23,7 +24,7 @@ export default function Certificates() {
           <tbody className="divide-y divide-slate-100">
             {q.data?.map((g) => (
               <tr key={g.id} className="hover:bg-slate-50"><td className="td">{fmtDate(g.createdAt)}</td><td className="td font-medium">{fullName(g.employee)}</td><td className="td font-mono">{g.employee.tabNumber}</td>
-                <td className="td text-right"><a className={cn(buttonStyles({ variant: 'secondary', size: 'sm' }))} href={`/api/documents/generated/${g.id}/download`}><Download size={14} /> DOCX</a></td></tr>
+                <td className="td text-right"><div className="flex items-center justify-end gap-1"><a className={cn(buttonStyles({ variant: 'secondary', size: 'sm' }))} href={`/api/documents/generated/${g.id}/download`}><Download size={14} /> DOCX</a><DeleteDocButton id={g.id} label="Маълумотнома" /></div></td></tr>
             ))}
             {q.data?.length === 0 && <tr><td colSpan={4} className="td py-10 text-center text-slate-500">Ҳали маълумотнома яратилмаган</td></tr>}
           </tbody>
