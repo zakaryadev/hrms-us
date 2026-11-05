@@ -2,8 +2,9 @@ import { BadRequestException, ConflictException, Injectable, NotFoundException }
 import { Prisma } from '@prisma/client';
 import { randomUUID } from 'crypto';
 import { copyFileSync, existsSync, mkdirSync, readFileSync, renameSync, statSync, unlinkSync, writeFileSync } from 'fs';
-import { join, resolve } from 'path';
+import { basename, join, resolve } from 'path';
 import { workYear, calcLeave } from '../calendar/leave';
+import { UPLOAD_DIR } from '../documents/documents.controller';
 import { PrismaService } from '../prisma/prisma.service';
 import { CalendarService } from '../calendar/calendar.service';
 import { SettingsService } from '../settings/settings.service';
@@ -112,30 +113,49 @@ export class DocumentsService {
     };
     let data: Record<string, unknown>;
     let number: string | null = null;
+    let photo: Buffer | undefined;
     let order: { type: OrderKind; number: string; date: string } | null = null;
 
     switch (type) {
       case 'obyektivka': {
         const edu = e.education[e.education.length - 1];
+        const yy = L.year; // «й.» / «y.»
+        const period = (start: Date | null, end: Date | null) => {
+          const a = start ? start.getUTCFullYear() : null, b = end ? end.getUTCFullYear() : null;
+          if (!a) return '—';
+          if (!end) return `${a} ${yy} - ${L.present}`;
+          return a === b ? `${a} ${yy}` : `${a}-${b} ${L.years}`;
+        };
         const history = e.workHistory.map((w) => ({
-          davr: `${w.startDate ? fmtDate(w.startDate).slice(3) : '—'} — ${w.endDate ? fmtDate(w.endDate).slice(3) : L.present}`,
-          lavozim_va_joy: [w.positionTitle, w.organizationName].filter(Boolean).join(', '),
+          davr: period(w.startDate, w.endDate),
+          joy: [w.organizationName, w.positionTitle].filter(Boolean).join(' - '),
         }));
-        if (e.hireDate) {
-          history.push({ davr: `${fmtDate(e.hireDate).slice(3)} — ${L.present}`, lavozim_va_joy: `${e.position.title}, ${s.tashkilot_nomi}, ${e.department.name}` });
+        const place = (e.birthPlace ?? '').trim();
+        const comma = place.indexOf(',');
+        const [place1, place2] = comma < 0 ? [place, ''] : [place.slice(0, comma + 1), place.slice(comma + 1).trim()];
+        const hire = e.hireDate;
+        if (hire) {
+          history.push({ davr: period(hire, null), joy: [s.tashkilot_nomi, cur.filial, cur.bolim, e.position.title].filter(Boolean).join(' ') });
         }
         data = {
           ...base,
-          tugilgan_sana: fmtDate(e.birthDate), tugilgan_joy: e.birthPlace ?? '', millati: e.nationality ?? '',
-          partiyaviyligi: e.partyMembership || L.none, malumoti: params.malumoti ?? '',
-          tamomlagan_oliygoh: edu?.institutionName ?? '', mutaxassisligi: edu?.speciality ?? '',
-          harbiy_unvoni: params.harbiyUnvoni || L.none, ishga_tushgan_sana: fmtDate(e.hireDate),
+          ishga_kirish_matn: hire ? L.hireLine(hire.getUTCFullYear(), String(hire.getUTCDate()).padStart(2, '0'), monthName(hire, lang)) : '',
+          tugilgan_sana: fmtDate(e.birthDate), tugilgan_joy_1: place1, tugilgan_joy_2: place2,
+          millati: e.nationality ?? '', partiyaviyligi: e.partyMembership || L.none, malumoti: params.malumoti ?? '',
+          tamomlagan: edu ? [[edu.endYear ? `${edu.endYear} ${yy}` : '', edu.institutionName].filter(Boolean).join(' '), edu.studyType ? `(${edu.studyType})` : ''].filter(Boolean).join(' ') : '',
+          mutaxassisligi: edu?.speciality ?? '',
+          ilmiy_daraja: params.ilmiyDaraja || L.none, ilmiy_unvon: params.ilmiyUnvon || L.none,
+          chet_tillari: params.chetTillari || L.none, harbiy_unvoni: params.harbiyUnvoni || L.none,
+          mukofotlar: params.mukofotlar || L.none, deputatlik: params.deputatlik || L.none,
           ish_joylari: history,
           qarindoshlar: e.relatives.map((r) => ({
             qarindoshligi: r.relativeType, fish: r.fullName, tugilgan_yil_joy: r.birthYearPlace ?? '',
             ish_joyi: r.workPlacePosition ?? '', manzili: r.livingAddress ?? '',
           })),
         };
+        if (e.photoUrl) {
+          try { photo = readFileSync(join(UPLOAD_DIR, basename(e.photoUrl))); } catch { /* расм файли йўқ — шаблондаги рамка қолади */ }
+        }
         break;
       }
       case 'ariza': {
@@ -255,16 +275,16 @@ export class DocumentsService {
         throw new BadRequestException(`Номаълум ҳужжат тури: ${type}`);
     }
 
-    return { lang, data, number, order, params, e, fish };
+    return { lang, data, number, order, params, e, fish, photo };
   }
 
   async generate(type: DocType, employeeId: string, params: Params = {}, persist = true) {
     return this.locked(async () => {
-    const { lang, data, number, order, params: p, e, fish } = await this.build(type, employeeId, params, persist);
+    const { lang, data, number, order, params: p, e, fish, photo } = await this.build(type, employeeId, params, persist);
     const who = `${TEMPLATE_LABEL[type] ?? type}${number ? ' № ' + number : ''}, ${fish} (${e.tabNumber})`;
     params = p;
 
-    const buffer = this.docx.render(lang, type, data);
+    const buffer = this.docx.render(lang, type, data, { photo });
     if (!persist) {
       return { buffer, summary: `Ҳужжат юклаб олинди (сақланмади): ${who}`, fileName: `${type}-${e.tabNumber}${number ? '-' + number.replace(/[^\w-]/g, '_') : ''}.docx` };
     }
@@ -312,7 +332,7 @@ export class DocumentsService {
       if (type === 'kelishuv') rest.agreementNumber = newParams.agreementNumber || d.number;
       else if (type.startsWith('buyruq-')) rest.orderNumber = newParams.orderNumber || d.number;
       const built = await this.build(type, d.employeeId, rest, true, d.filePath);
-      const buffer = this.docx.render(built.lang, type, built.data);
+      const buffer = this.docx.render(built.lang, type, built.data, { photo: built.photo });
       mkdirSync(GENERATED_DIR, { recursive: true });
       writeFileSync(join(GENERATED_DIR, d.filePath), buffer);
       const params = built.params;

@@ -1,6 +1,7 @@
 import { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { mkdtempSync, readFileSync } from 'fs';
+import { deflateSync, crc32 } from 'zlib';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import PizZip from 'pizzip';
@@ -21,7 +22,7 @@ describe('Yangi buyruqlar, tahrirlash, raqamlash, shablon yuklash, eksport, foyd
 
   beforeAll(async () => {
     dir = mkdtempSync(join(tmpdir(), 'hrms-tpl-')); genDir = mkdtempSync(join(tmpdir(), 'hrms-gen-'));
-    process.env.CUSTOM_TEMPLATE_DIR = dir; process.env.GENERATED_DIR = genDir;
+    process.env.CUSTOM_TEMPLATE_DIR = dir; process.env.GENERATED_DIR = genDir; process.env.UPLOAD_DIR = mkdtempSync(join(tmpdir(), 'hrms-up-'));
     const { prepareTestDb } = await import('./test-db');
     await prepareTestDb('hrms_test_orders2');
     process.env.JWT_SECRET = 'test-secret-test-secret-123';
@@ -186,5 +187,39 @@ describe('Yangi buyruqlar, tahrirlash, raqamlash, shablon yuklash, eksport, foyd
     expect((await a.get('/api/users')).body.some((x: any) => x.id === u.id)).toBe(false);
     const j = (await a.get('/api/audit?entity=users').expect(200)).body.items;
     expect(j.some((x: any) => x.action === 'delete' && /Вақтинча/.test(x.summary))).toBe(true);
+  });
+
+  it('Т-2 маълумотнома: ходим маълумоти, 2 қаторли туғилган жой, ишга қабул сатри, қариндошлар ва фото (e2e)', async () => {
+    const png = (w: number, h: number) => {
+      const chunk = (t: string, d: Buffer) => { const b = Buffer.concat([Buffer.from(t), d]); const len = Buffer.alloc(4); len.writeUInt32BE(d.length); const c = Buffer.alloc(4); c.writeUInt32BE(crc32(b) >>> 0); return Buffer.concat([len, b, c]); };
+      const ihdr = Buffer.alloc(13); ihdr.writeUInt32BE(w, 0); ihdr.writeUInt32BE(h, 4); ihdr[8] = 8; ihdr[9] = 2;
+      const raw = Buffer.alloc((w * 3 + 1) * h, 120);
+      for (let y = 0; y < h; y++) raw[y * (w * 3 + 1)] = 0;
+      return Buffer.concat([Buffer.from('89504e470d0a1a0a', 'hex'), chunk('IHDR', ihdr), chunk('IDAT', deflateSync(raw)), chunk('IEND', Buffer.alloc(0))]);
+    };
+    const e = (await a.post('/api/employees').send({
+      tabNumber: '77', firstName: 'Закарья', lastName: 'Муратбаев', middleName: 'Бахтияр улы', departmentId: deptId, positionId: posId, salary: 5000000,
+      hireDate: '2026-07-01', birthDate: '2003-10-13', birthPlace: 'Қорақалпоғистон Республикаси, Нукус шаҳри', nationality: 'қорақалпоқ',
+      education: [{ institutionName: 'Нукус давлат техника университети', speciality: 'Дастурий инжиниринг', studyType: 'кундузги', endYear: 2025 }],
+      workHistory: [{ organizationName: 'Data Life', positionTitle: 'график дизайнери', startDate: '2021-01-01', endDate: '2023-12-31' }],
+      relatives: [{ relativeType: 'Отаси', fullName: 'Бердибаев Бахтияр', birthYearPlace: '1974 йил, Нукус', workPlacePosition: 'Тадбиркор', livingAddress: 'Нукус, Жасарат 92' }],
+    }).expect(201)).body;
+    const gen = (lang: string) => a.post('/api/documents/generate/obyektivka').send({ employeeId: e.id, params: { lang, malumoti: 'олий', chetTillari: 'Рус тили' } });
+    // фотосиз: шаблондаги рамка қолади
+    const g0 = await gen('cyr').expect(201);
+    const z0 = new PizZip(await fileOf(g0.body.id));
+    expect(z0.file('word/media/photo.png')).toBeNull();
+    // расм юклангандан кейин — ходим расми қўйилади
+    await a.post(`/api/employees/${e.id}/photo`).attach('file', png(30, 40), 'p.png').expect(201);
+    const g1 = await gen('cyr').expect(201);
+    const buf = await fileOf(g1.body.id); const z = new PizZip(buf);
+    const t = text(buf);
+    expect(z.file('word/media/photo.png')).toBeTruthy();
+    for (const x of ['Муратбаев Закарья Бахтияр улы'.replace('Муратбаев Закарья', 'Муратбаев Закарья'), '2026 йил 01 июлдан', '13.10.2003', 'Қорақалпоғистон Республикаси,', 'Нукус шаҳри', 'қорақалпоқ',
+      '2025 й. Нукус давлат техника университети (кундузги)', 'Дастурий инжиниринг', 'Рус тили', '2021-2023 йй.', 'Data Life - график дизайнери', '2026 й. - ҳ.в.', 'Бердибаев Бахтияр', 'Жасарат 92'])
+      expect(t).toContain(x);
+    expect(t).not.toMatch(/\{\{|\}\}/);
+    const gl = await gen('lat').expect(201);
+    expect(text(await fileOf(gl.body.id))).toContain("MA'LUMOTNOMA");
   });
 });

@@ -1,5 +1,5 @@
 import PizZip from 'pizzip';
-import { DocxService } from './docx.service';
+import { DocxService, imageInfo } from './docx.service';
 import { fmtDate, fmtDayMonth, fmtMoney, monthName, toLang } from './format';
 import { DOC_STRINGS } from './strings';
 
@@ -59,20 +59,51 @@ describe.each([['lat'], ['cyr']] as const)('DOCX shablonlari (%s)', (lang) => {
     expect(off).not.toMatch(/\{\{|\}\}/);
   });
 
-  it('obyektivka: tsikllar (mehnat faoliyati, qarindoshlar jadvali)', () => {
-    const t = text(svc.render(lang, 'obyektivka', {
-      ...common, tugilgan_sana: '15.03.1992', tugilgan_joy: "Qo'vasoy", millati: "o'zbek", partiyaviyligi: DOC_STRINGS[lang].none, malumoti: 'Oliy',
-      tamomlagan_oliygoh: 'TATU', mutaxassisligi: 'Dasturchi', harbiy_unvoni: DOC_STRINGS[lang].none, ishga_tushgan_sana: '01.05.2026',
-      ish_joylari: [{ davr: '2015 — 2020', lavozim_va_joy: 'Dasturchi, ABC' }, { davr: `2020 — ${DOC_STRINGS[lang].present}`, lavozim_va_joy: 'Menejer, XYZ' }],
-      qarindoshlar: [
-        { qarindoshligi: 'otasi', fish: 'Aliyev A.', tugilgan_yil_joy: "1960, Qo'vasoy", ish_joyi: 'Nafaqada', manzili: "Qo'vasoy" },
-        { qarindoshligi: 'onasi', fish: 'Aliyeva B.', tugilgan_yil_joy: "1965, Qo'vasoy", ish_joyi: 'Maktab', manzili: "Qo'vasoy" },
-      ],
-    }));
+  const T2 = (over: Record<string, unknown> = {}) => ({
+    ...common, ishga_kirish_matn: '2026-yil 01 mayda', tugilgan_sana: '15.03.1992', tugilgan_joy_1: "Qo'vasoy viloyati,", tugilgan_joy_2: 'Marg\'ilon shahri',
+    millati: "o'zbek", partiyaviyligi: DOC_STRINGS[lang].none, malumoti: 'Oliy', tamomlagan: '2015 TATU', mutaxassisligi: 'Dasturchi',
+    ilmiy_daraja: DOC_STRINGS[lang].none, ilmiy_unvon: DOC_STRINGS[lang].none, chet_tillari: 'Ingliz tili', harbiy_unvoni: DOC_STRINGS[lang].none,
+    mukofotlar: DOC_STRINGS[lang].none, deputatlik: DOC_STRINGS[lang].none,
+    ish_joylari: [{ davr: '2015-2020 yy.', joy: 'ABC - Dasturchi' }, { davr: `2020 y. - ${DOC_STRINGS[lang].present}`, joy: 'XYZ Menejer' }],
+    qarindoshlar: [
+      { qarindoshligi: 'otasi', fish: 'Aliyev A.', tugilgan_yil_joy: "1960, Qo'vasoy", ish_joyi: 'Nafaqada', manzili: "Qo'vasoy" },
+      { qarindoshligi: 'onasi', fish: 'Aliyeva B.', tugilgan_yil_joy: "1965, Qo'vasoy", ish_joyi: 'Maktab', manzili: "Qo'vasoy" },
+    ], ...over,
+  });
+
+  it('obyektivka (T-2, namunadan 1:1): tsikllar, tug\'ilgan joy ikki qator, hamma maydonlar', () => {
+    const t = text(svc.render(lang, 'obyektivka', T2()));
     expect(t).not.toMatch(/\{\{|\}\}|\{#|\{\//);
-    for (const s of ['Dasturchi, ABC', 'Menejer, XYZ', 'Aliyev A.', 'Aliyeva B.']) expect(t).toContain(s);
+    for (const s of ['2015-2020 yy.', 'ABC - Dasturchi', 'XYZ Menejer', 'Aliyev A.', 'Aliyeva B.', "Qo'vasoy viloyati,", "Marg'ilon shahri", 'Ingliz tili', '2015 TATU', '2026-yil 01 mayda'])
+      expect(t).toContain(s);
     expect(t).toContain(lang === 'cyr' ? 'МАЪЛУМОТНОМА' : "MA'LUMOTNOMA");
     expect(t).toContain(lang === 'cyr' ? 'ҳ.в.' : 'h.v.');
+    expect(t).toContain(lang === 'cyr' ? 'яқин қариндошлари ҳақида' : 'yaqin qarindoshlari haqida');
+  });
+
+  it("obyektivka: tug'ilgan joyning ikkinchi qatori bo'sh bo'lsa abzats qolmaydi; qarindoshsiz ham xato yo'q", () => {
+    const xml = (o: Record<string, unknown>) => new PizZip(svc.render(lang, 'obyektivka', T2(o))).file('word/document.xml')!.asText();
+    const paras = (x: string) => (x.match(/<w:p[ >]/g) ?? []).length;
+    expect(paras(xml({ tugilgan_joy_2: '' }))).toBe(paras(xml({})) - 1);
+    expect(() => svc.render(lang, 'obyektivka', T2({ qarindoshlar: [], ish_joylari: [] }))).not.toThrow();
+  });
+
+  it('obyektivka: xodim rasmi shablondagi rasm o\'rniga qo\'yiladi (PNG/JPEG, kesib moslashtiriladi), buzuq rasm e\'tiborsiz', () => {
+    // 2x2 PNG (to'g'ri CRC shart emas — faqat sarlavha o'qiladi) va oddiy JPEG sarlavhasi
+    const png = Buffer.concat([Buffer.from('89504e470d0a1a0a0000000d49484452', 'hex'), Buffer.from('00000064000000c8', 'hex'), Buffer.alloc(20)]);   // 100x200
+    const out = new PizZip(svc.render(lang, 'obyektivka', T2(), { photo: png }));
+    expect(out.file('word/media/photo.png')).toBeTruthy();
+    const x = out.file('word/document.xml')!.asText();
+    expect(x).toMatch(/<a:srcRect l="0" t="\d+" r="0" b="\d+"\/>/);   // tor-uzun rasm: tepa/pastdan kesiladi
+    expect(out.file('word/_rels/document.xml.rels')!.asText()).toContain('media/photo.png');
+    expect(imageInfo(png)).toEqual({ ext: 'png', w: 100, h: 200 });
+    const jpg = Buffer.from('ffd8ffe000104a46494600010100000100010000ffc0001108012c01900301220002110103110100', 'hex');   // 400x300 (h=300,w=400)
+    expect(imageInfo(jpg)).toEqual({ ext: 'jpg', w: 400, h: 300 });
+    const out2 = new PizZip(svc.render(lang, 'obyektivka', T2(), { photo: jpg }));
+    expect(out2.file('word/media/photo.jpg')).toBeTruthy();
+    expect(out2.file('[Content_Types].xml')!.asText()).toMatch(/Extension="jpg"/);
+    const bad = new PizZip(svc.render(lang, 'obyektivka', T2(), { photo: Buffer.from('bu rasm emas') }));
+    expect(bad.file('word/media/photo.png')).toBeNull();
   });
 
   it("noma'lum teg bo'lsa ham bo'sh qiymat bilan to'ldiriladi", () => {

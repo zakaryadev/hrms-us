@@ -4,6 +4,9 @@ import { Lang } from './format';
 export const DOC_STRINGS = {
   lat: {
     present: 'h.v.',
+    year: 'y.',
+    years: 'yy.',
+    hireLine: (y: number, d: string, m: string) => `${y}-yil ${d} ${m}dan`,
     none: "yo'q",
     signer: 'Bosh direktor',
     orderPrefix: 'М-',
@@ -17,6 +20,9 @@ export const DOC_STRINGS = {
   },
   cyr: {
     present: 'ҳ.в.',
+    year: 'й.',
+    years: 'йй.',
+    hireLine: (y: number, d: string, m: string) => `${y} йил ${d} ${m}дан`,
     none: 'йўқ',
     signer: 'Бош директор',
     orderPrefix: 'М-',

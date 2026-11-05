@@ -133,6 +133,7 @@ export function DocModal({ type, employee, onClose, edit }: { type: Exclude<DocT
     newSalary: '', poaText: '', orderNumber: '', orderDate: today(), basis: '', malumoti: '', harbiyUnvoni: '',
     hireDate: employee.hireDate?.slice(0, 10) ?? '', salary: employee.salary != null ? String(Number(employee.salary)) : '', probationMonths: String(employee.probationMonths ?? 0),
     dismissalDate: '', compensation: false, reason: '', rewardText: '', amount: '',
+    ilmiyDaraja: '', ilmiyUnvon: '', chetTillari: '', mukofotlar: '', deputatlik: '',
     ...Object.fromEntries(Object.entries(edit?.params ?? {}).map(([k, v]) => [k, typeof v === 'number' ? String(v) : v])),
   });
   const [save, setSave] = useState(true);
@@ -154,7 +155,7 @@ export function DocModal({ type, employee, onClose, edit }: { type: Exclude<DocT
     if (type === 'buyruq-qabul') { copy('orderNumber', 'orderDate', 'hireDate', 'basis'); params.salary = Number(f.salary) || 0; params.probationMonths = Number(f.probationMonths) || 0; }
     if (type === 'buyruq-bosh') { copy('orderNumber', 'orderDate', 'dismissalDate', 'basis'); params.compensation = !!f.compensation; }
     if (type === 'buyruq-rag') { copy('orderNumber', 'orderDate', 'reason', 'rewardText', 'basis'); if (f.amount !== '') params.amount = Number(f.amount); }
-    if (type === 'obyektivka') copy('malumoti', 'harbiyUnvoni');
+    if (type === 'obyektivka') copy('malumoti', 'harbiyUnvoni', 'ilmiyDaraja', 'ilmiyUnvon', 'chetTillari', 'mukofotlar', 'deputatlik');
     return params;
   }, edit);
 
@@ -252,9 +253,18 @@ export function DocModal({ type, employee, onClose, edit }: { type: Exclude<DocT
         )}
 
         {type === 'obyektivka' && (
-          <section className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <Field label="Маълумоти"><Input placeholder="Олий" value={f.malumoti} onChange={set('malumoti')} /></Field>
-            <Field label="Ҳарбий унвони"><Input placeholder="йўқ" value={f.harbiyUnvoni} onChange={set('harbiyUnvoni')} /></Field>
+          <section>
+            <SectionTitle>Қўшимча маълумотлар (Т-2)</SectionTitle>
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <Field label="Маълумоти"><Input placeholder="олий" value={f.malumoti} onChange={set('malumoti')} /></Field>
+              <Field label="Қайси чет тилларини билади"><Input placeholder="йўқ" value={f.chetTillari} onChange={set('chetTillari')} /></Field>
+              <Field label="Илмий даражаси"><Input placeholder="йўқ" value={f.ilmiyDaraja} onChange={set('ilmiyDaraja')} /></Field>
+              <Field label="Илмий унвони"><Input placeholder="йўқ" value={f.ilmiyUnvon} onChange={set('ilmiyUnvon')} /></Field>
+              <Field label="Ҳарбий (махсус) унвони"><Input placeholder="йўқ" value={f.harbiyUnvoni} onChange={set('harbiyUnvoni')} /></Field>
+              <Field label="Давлат мукофотлари (қайси)"><Input placeholder="йўқ" value={f.mukofotlar} onChange={set('mukofotlar')} /></Field>
+              <div className="md:col-span-2"><Field label="Халқ депутатлари Кенгаши депутатими ёки бошқа сайланадиган орган аъзосими"><Input placeholder="йўқ" value={f.deputatlik} onChange={set('deputatlik')} /></Field></div>
+            </div>
+            <p className="mt-2 text-xs text-slate-500">Бўш қолдирилса «йўқ» ёзилади. Фото — ходим профилидаги расм (3x4); расм бўлмаса бўш рамка чиқади.</p>
           </section>
         )}
 
