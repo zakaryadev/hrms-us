@@ -55,7 +55,7 @@ export default function GlobalSearch() {
               <button type="button" onMouseDown={(ev) => { ev.preventDefault(); go(e.id); }} onMouseEnter={() => setActive(i)}
                 className={`flex w-full items-center gap-3 rounded-md px-2.5 py-2 text-left ${i === active ? 'bg-slate-100' : ''}`}>
                 <Avatar size={30} src={photoSrc(e.photoUrl)} name={fullName(e)} />
-                <span className="min-w-0"><span className="block truncate text-sm font-medium">{fullName(e)}</span><span className="block truncate text-xs text-slate-500">№ {e.tabNumber} · {e.position.title}</span></span>
+                <span className="min-w-0"><span className="block break-words text-sm font-medium">{fullName(e)}</span><span className="block truncate text-xs text-slate-500">№ {e.tabNumber} · {e.position.title}</span></span>
               </button>
             </li>
           ))}

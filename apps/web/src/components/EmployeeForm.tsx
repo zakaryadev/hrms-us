@@ -80,7 +80,7 @@ export default function EmployeeForm({ employee, onClose }: { employee?: any; on
           <ImageUploader className="mb-4" src={photoRemoved ? null : photoSrc(employee?.photoUrl)} error={photoError || null}
             onSelect={(file) => { setPhotoFile(file); setPhotoRemoved(false); setPhotoError(''); }}
             onRemove={() => { setPhotoFile(null); setPhotoRemoved(true); setPhotoError(''); }} />
-          <div className="grid gap-4 md:grid-cols-3">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
             {inp('tabNumber', 'Табель рақами', 'text', true)}{inp('lastName', 'Фамилия', 'text', true)}{inp('firstName', 'Исм', 'text', true)}
             {inp('middleName', 'Отасининг исми')}{inp('birthDate', 'Туғилган санаси', 'date')}{inp('birthPlace', 'Туғилган жойи')}
             {sel('gender', 'Жинси', [['erkak', 'Эркак'], ['ayol', 'Аёл']], '—')}{inp('nationality', 'Миллати')}{inp('partyMembership', 'Партиявийлиги')}
@@ -91,7 +91,7 @@ export default function EmployeeForm({ employee, onClose }: { employee?: any; on
 
         <section>
           <SectionTitle>Паспорт</SectionTitle>
-          <div className="grid gap-4 md:grid-cols-3">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
             {inp('pinfl', 'ЖШШИР (14 та рақам)')}{inp('passportSeriesNumber', 'Паспорт серия ва рақами')}{inp('passportGivenDate', 'Берилган санаси', 'date')}
             <div className="md:col-span-3">{inp('passportGivenBy', 'Ким томонидан берилган')}</div>
           </div>
@@ -99,7 +99,7 @@ export default function EmployeeForm({ employee, onClose }: { employee?: any; on
 
         <section>
           <SectionTitle>Иш жойи ва шартнома</SectionTitle>
-          <div className="grid gap-4 md:grid-cols-3">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
             <Field label="Бўлим *"><Select required value={f.departmentId} onChange={(v) => setF({ ...f, departmentId: v, positionId: '' })}><option value="">Танланг</option>{departments.data?.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}</Select></Field>
             <Field label="Лавозим *"><Select required value={f.positionId} onChange={(v) => setF({ ...f, positionId: v })} disabled={!f.departmentId}><option value="">Танланг</option>{positions.data?.map((p) => <option key={p.id} value={p.id}>{p.title}</option>)}</Select></Field>
             {sel('employmentType', 'Иш тури', [['shtat', 'Штат'], ['gpx', 'ГПХ (шартнома)']])}

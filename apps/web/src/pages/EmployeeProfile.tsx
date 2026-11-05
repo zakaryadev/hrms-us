@@ -16,7 +16,7 @@ const DOC_TYPES = [
 ];
 
 function Row({ k, v }: { k: string; v: React.ReactNode }) {
-  return <div className="flex justify-between gap-6 border-b border-slate-100 py-2.5 text-[13.5px] last:border-0"><dt className="text-slate-500">{k}</dt><dd className="text-right font-medium text-slate-900">{v || '—'}</dd></div>;
+  return <div className="flex justify-between gap-6 border-b border-slate-100 py-2.5 text-[13.5px] last:border-0"><dt className="shrink-0 whitespace-nowrap text-slate-500">{k}</dt><dd className="min-w-0 text-right font-medium text-slate-900">{v || '—'}</dd></div>;
 }
 
 export default function EmployeeProfile() {
@@ -33,13 +33,13 @@ export default function EmployeeProfile() {
 
   return (
     <div>
-      <nav className="mb-4 flex items-center gap-2 text-[13px] text-slate-500" aria-label="Йўл">
-        <Link to="/employees" className="inline-flex items-center gap-1 hover:text-navy"><ArrowLeft size={14} /> Ходимлар</Link>
-        <span aria-hidden>/</span><span className="truncate text-slate-800">{fullName(e)}</span>
+      <nav className="mb-4 flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px] text-slate-500" aria-label="Йўл">
+        <Link to="/employees" className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap hover:text-navy"><ArrowLeft size={14} /> Ходимлар</Link>
+        <span aria-hidden>/</span><span className="min-w-0 break-words text-slate-800">{fullName(e)}</span>
       </nav>
       <header className="mb-6 flex flex-wrap items-center gap-x-5 gap-y-4">
         <Avatar size={72} src={photoSrc(e.photoUrl)} name={fullName(e)} />
-        <div className="min-w-[220px] flex-1">
+        <div className="min-w-[200px] flex-1">
           <p className="mb-1 text-xs font-medium text-slate-500">Табель № <span className="tnum">{e.tabNumber}</span></p>
           <h1 className="text-2xl font-bold leading-8 tracking-[-0.025em] text-slate-950">{fullName(e)}</h1>
           <p className="mt-1 text-[13.5px] text-slate-500">{e.position.title} · {e.department.name}</p>
@@ -50,7 +50,7 @@ export default function EmployeeProfile() {
       <Tabs aria-label="Ходим маълумотлари" items={TABS.map((t) => ({ value: t, label: t }))} value={tab} onChange={setTab} />
       <div className="card mt-5 min-h-[220px] p-6">
       {tab === TABS[0] && (
-        <dl className="grid gap-x-14 gap-y-8 md:grid-cols-2">
+        <dl className="grid grid-cols-1 gap-x-14 gap-y-8 md:grid-cols-2">
           <div>
             <h3 className="eyebrow mb-2">Шахсий</h3>
             <Row k="Туғилган санаси" v={fmtDate(e.birthDate)} /><Row k="Туғилган жойи" v={e.birthPlace} />
@@ -100,13 +100,13 @@ function WorkHistory({ e, onSaved }: { e: any; onSaved: () => void }) {
         <thead><tr><th className="th">Давр</th><th className="th">Ташкилот</th><th className="th">Лавозим</th><th /></tr></thead>
         <tbody className="divide-y divide-slate-100">
           {e.workHistory.map((w: any) => (
-            <tr key={w.id}><td className="td">{fmtDate(w.startDate)} — {w.endDate ? fmtDate(w.endDate) : 'ҳозиргача'}</td><td className="td">{w.organizationName}</td><td className="td">{w.positionTitle}</td>
+            <tr key={w.id}><td className="td whitespace-nowrap">{fmtDate(w.startDate)} — {w.endDate ? fmtDate(w.endDate) : 'ҳозиргача'}</td><td className="td">{w.organizationName}</td><td className="td">{w.positionTitle}</td>
               <td className="td text-right">{can.write && <button aria-label="Ўчириш" className="text-slate-400 hover:text-red-600" onClick={() => save.mutate(e.workHistory.filter((x: any) => x.id !== w.id).map(clean))}><Trash2 size={16} /></button>}</td></tr>
           ))}
           {e.workHistory.length === 0 && <tr><td colSpan={4} className="td text-slate-500">Маълумот йўқ</td></tr>}
         </tbody>
       </table>
-      {can.write && <form className="grid items-end gap-3 sm:grid-cols-5" onSubmit={(ev) => { ev.preventDefault(); save.mutate([...e.workHistory.map(clean), clean(n)]); setN({ startDate: '', endDate: '', organizationName: '', positionTitle: '' }); }}>
+      {can.write && <form className="grid grid-cols-1 items-end gap-3 sm:grid-cols-5" onSubmit={(ev) => { ev.preventDefault(); save.mutate([...e.workHistory.map(clean), clean(n)]); setN({ startDate: '', endDate: '', organizationName: '', positionTitle: '' }); }}>
         <Field label="Бошланиши"><DatePicker value={n.startDate} onChange={(v) => setN({ ...n, startDate: v })} /></Field>
         <Field label="Тугаши"><DatePicker value={n.endDate} onChange={(v) => setN({ ...n, endDate: v })} /></Field>
         <Field label="Ташкилот *"><Input required value={n.organizationName} onChange={(x) => setN({ ...n, organizationName: x.target.value })} /></Field>
@@ -135,7 +135,7 @@ function Relatives({ e, onSaved }: { e: any; onSaved: () => void }) {
           {e.relatives.length === 0 && <tr><td colSpan={6} className="td text-slate-500">Маълумот йўқ</td></tr>}
         </tbody>
       </table></div>
-      {can.write && <form className="grid items-end gap-3 sm:grid-cols-6" onSubmit={(ev) => { ev.preventDefault(); save.mutate([...e.relatives.map(clean), clean(n)]); setN(empty); }}>
+      {can.write && <form className="grid grid-cols-1 items-end gap-3 sm:grid-cols-6" onSubmit={(ev) => { ev.preventDefault(); save.mutate([...e.relatives.map(clean), clean(n)]); setN(empty); }}>
         {([['relativeType', 'Қариндошлиги *', true], ['fullName', 'Ф.И.Ш. *', true], ['birthYearPlace', 'Туғилган йил, жой'], ['workPlacePosition', 'Иш жойи'], ['livingAddress', 'Манзил']] as const).map(([k, label, req]) => (
           <Field key={k} label={label}><Input required={!!req} value={(n as any)[k]} onChange={(x) => setN({ ...n, [k]: x.target.value })} /></Field>
         ))}

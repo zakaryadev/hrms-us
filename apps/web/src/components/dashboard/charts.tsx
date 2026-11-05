@@ -66,7 +66,7 @@ export function OverviewChart({ data, name, color, unit, table }: { data: { labe
               <AreaChart data={data} margin={{ top: 12, right: 22, bottom: 0, left: -8 }}>
                 <defs><linearGradient id={id} x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={color} stopOpacity={0.2} /><stop offset="100%" stopColor={color} stopOpacity={0.02} /></linearGradient></defs>
                 <CartesianGrid vertical={false} stroke="#e5e5e5" strokeDasharray="3 4" />
-                <XAxis dataKey="label" tick={axisTick} tickLine={false} axisLine={false} interval={0} dy={6} />
+                <XAxis dataKey="label" tick={axisTick} tickLine={false} axisLine={false} interval="preserveStartEnd" minTickGap={14} dy={6} />
                 <YAxis tick={axisTick} tickLine={false} axisLine={false} allowDecimals={false} domain={[0, ticks[4]]} ticks={ticks} width={44} tickFormatter={(v) => `${v}${unit ?? ''}`} />
                 <Tooltip content={<ChartTooltip unit={unit} />} cursor={{ stroke: '#a3a3a3', strokeDasharray: '3 3' }} labelFormatter={(l, p) => `${l} ${p?.[0]?.payload?.year ?? ''}`} />
                 <Area type="monotone" dataKey="v" name={name} stroke={color} strokeWidth={2} fill={`url(#${id})`} dot={false} activeDot={{ r: 5, stroke: '#fff', strokeWidth: 2, fill: color }} isAnimationActive={false} />
@@ -100,13 +100,13 @@ export function Donut({ slices, centerValue, centerLabel }: { slices: Slice[]; c
           <span className="text-[11px] text-slate-500">{centerLabel}</span>
         </div>
       </div>
-      <ul className="min-w-0 flex-1 space-y-2.5 text-sm">
+      <ul className="min-w-[12rem] flex-1 space-y-2.5 text-sm">
         {slices.map((s) => (
           <li key={s.name} className="flex items-start gap-2.5">
             <span className="mt-[3px] h-2.5 w-2.5 shrink-0 rounded-sm" style={{ background: s.color }} aria-hidden />
             <span className="min-w-0 flex-1 break-words leading-4 text-slate-600">{s.name}</span>
-            <span className="text-xs text-slate-400 tnum">{s.value}</span>
-            <span className="w-9 shrink-0 text-right font-semibold tnum">{total ? Math.round((s.value / total) * 100) : 0}%</span>
+            <span className="shrink-0 whitespace-nowrap text-xs text-slate-400 tnum">{s.value}</span>
+            <span className="w-10 shrink-0 whitespace-nowrap text-right font-semibold tnum">{total ? Math.round((s.value / total) * 100) : 0}%</span>
           </li>
         ))}
       </ul>

@@ -25,7 +25,7 @@ export default function Archive() {
               <tr key={e.id} className="hover:bg-slate-50">
                 <td className="td font-mono">{e.tabNumber}</td>
                 <td className="td"><Link className="font-medium text-slate-950 hover:underline" to={`/employees/${e.id}`}>{fullName(e)}</Link></td>
-                <td className="td">{e.position.title}</td><td className="td text-slate-500">{e.department.name}</td><td className="td">{fmtDate(e.hireDate)}</td>
+                <td className="td">{e.position.title}</td><td className="td text-slate-500">{e.department.name}</td><td className="td whitespace-nowrap">{fmtDate(e.hireDate)}</td>
                 <td className="td text-right">{can.write && <Button variant="secondary" size="sm"  onClick={() => restore.mutate(e.id)}><RotateCcw size={14} /> Қайтариш</Button>}</td>
               </tr>
             ))}

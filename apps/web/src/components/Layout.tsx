@@ -114,8 +114,8 @@ function UserBlock({ collapsed, onLogout }: { collapsed: boolean; onLogout: () =
       {!collapsed && (
         <>
           <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-medium" title={user?.fullName}>{user?.fullName}</p>
-            <p className="truncate text-xs text-slate-500">{user && ROLE_LABEL[user.role]}</p>
+            <p className="break-words text-sm font-medium" title={user?.fullName}>{user?.fullName}</p>
+            <p className="break-words text-xs text-slate-500">{user && ROLE_LABEL[user.role]}</p>
           </div>
           <button aria-label="Чиқиш" title="Чиқиш" onClick={onLogout} className="rounded-md p-2 text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900"><LogOut size={16} /></button>
         </>
@@ -175,7 +175,7 @@ export default function Layout() {
               </Popover.Trigger>
               <Popover.Portal>
                 <Popover.Content align="end" sideOffset={8} className="z-[70] w-60 rounded-lg border border-slate-200 bg-white p-1 shadow-md">
-                  <div className="px-3 py-2"><p className="truncate text-sm font-medium">{user?.fullName}</p><p className="text-xs text-slate-500">{user && ROLE_LABEL[user.role]} · {user?.login}</p></div>
+                  <div className="px-3 py-2"><p className="break-words text-sm font-medium">{user?.fullName}</p><p className="text-xs text-slate-500">{user && ROLE_LABEL[user.role]} · {user?.login}</p></div>
                   <div className="my-1 h-px bg-slate-100" />
                   <Popover.Close asChild><button type="button" onClick={() => setPwd(true)} className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm hover:bg-slate-100"><KeyRound size={15} /> Паролни ўзгартириш</button></Popover.Close>
                   <button type="button" onClick={logout} className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm hover:bg-slate-100"><LogOut size={15} /> Чиқиш</button>

@@ -28,7 +28,7 @@ export default function Orders() {
           <tbody className="divide-y divide-slate-100">
             {q.data?.map((o) => (
               <tr key={o.id} className="hover:bg-slate-50">
-                <td className="td font-medium">{o.orderNumber}</td><td className="td">{fmtDate(o.orderDate)}</td>
+                <td className="td font-medium">{o.orderNumber}</td><td className="td whitespace-nowrap">{fmtDate(o.orderDate)}</td>
                 <td className="td">{ORDER_LABEL[o.orderType] ?? o.orderType}</td><td className="td">{fullName(o.employee)}</td>
                 <td className="td text-right"><div className="flex items-center justify-end gap-1">{o.hasFile && <a className={cn(buttonStyles({ variant: 'secondary', size: 'sm' }))} href={`/api/orders/${o.id}/download`}><Download size={14} /> DOCX</a>}<DeleteDocButton id={o.id} kind="order" label={`Буйруқ № ${o.orderNumber}`} /></div></td>
               </tr>

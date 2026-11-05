@@ -4,7 +4,9 @@
 
 @layer base {
   html { font-family: theme('fontFamily.sans'); -webkit-text-size-adjust: 100%; }
-  body { @apply bg-white text-slate-950 antialiased; font-size: 14px; line-height: 1.5; }
+  body { @apply bg-white text-slate-950 antialiased; font-size: 14px; line-height: 1.5; overflow-wrap: anywhere; }
+  /* Узун сўзлар (ном, манзил, лавозим) сатрдан чиқиб кетмасдан кейинги қаторга ўтади; flex/grid болалари торая олади */
+  h1, h2, h3, p, li, label, dd, dt { overflow-wrap: anywhere; }
   /* Raqamlar ustun bo'ylab tekis turishi uchun */
   table, .tnum { font-variant-numeric: tabular-nums; }
   ::selection { background: #e5e5e5; }
@@ -15,6 +17,6 @@
   .label { @apply mb-1.5 block text-xs font-medium text-slate-700; }
   .card { @apply rounded-xl border border-slate-200 bg-white shadow-sm; }
   .th { @apply h-10 whitespace-nowrap px-4 text-left text-xs font-medium text-slate-500; }
-  .td { @apply px-4 py-3 text-sm; }
+  .td { @apply px-4 py-3 text-sm; overflow-wrap: anywhere; min-width: 6.5rem; max-width: 22rem; }
   .eyebrow { @apply text-[11px] font-semibold uppercase tracking-eyebrow text-slate-500; }
 }

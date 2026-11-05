@@ -26,14 +26,14 @@ export default function Payroll() {
           <tbody className="divide-y divide-slate-100">
             {q.data?.rows.map((r: any) => (
               <tr key={r.employeeId} className="hover:bg-slate-50">
-                <td className="td"><div className="font-medium">{r.fullName}</div><div className="text-xs text-slate-500">{r.tabNumber} · {r.position}</div></td>
-                <td className="td text-slate-500">{EMP_TYPE_LABEL[r.employmentType]}</td><td className="td text-right">{fmtMoney(r.salary)}</td>
+                <td className="td min-w-[12rem]"><div className="font-medium">{r.fullName}</div><div className="text-xs text-slate-500">{r.tabNumber} · {r.position}</div></td>
+                <td className="td text-slate-500">{EMP_TYPE_LABEL[r.employmentType]}</td><td className="td text-right whitespace-nowrap">{fmtMoney(r.salary)}</td>
                 <td className="td text-right">{r.result.workedDays} / {r.result.workingDays}</td><td className="td text-right">{r.result.sickDays}</td><td className="td text-right">{r.result.absentDays}</td>
-                <td className="td text-right font-semibold text-navy">{fmtMoney(r.result.salary)}</td>
+                <td className="td text-right font-semibold text-navy whitespace-nowrap">{fmtMoney(r.result.salary)}</td>
               </tr>
             ))}
           </tbody>
-          <tfoot><tr className="border-t bg-slate-50"><td className="td font-semibold" colSpan={6}>Жами</td><td className="td text-right font-bold text-navy">{fmtMoney(total)}</td></tr></tfoot>
+          <tfoot><tr className="border-t bg-slate-50"><td className="td font-semibold" colSpan={6}>Жами</td><td className="td text-right font-bold text-navy whitespace-nowrap">{fmtMoney(total)}</td></tr></tfoot>
         </table>
       </div>
     </div>

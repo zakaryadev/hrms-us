@@ -35,7 +35,7 @@ export default function Users() {
                   <td className="td font-medium">{u.fullName}{u.id === me?.id && <span className="ml-2 text-xs text-slate-400">(сиз)</span>}</td>
                   <td className="td font-mono text-xs">{u.login}</td><td className="td">{ROLE_LABEL[u.role]}</td>
                   <td className="td"><span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${u.active ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-600'}`}>{u.active ? 'Фаол' : 'Ўчирилган'}</span></td>
-                  <td className="td">{fmtDate(u.createdAt)}</td>
+                  <td className="td whitespace-nowrap">{fmtDate(u.createdAt)}</td>
                   <td className="td text-right"><div className="flex items-center justify-end gap-1">
                     <Button variant="secondary" size="sm" onClick={() => setEdit(u)}><Pencil size={14} /> Таҳрирлаш</Button>
                     {u.id !== me?.id && <button aria-label="Ўчириш" title="Ўчириш" className="rounded p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-600" onClick={() => confirm(`«${u.fullName}» (${u.login}) ўчирилсинми? Ўрнига «Фаол» белгисини олиб қўйиш мумкин.`) && del.mutate(u.id)}><Trash2 size={16} /></button>}

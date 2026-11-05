@@ -52,9 +52,9 @@ export default function Employees() {
             {list.data?.items.map((e: any) => (
               <tr key={e.id} className="hover:bg-slate-50">
                 <td className="td font-mono">{e.tabNumber}</td>
-                <td className="td"><Link to={`/employees/${e.id}`} className="flex items-center gap-3 font-medium text-slate-950 hover:underline"><Avatar size={34} src={photoSrc(e.photoUrl)} name={fullName(e)} />{fullName(e)}</Link></td>
-                <td className="td">{e.position.title}</td>
-                <td className="td text-slate-500">{e.department.name}</td>
+                <td className="td min-w-[13rem]"><Link to={`/employees/${e.id}`} className="flex items-center gap-3 font-medium text-slate-950 hover:underline"><Avatar size={34} src={photoSrc(e.photoUrl)} name={fullName(e)} />{fullName(e)}</Link></td>
+                <td className="td min-w-[10rem]">{e.position.title}</td>
+                <td className="td min-w-[10rem] text-slate-500">{e.department.name}</td>
                 <td className="td text-slate-500">{EMP_TYPE_LABEL[e.employmentType]}</td>
                 <td className="td"><StatusBadge status={e.status} /></td>
               </tr>

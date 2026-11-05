@@ -36,7 +36,7 @@ function Kpi({ label, value, icon: Icon, color, children, spark }: { label: stri
     <div className="card flex flex-col overflow-hidden">
       <div className="flex items-start justify-between gap-3 p-5 pb-0">
         <div className="min-w-0">
-          <p className="truncate text-xs font-medium text-slate-500">{label}</p>
+          <p className="break-words text-xs font-medium text-slate-500">{label}</p>
           <p className="mt-2 text-2xl font-bold leading-8 tracking-[-0.025em] tnum">{value}</p>
         </div>
         <span className="grid h-10 w-10 shrink-0 place-items-center rounded-[10px]" style={{ background: `${color}1a`, color }} aria-hidden><Icon size={20} strokeWidth={1.8} /></span>
@@ -87,7 +87,7 @@ export default function Dashboard() {
     <div>
       <PageHeader title="Бош саҳифа" hint={`Хуш келибсиз, ${user?.fullName ?? ''}. Кадрлар бўлимидаги бугунги ҳолат.`} />
 
-      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4" aria-label="Асосий кўрсаткичлар">
+      <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4" aria-label="Асосий кўрсаткичлар">
         <Kpi label="Ходимлар" value={data.totalEmployees} icon={Users} color={CHART.c1}
           spark={<Spark data={sp('headcount')} color={CHART.c1} name="Ходимлар сони" />}>
           <Delta value={data.deltas.headcount} caption="ўтган ой охирига нисбатан" />
@@ -106,14 +106,14 @@ export default function Dashboard() {
         </Kpi>
       </section>
 
-      <section className="mt-4 grid gap-4 xl:grid-cols-3">
+      <section className="mt-4 grid grid-cols-1 gap-4 xl:grid-cols-3">
         <div className="card flex min-w-0 flex-col p-6 xl:col-span-2">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
               <h2 className="text-base font-semibold tracking-[-0.025em]">Умумий кўриниш</h2>
               <p className="mt-1 text-xs text-slate-500">Охирги 12 ой (ҳозир ишлаётганлар қабул санаси бўйича)</p>
             </div>
-            <div className="ml-auto flex items-center gap-2">
+            <div className="ml-auto flex max-w-full flex-wrap items-center justify-end gap-2">
               <Tabs aria-label="Кўрсаткич" items={METRICS.map((x) => ({ value: x.value, label: x.label }))} value={metric} onChange={setMetric} />
               <button type="button" onClick={() => setTable((t) => !t)} aria-pressed={table} title={table ? 'Графикни кўрсатиш' : 'Жадвал кўриниши'} aria-label={table ? 'Графикни кўрсатиш' : 'Жадвал кўриниши'}
                 className="grid h-9 w-9 place-items-center rounded-lg border border-slate-200 text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-950 aria-pressed:bg-slate-100">
@@ -141,7 +141,7 @@ export default function Dashboard() {
                 const p = Math.round((d.occupied / d.staff) * 100);
                 return (
                   <div key={d.id}>
-                    <div className="mb-2 flex items-center justify-between gap-3 text-sm"><span className="truncate font-medium" title={d.name}>{d.name}</span><span className="text-xs text-slate-500 tnum">{p}%</span></div>
+                    <div className="mb-2 flex items-center justify-between gap-3 text-sm"><span className="min-w-0 break-words font-medium" title={d.name}>{d.name}</span><span className="shrink-0 whitespace-nowrap text-xs text-slate-500 tnum">{p}%</span></div>
                     <Progress value={d.occupied} max={d.staff} color={CATEGORICAL[i]} label={d.name} />
                     <div className="mt-1.5 flex justify-between text-xs text-slate-500 tnum"><span>Банд: {d.occupied}</span><span>Штат: {d.staff}</span></div>
                   </div>
@@ -153,7 +153,7 @@ export default function Dashboard() {
         </div>
       </section>
 
-      <section className="mt-4 grid gap-4 xl:grid-cols-3">
+      <section className="mt-4 grid grid-cols-1 gap-4 xl:grid-cols-3">
         <div className="card min-w-0 p-6 xl:col-span-2">
           <div className="mb-4 flex items-start justify-between">
             <div><h2 className="text-base font-semibold tracking-[-0.025em]">Сўнгги буйруқлар</h2><p className="mt-1 text-xs text-slate-500">Яқинда яратилган кадрлар буйруқлари</p></div>
@@ -165,10 +165,10 @@ export default function Dashboard() {
               <tbody className="divide-y divide-slate-100">
                 {data.recentOrders.map((o: any) => (
                   <tr key={o.id} className="transition-colors hover:bg-slate-50">
-                    <td className="td"><Link to={`/employees/${o.employee.id}`} className="flex items-center gap-3"><Avatar size={36} src={photoSrc(o.employee.photoUrl)} name={o.employee.fullName} /><span className="min-w-0"><span className="block truncate text-sm font-medium">{o.employee.fullName}</span><span className="block text-xs text-slate-500">Табель № {o.employee.tabNumber}</span></span></Link></td>
+                    <td className="td"><Link to={`/employees/${o.employee.id}`} className="flex items-center gap-3"><Avatar size={36} src={photoSrc(o.employee.photoUrl)} name={o.employee.fullName} /><span className="min-w-0"><span className="block break-words text-sm font-medium">{o.employee.fullName}</span><span className="block text-xs text-slate-500">Табель № {o.employee.tabNumber}</span></span></Link></td>
                     <td className="td font-mono text-xs text-slate-500">{o.orderNumber}</td>
                     <td className="td"><span className={`inline-flex rounded-md px-2 py-0.5 text-xs font-medium ${ORDER_BADGE[o.orderType] ?? 'bg-slate-200 text-slate-800'}`}>{o.typeLabel}</span></td>
-                    <td className="td text-right text-slate-600 tnum">{fmtDate(o.orderDate)}</td>
+                    <td className="td text-right text-slate-600 tnum whitespace-nowrap">{fmtDate(o.orderDate)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -186,7 +186,7 @@ export default function Dashboard() {
               return (
                 <li key={i} className="flex items-start gap-3">
                   <span className="grid h-10 w-10 shrink-0 place-items-center rounded-[10px]" style={{ background: `${color}1a`, color }} aria-hidden><Icon size={18} strokeWidth={1.8} /></span>
-                  <div className="min-w-0"><p className="text-sm font-medium leading-5">{a.title}</p><p className="truncate text-xs text-slate-500" title={a.text}>{a.text}</p><p className="mt-0.5 text-xs text-slate-400">{timeAgo(a.at)}</p></div>
+                  <div className="min-w-0"><p className="text-sm font-medium leading-5">{a.title}</p><p className="break-words text-xs text-slate-500" title={a.text}>{a.text}</p><p className="mt-0.5 text-xs text-slate-400">{timeAgo(a.at)}</p></div>
                 </li>
               );
             })}

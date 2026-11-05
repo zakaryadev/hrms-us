@@ -56,8 +56,8 @@ export default function Calendar() {
 
       {q.isLoading && <Loading rows={6} />}
       {q.data && (
-        <div className="grid gap-4 xl:grid-cols-[1fr_320px]">
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        <div className="grid grid-cols-1 gap-4 xl:grid-cols-[1fr_320px]">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
             {byMonth.map((list, m) => (
               <div key={m} className="card p-3">
                 <h3 className="mb-2 text-sm font-semibold">{MONTHS[m]}</h3>
@@ -106,7 +106,7 @@ export default function Calendar() {
               <ul className="space-y-1 text-sm">
                 {customList.map((d) => (
                   <li key={d.date}><button className="flex w-full items-center gap-2 text-left hover:text-brand" onClick={() => pick(d)}>
-                    <span className={`rounded px-1.5 py-0.5 text-xs ${STATUS[d.status].cls}`}>{fmtDate(d.date)}</span><span className="truncate text-slate-600">{d.note || STATUS[d.status].label}</span>
+                    <span className={`rounded px-1.5 py-0.5 text-xs ${STATUS[d.status].cls}`}>{fmtDate(d.date)}</span><span className="min-w-0 break-words text-slate-600">{d.note || STATUS[d.status].label}</span>
                   </button></li>
                 ))}
                 {customList.length === 0 && <li className="text-slate-500">Йўқ</li>}

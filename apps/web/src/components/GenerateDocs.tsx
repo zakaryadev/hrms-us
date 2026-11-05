@@ -32,7 +32,7 @@ export default function GenerateDocs({ employee }: { employee: any }) {
   const history = useQuery({ queryKey: ['generated', employee.id], queryFn: () => api<any[]>(`/employees/${employee.id}/generated`) });
   return (
     <div className="space-y-4">
-      {canEdit && <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+      {canEdit && <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {DOCS.map((d) => (
           <button key={d.type} onClick={() => setOpen(d.type)} className="card flex items-start gap-3 p-4 text-left transition-colors hover:border-brand hover:bg-brand-soft/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40">
             <FilePlus2 className="mt-0.5 shrink-0 text-brand" size={20} />
@@ -163,12 +163,12 @@ export function DocModal({ type, employee, onClose, edit }: { type: Exclude<DocT
     <Modal title={TYPE_LABEL[type]} onClose={onClose} wide>
       <form className="space-y-5" onSubmit={(e) => { e.preventDefault(); submit.mutate(); }}>
         <LangPicker lang={lang} setLang={setLang} />
-        <section><Field label="Ходим"><Input className="bg-slate-50" readOnly value={`${employee.lastName} ${employee.firstName} — ${cur}`} /></Field></section>
+        <section><Field label="Ходим"><Textarea rows={2} className="bg-slate-50" readOnly value={`${employee.lastName} ${employee.firstName} — ${cur}`} /></Field></section>
 
         {needsTarget && (
           <section>
             <SectionTitle>Янги иш жойи</SectionTitle>
-            <div className="grid gap-4 md:grid-cols-3">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
               <Field label="Янги филиал / ҳудуд *"><Select required value={f.newDepartmentId} onChange={(v) => setF({ ...f, newDepartmentId: v, newPositionId: '' })}><option value="">Танланг</option>{departments.data?.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}</Select></Field>
               <Field label="Янги лавозим *"><Select required disabled={!f.newDepartmentId} value={f.newPositionId}
                 onChange={(v) => { const p = positions.data?.find((x) => x.id === v); setF({ ...f, newPositionId: v, newSalary: type === 'kelishuv' && p ? Number(p.baseSalary) : f.newSalary }); }}>
@@ -179,7 +179,7 @@ export function DocModal({ type, employee, onClose, edit }: { type: Exclude<DocT
         )}
 
         {type === 'ariza' && (
-          <section className="grid gap-4 md:grid-cols-3">
+          <section className="grid grid-cols-1 gap-4 md:grid-cols-3">
             <Field label="Ариза санаси *"><DatePicker required value={f.applicationDate} onChange={(v) => setF({ ...f, applicationDate: v })} /></Field>
           </section>
         )}
@@ -187,7 +187,7 @@ export function DocModal({ type, employee, onClose, edit }: { type: Exclude<DocT
         {type === 'kelishuv' && (
           <section>
             <SectionTitle>Келишув</SectionTitle>
-            <div className="grid gap-4 md:grid-cols-3">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
               <Field label="Шартнома"><Input className="bg-slate-50" readOnly value={employee.contractNumber ? `${employee.contractNumber} (${fmtDate(employee.contractDate)})` : 'Киритилмаган!'} /></Field>
               <Field label="Келишув тузилган сана *"><DatePicker required value={f.agreementDate} onChange={(v) => setF({ ...f, agreementDate: v })} /></Field>
               <Field label="Янги ойлик иш ҳақи (сўм) *"><Input required type="number" min={0} value={f.newSalary} onChange={set('newSalary')} /></Field>
@@ -200,7 +200,7 @@ export function DocModal({ type, employee, onClose, edit }: { type: Exclude<DocT
         {type === 'buyruq-otkazish' && (
           <section>
             <SectionTitle>Буйруқ</SectionTitle>
-            <div className="grid gap-4 md:grid-cols-3">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
               <Field label="Буйруқ рақами"><Input placeholder="Бўш қолса автоматик" value={f.orderNumber} onChange={set('orderNumber')} /></Field>
               <Field label="Буйруқ санаси *"><DatePicker required value={f.orderDate} onChange={(v) => setF({ ...f, orderDate: v })} /></Field>
               <div className="md:col-span-3"><Field label="Асос *"><Textarea required rows={3} placeholder="Ходимнинг аризаси, қўшимча келишув ҳамда ЎзР Меҳнат кодексининг 138, 140-моддалари" value={f.basis} onChange={set('basis')} /></Field></div>
@@ -211,7 +211,7 @@ export function DocModal({ type, employee, onClose, edit }: { type: Exclude<DocT
         {type === 'buyruq-qabul' && (
           <section>
             <SectionTitle>Ишга қабул</SectionTitle>
-            <div className="grid gap-4 md:grid-cols-3">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
               <Field label="Буйруқ рақами"><Input placeholder="Бўш қолса автоматик" value={f.orderNumber} onChange={set('orderNumber')} /></Field>
               <Field label="Буйруқ санаси *"><DatePicker required value={f.orderDate} onChange={(v) => setF({ ...f, orderDate: v })} /></Field>
               <Field label="Ишга қабул санаси *"><DatePicker required value={f.hireDate} onChange={(v) => setF({ ...f, hireDate: v })} /></Field>
@@ -225,7 +225,7 @@ export function DocModal({ type, employee, onClose, edit }: { type: Exclude<DocT
         {type === 'buyruq-bosh' && (
           <section>
             <SectionTitle>Ишдан бўшатиш</SectionTitle>
-            <div className="grid gap-4 md:grid-cols-3">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
               <Field label="Буйруқ рақами"><Input placeholder="Бўш қолса автоматик" value={f.orderNumber} onChange={set('orderNumber')} /></Field>
               <Field label="Буйруқ санаси *"><DatePicker required value={f.orderDate} onChange={(v) => setF({ ...f, orderDate: v })} /></Field>
               <Field label="Бўшатиш санаси *"><DatePicker required value={f.dismissalDate} onChange={(v) => setF({ ...f, dismissalDate: v })} /></Field>
@@ -239,7 +239,7 @@ export function DocModal({ type, employee, onClose, edit }: { type: Exclude<DocT
         {type === 'buyruq-rag' && (
           <section>
             <SectionTitle>Рағбатлантириш</SectionTitle>
-            <div className="grid gap-4 md:grid-cols-3">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
               <Field label="Буйруқ рақами"><Input placeholder="Бўш қолса автоматик" value={f.orderNumber} onChange={set('orderNumber')} /></Field>
               <Field label="Буйруқ санаси *"><DatePicker required value={f.orderDate} onChange={(v) => setF({ ...f, orderDate: v })} /></Field>
               <Field label="Пул мукофоти (сўм)"><Input type="number" min={0} value={f.amount} onChange={set('amount')} /></Field>
@@ -252,7 +252,7 @@ export function DocModal({ type, employee, onClose, edit }: { type: Exclude<DocT
         )}
 
         {type === 'obyektivka' && (
-          <section className="grid gap-4 md:grid-cols-2">
+          <section className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <Field label="Маълумоти"><Input placeholder="Олий" value={f.malumoti} onChange={set('malumoti')} /></Field>
             <Field label="Ҳарбий унвони"><Input placeholder="йўқ" value={f.harbiyUnvoni} onChange={set('harbiyUnvoni')} /></Field>
           </section>
@@ -315,28 +315,28 @@ export function LeaveModal({ employee, onClose, edit }: { employee: any; onClose
     <Modal title="Меҳнат таътили бериш ҳақида буйруқ" onClose={onClose} wide>
       <form className="space-y-5" onSubmit={(e) => { e.preventDefault(); submit.mutate(); }}>
         <LangPicker lang={lang} setLang={setLang} />
-        <section className="grid gap-4 md:grid-cols-2">
+        <section className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <Field label="Кимга"><Textarea rows={2} className={ro} readOnly value={s ? `«${s.tashkilot_nomi}» бош директори ${s.bosh_direktor_fish}га` : ''} /></Field>
           <Field label="Кимдан"><Textarea rows={2} className={ro} readOnly value={`${fullName} — ${unit}, ${employee.position.title}`} /></Field>
         </section>
 
         <section>
           <SectionTitle>Саналар ва муддатлар</SectionTitle>
-          <div className="grid gap-4 md:grid-cols-3">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
             <Field label="Иш йили бошланиши"><DatePicker value={wyStart} onChange={(v) => setF({ ...f, workYearStart: v })} /></Field>
             <Field label="Иш йили тугаши"><DatePicker value={wyEnd} onChange={(v) => setF({ ...f, workYearEnd: v })} /></Field>
             <Field label="Бошланиши *"><DatePicker required value={f.startDate} onChange={(v) => setF({ ...f, startDate: v })} /></Field>
           </div>
         </section>
 
-        <section className="grid gap-4 md:grid-cols-3">
+        <section className="grid grid-cols-1 gap-4 md:grid-cols-3">
           <Field label="Асосий таътил куни"><Input type="number" min={0} value={f.basicDays} onChange={set('basicDays')} /></Field>
           <Field label="Қўшимча таътил куни"><Input type="number" min={0} value={f.extraDays} onChange={set('extraDays')} /></Field>
           <Field label="Жами календар кун"><Input className={ro} readOnly value={days} /></Field>
         </section>
 
         <section className="rounded-lg border border-slate-200 bg-slate-50 p-4">
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <Field label="Тугаши"><div className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold">{calc.data ? fmtDate(calc.data.endDate) : '—'}</div></Field>
             <Field label="Ишга чиқиш куни"><div className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold">{calc.data ? fmtDate(calc.data.returnDate) : '—'}</div></Field>
           </div>
@@ -346,7 +346,7 @@ export function LeaveModal({ employee, onClose, edit }: { employee: any; onClose
           {!f.startDate && <p className="mt-2 text-xs text-slate-500">Бошланиш санасини танланг — тугаш ва ишга чиқиш санаси автоматик ҳисобланади.</p>}
         </section>
 
-        <section className="grid gap-4 md:grid-cols-2">
+        <section className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div className="md:col-span-2"><Field label="Асос"><Textarea rows={2} placeholder="Меҳнат кодексининг 217, 219... моддалари ҳамда ходим аризаси" value={f.basis || D.basis} onChange={set('basis')} /></Field></div>
           <Field label="Имзоловчи"><Textarea rows={2} value={f.signer || D.signer} onChange={set('signer')} /></Field>
           <Field label="Буйруқ санаси"><DatePicker required value={f.orderDate} onChange={(v) => setF({ ...f, orderDate: v })} /></Field>

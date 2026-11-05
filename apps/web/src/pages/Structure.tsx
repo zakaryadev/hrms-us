@@ -42,14 +42,14 @@ export default function Structure() {
     <div className="space-y-4">
       <PageHeader title="Штат ва сон" hint="Бўлимлар (филиаллар) ва лавозимлар. «Штат сони» — шу лавозимдаги штат бирликлари, «Банд» — ишлаётган ходимлар." />
       {err && <ErrorNote error={new Error(err)} />}
-      <div className="grid gap-4 lg:grid-cols-[340px_1fr]">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[340px_1fr]">
         <div className="card p-4">
           <ul className="mb-4 space-y-1">
             {departments.data?.map((d) => (
               <li key={d.id} className={`flex items-center gap-1 rounded-md px-3 py-2 text-[13.5px] ${d.id === current ? 'bg-slate-100 font-medium text-slate-950' : 'hover:bg-slate-100'}`}>
                 <button className="min-w-0 flex-1 text-left" onClick={() => setSelected(d.id)}>
-                  <span className="block truncate">{d.name}</span>
-                  {d.parentId && <span className={`block truncate text-[11px] text-slate-500`}>↳ {parentName(d.parentId)}</span>}
+                  <span className="block break-words">{d.name}</span>
+                  {d.parentId && <span className={`block break-words text-[11px] text-slate-500`}>↳ {parentName(d.parentId)}</span>}
                 </button>
                 {can.write && <><button aria-label="Таҳрирлаш" className="opacity-60 hover:opacity-100" onClick={() => setEditDept(d)}><Pencil size={15} /></button>
                 <button aria-label="Ўчириш" className="opacity-60 hover:opacity-100" onClick={() => confirm(`«${d.name}» ўчирилсинми?`) && delDept.mutate(d.id)}><Trash2 size={15} /></button></>}
@@ -73,7 +73,7 @@ export default function Structure() {
             <tbody className="divide-y divide-slate-100">
               {positions.data?.map((p) => (
                 <tr key={p.id}>
-                  <td className="td">{p.rankOrder}</td><td className="td font-medium">{p.title}</td><td className="td">{fmtMoney(p.baseSalary)}</td>
+                  <td className="td">{p.rankOrder}</td><td className="td font-medium">{p.title}</td><td className="td whitespace-nowrap">{fmtMoney(p.baseSalary)}</td>
                   <td className={`td ${p.occupied > p.staffCount ? 'font-semibold text-red-600' : ''}`} title={p.occupied > p.staffCount ? 'Ходимлар штатдан кўп' : undefined}>{p.occupied} / {p.staffCount}</td>
                   <td className="td whitespace-nowrap text-right">
                     {can.write && <><button aria-label="Таҳрирлаш" className="mr-3 text-slate-400 hover:text-brand" onClick={() => setEditPos(p)}><Pencil size={16} /></button>
@@ -85,7 +85,7 @@ export default function Structure() {
             </tbody>
           </table></div>
           {current && can.write && (
-            <form className="grid items-end gap-3 border-t pt-4 sm:grid-cols-5" onSubmit={(e) => { e.preventDefault(); addPos.mutate(); }}>
+            <form className="grid grid-cols-1 items-end gap-3 border-t pt-4 sm:grid-cols-5" onSubmit={(e) => { e.preventDefault(); addPos.mutate(); }}>
               <div className="sm:col-span-2"><Field label="Янги лавозим *"><Input required value={pn.title} onChange={(e) => setPn({ ...pn, title: e.target.value })} /></Field></div>
               <Field label="Тартиб"><Input type="number" value={pn.rankOrder} onChange={(e) => setPn({ ...pn, rankOrder: e.target.value })} /></Field>
               <Field label="Оклад"><Input type="number" min={0} value={pn.baseSalary} onChange={(e) => setPn({ ...pn, baseSalary: e.target.value })} /></Field>
@@ -132,7 +132,7 @@ function PosModal({ pos, onClose, onSaved }: { pos: any; onClose: () => void; on
     <Modal title="Лавозимни таҳрирлаш" onClose={onClose}>
       <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); save.mutate(); }}>
         <Field label="Лавозим номи *"><Input required value={f.title} onChange={(e) => setF({ ...f, title: e.target.value })} /></Field>
-        <div className="grid gap-4 sm:grid-cols-3">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           <Field label="Тартиб"><Input type="number" value={f.rankOrder} onChange={(e) => setF({ ...f, rankOrder: e.target.value })} /></Field>
           <Field label="Оклад (сўм)"><Input type="number" min={0} value={f.baseSalary} onChange={(e) => setF({ ...f, baseSalary: e.target.value })} /></Field>
           <Field label="Штат сони"><Input type="number" min={1} value={f.staffCount} onChange={(e) => setF({ ...f, staffCount: e.target.value })} /></Field>

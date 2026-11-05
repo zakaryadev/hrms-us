@@ -3,7 +3,7 @@ import type { ReactNode } from 'react';
 /** Кириш ва созлаш саҳифалари учун: чапда navy панель, ўнгда форма */
 export default function AuthLayout({ children, wide }: { children: ReactNode; wide?: boolean }) {
   return (
-    <div className="grid min-h-screen bg-paper lg:grid-cols-[minmax(360px,5fr)_7fr]">
+    <div className="grid grid-cols-1 min-h-screen bg-paper lg:grid-cols-[minmax(360px,5fr)_7fr]">
       <aside className="hidden flex-col justify-between bg-navy p-12 lg:flex">
         <div className="inline-flex h-14 w-fit items-center rounded bg-white px-5"><img src="/logo.svg" alt="UNICON SOFT" className="h-7" /></div>
         <div>
