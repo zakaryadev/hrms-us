@@ -8,6 +8,10 @@ import { IS_PUBLIC, ROLES } from './decorators';
 
 const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
 const ACCOUNTANT_WRITABLE = ['/timesheet', '/auth'];
+// Журнал ходимлари (operator, rahbar) фақат журнални ва ўз ҳисобини кўради — кадрлар маълумотига киролмайди
+const JOURNAL_ONLY: UserRole[] = ['operator', 'rahbar'];
+const JOURNAL_WRITERS: UserRole[] = ['superadmin', 'operator'];
+const inPath = (path: string, p: string) => path === p || path.startsWith(p + '/');
 
 @Injectable()
 export class AuthGuard implements CanActivate {
@@ -30,6 +34,9 @@ export class AuthGuard implements CanActivate {
 
     const roles = this.reflector.getAllAndOverride<UserRole[] | undefined>(ROLES, targets);
     if (roles?.length && !roles.includes(user.role)) throw new ForbiddenException('Бу амал учун рухсат йўқ');
+    const apiPath = String(req.originalUrl ?? req.url).split('?')[0].replace(/^\/api/, '');
+    if (JOURNAL_ONLY.includes(user.role) && !['/journal', '/auth'].some((p) => inPath(apiPath, p))) throw new ForbiddenException('Бу амал учун рухсат йўқ');
+    if (inPath(apiPath, '/journal') && !SAFE_METHODS.has(req.method) && !JOURNAL_WRITERS.includes(user.role)) throw new ForbiddenException('Журналга ёзиш учун рухсат йўқ');
     // Бухгалтер: ҳамма жойни кўра олади, ўзгартира олиши фақат табелда (ва ўз паролида)
     if (user.role === 'buxgalter' && !SAFE_METHODS.has(req.method)) {
       const path = String(req.originalUrl ?? req.url).split('?')[0].replace(/^\/api/, '');

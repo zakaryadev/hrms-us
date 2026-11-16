@@ -12,12 +12,13 @@ import { TranslitModule } from './translit/translit.module';
 import { TimesheetModule } from './timesheet/timesheet.module';
 import { DepartmentsModule } from './departments/departments.module';
 import { EmployeesModule } from './employees/employees.module';
+import { JournalModule } from './journal/journal.module';
 import { HealthController } from './health.controller';
 import { PositionsModule } from './positions/positions.module';
 import { PrismaModule } from './prisma/prisma.module';
 
 @Module({
-  imports: [ConfigModule.forRoot({ isGlobal: true }), PrismaModule, AuditModule, AuthModule, UsersModule, CalendarModule, DepartmentsModule, PositionsModule, EmployeesModule, DashboardModule, DocumentsModule, DocxModule, SettingsModule, TimesheetModule, TranslitModule],
+  imports: [ConfigModule.forRoot({ isGlobal: true }), PrismaModule, AuditModule, AuthModule, UsersModule, CalendarModule, DepartmentsModule, PositionsModule, EmployeesModule, DashboardModule, DocumentsModule, DocxModule, SettingsModule, TimesheetModule, TranslitModule, JournalModule],
   controllers: [HealthController],
 })
 export class AppModule {}

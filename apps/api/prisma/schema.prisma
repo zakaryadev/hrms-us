@@ -38,6 +38,8 @@ enum UserRole {
   superadmin
   kadrlar
   buxgalter
+  operator // журнал юритувчи (техник ёрдам ходими)
+  rahbar // фақат кўриш ва ҳисобот
 }
 
 enum OrderType {
@@ -238,6 +240,11 @@ model User {
   active       Boolean  @default(true)
   createdAt    DateTime @default(now()) @map("created_at")
 
+  journalTickets   JournalTicket[]
+  journalEntries   JournalEntry[]
+  journalTrainings JournalTraining[]
+  journalKb        JournalKb[]
+
   @@map("users")
 }
 
@@ -268,4 +275,135 @@ model AuditLog {
   @@index([createdAt])
   @@index([entity, createdAt])
   @@map("audit_logs")
+}
+
+// ───────── Ижро журнали (техник ёрдам фаолияти) ─────────
+
+/// Ташкилотлар ягона рўйхати; қолган журналлар шунга боғланади. nameKey — дубликатларни аниқлаш учун нормаллаштирилган ном.
+model JournalOrg {
+  id        String   @id @default(uuid())
+  name      String
+  nameKey   String   @unique @map("name_key")
+  region    String   @default("")
+  group     String   @default("")
+  note      String   @default("")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  tickets   JournalTicket[]
+  entries   JournalEntry[]
+  trainings JournalTraining[]
+
+  @@map("journal_orgs")
+}
+
+/// Техник мурожаатлар — марказий ёзув. Холат қийматлари `journal.constants.ts` даги рўйхатдан (ўзгартириладиган).
+model JournalTicket {
+  id          String      @id @default(uuid())
+  code        String      @unique
+  received    DateTime    @db.Date
+  orgId       String?     @map("org_id")
+  org         JournalOrg? @relation(fields: [orgId], references: [id], onDelete: SetNull)
+  group       String      @default("")
+  person      String      @default("")
+  channel     String      @default("")
+  category    String      @default("")
+  priority    String      @default("")
+  problem     String
+  actions     String      @default("")
+  dept        String      @default("")
+  status      String      @default("Yangi")
+  resolved    DateTime?   @db.Date
+  replied     Boolean?
+  note        String      @default("")
+  createdById String?     @map("created_by_id")
+  createdBy   User?       @relation(fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt   DateTime    @default(now()) @map("created_at")
+  updatedAt   DateTime    @updatedAt @map("updated_at")
+
+  entries   JournalEntry[]
+  kb        JournalKb[]
+  trainings JournalTraining[]
+
+  @@index([received])
+  @@index([status])
+  @@index([orgId])
+  @@map("journal_tickets")
+}
+
+/// Кундалик журнал: ҳар бир бажарилган иш. start/end — "HH:mm".
+model JournalEntry {
+  id          String         @id @default(uuid())
+  date        DateTime       @db.Date
+  start       String         @default("")
+  end         String         @default("")
+  type        String
+  orgId       String?        @map("org_id")
+  org         JournalOrg?    @relation(fields: [orgId], references: [id], onDelete: SetNull)
+  ticketId    String?        @map("ticket_id")
+  ticket      JournalTicket? @relation(fields: [ticketId], references: [id], onDelete: SetNull)
+  person      String         @default("")
+  channel     String         @default("")
+  content     String         @default("")
+  done        String         @default("")
+  result      String         @default("")
+  status      String         @default("")
+  next        String         @default("")
+  partner     String         @default("")
+  note        String         @default("")
+  createdById String?        @map("created_by_id")
+  createdBy   User?          @relation(fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt   DateTime       @default(now()) @map("created_at")
+  updatedAt   DateTime       @updatedAt @map("updated_at")
+
+  @@index([date])
+  @@index([ticketId])
+  @@index([orgId])
+  @@map("journal_entries")
+}
+
+model JournalTraining {
+  id          String         @id @default(uuid())
+  date        DateTime       @db.Date
+  orgId       String?        @map("org_id")
+  org         JournalOrg?    @relation(fields: [orgId], references: [id], onDelete: SetNull)
+  topic       String
+  format      String         @default("")
+  count       Int            @default(0)
+  ticketId    String?        @map("ticket_id")
+  ticket      JournalTicket? @relation(fields: [ticketId], references: [id], onDelete: SetNull)
+  link        String         @default("")
+  trainer     String         @default("")
+  result      String         @default("")
+  note        String         @default("")
+  createdById String?        @map("created_by_id")
+  createdBy   User?          @relation(fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt   DateTime       @default(now()) @map("created_at")
+  updatedAt   DateTime       @updatedAt @map("updated_at")
+
+  @@index([date])
+  @@index([orgId])
+  @@map("journal_trainings")
+}
+
+model JournalKb {
+  id          String         @id @default(uuid())
+  code        String         @unique
+  created     DateTime       @db.Date
+  category    String         @default("")
+  type        String         @default("")
+  question    String
+  solution    String         @default("")
+  ticketId    String?        @map("ticket_id")
+  ticket      JournalTicket? @relation(fields: [ticketId], references: [id], onDelete: SetNull)
+  link        String         @default("")
+  version     String         @default("1.0")
+  status      String         @default("Loyiha")
+  review      DateTime?      @db.Date
+  createdById String?        @map("created_by_id")
+  createdBy   User?          @relation(fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt   DateTime       @default(now()) @map("created_at")
+  updatedAt   DateTime       @updatedAt @map("updated_at")
+
+  @@index([created])
+  @@map("journal_kb")
 }
