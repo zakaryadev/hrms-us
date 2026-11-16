@@ -2,7 +2,7 @@ import * as Dialog from '@radix-ui/react-dialog';
 import * as Popover from '@radix-ui/react-popover';
 import { useQuery } from '@tanstack/react-query';
 import {
-  Archive, BookMarked, CalendarDays, CalendarRange, ChevronDown, ChevronLeft, FileSpreadsheet, FileText, KeyRound, LayoutDashboard, LogOut, Menu, Network, Palmtree, Plus, ScrollText, UserCog, Users, Wallet, FileType2, History, Languages, NotebookPen, ClipboardList, GraduationCap, Building2, BarChart3, LifeBuoy,
+  Archive, BookMarked, CalendarDays, CalendarRange, ChevronDown, ChevronLeft, FileSpreadsheet, FileText, KeyRound, LayoutDashboard, LogOut, Menu, Network, Palmtree, Plus, ScrollText, UserCog, Users, Wallet, FileType2, History, Languages, NotebookPen, ClipboardList, GraduationCap, Building2, BarChart3, LifeBuoy, Settings2,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
@@ -10,6 +10,8 @@ import { useAuth, useCan } from '../auth/AuthContext';
 import { api, ROLE_LABEL } from '../lib/api';
 import ChangePassword from './ChangePassword';
 import GlobalSearch from './GlobalSearch';
+import JournalSearch from '../pages/journal/JournalSearch';
+import { ScriptToggle, useT } from '../lib/script';
 import { buttonStyles, cn } from './kit';
 
 type Item = { to: string; label: string; icon: typeof Users; end?: boolean; badge?: 'onLeave' };
@@ -24,6 +26,7 @@ const GROUPS: Group[] = [
     { to: '/journal/kb', label: 'Билимлар базаси', icon: ClipboardList },
     { to: '/journal/orgs', label: 'Ташкилотлар', icon: Building2 },
     { to: '/journal/report', label: 'Ойлик ҳисобот', icon: BarChart3 },
+    { to: '/journal/settings', label: 'Журнал созламалари', icon: Settings2 },
   ] },
   { id: 'main', label: 'Асосий', items: [{ to: '/', label: 'Бош саҳифа', icon: LayoutDashboard, end: true }] },
   { id: 'hr', label: 'Кадрлар', items: [
@@ -77,11 +80,12 @@ function SidebarNav({ collapsed, onNavigate }: { collapsed: boolean; onNavigate?
   const [closed, setClosed] = useState<Record<string, boolean>>(() => store.get('nav-closed', {}));
   const toggle = (id: string) => setClosed((c) => { const n = { ...c, [id]: !c[id] }; store.set('nav-closed', n); return n; });
   const location = useLocation();
+  const t = useT();
 
   return (
     <nav className="flex-1 space-y-3 overflow-y-auto px-3 py-4" aria-label="Асосий меню">
       {GROUPS.filter((g) => !journalOnly || g.id === 'journal').map((g) => {
-        const items = g.items.filter((i) => ((i.to !== '/users' && i.to !== '/audit') || isAdmin) && (i.to !== '/import' || can.write));
+        const items = g.items.filter((i) => ((i.to !== '/users' && i.to !== '/audit') || isAdmin) && (i.to !== '/import' || can.write) && (i.to !== '/journal/settings' || isAdmin));
         if (!items.length) return null;
         // Фаол саҳифа ётган гуруҳ ҳеч қачон бекилмайди
         const hasActive = items.some((i) => (i.end ? location.pathname === i.to : location.pathname.startsWith(i.to)));
@@ -91,7 +95,7 @@ function SidebarNav({ collapsed, onNavigate }: { collapsed: boolean; onNavigate?
             {collapsed ? <div className="mx-3 mb-2 border-t border-slate-200 first:hidden" /> : (
               <button type="button" onClick={() => toggle(g.id)} aria-expanded={!isClosed}
                 className="mb-1 flex w-full items-center justify-between rounded-md px-3 py-1.5 text-[11px] font-medium uppercase tracking-[0.1em] text-slate-500 transition-colors hover:text-slate-900">
-                {g.label}<ChevronDown size={14} className={cn('transition-transform', isClosed && '-rotate-90')} />
+                {g.id === 'journal' ? t(g.label) : g.label}<ChevronDown size={14} className={cn('transition-transform', isClosed && '-rotate-90')} />
               </button>
             )}
             {!isClosed && (
@@ -103,7 +107,7 @@ function SidebarNav({ collapsed, onNavigate }: { collapsed: boolean; onNavigate?
                       className={({ isActive }) => cn('group flex h-9 items-center gap-3 rounded-[10px] px-3 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-slate-400/50',
                         isActive ? 'bg-slate-100 text-slate-950' : 'text-slate-950/70 hover:bg-slate-100/70 hover:text-slate-950', collapsed && 'justify-center px-0')}>
                       <Icon size={18} strokeWidth={1.7} className="shrink-0" />
-                      {!collapsed && <span className="flex-1 truncate">{label}</span>}
+                      {!collapsed && <span className="flex-1 truncate">{to.startsWith('/journal') ? t(label) : label}</span>}
                       {!collapsed && count > 0 && <span className="rounded-full bg-slate-900/15 px-1.5 text-[10px] font-semibold leading-5 text-slate-900">{count}</span>}
                     </NavLink>
                   );
@@ -176,8 +180,9 @@ export default function Layout() {
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="sticky top-0 z-30 flex h-16 shrink-0 items-center gap-3 border-b border-slate-200 bg-white/80 px-4 backdrop-blur-xl sm:px-6">
           <button type="button" aria-label="Менюни очиш" onClick={() => setDrawer(true)} className="rounded-md p-2 text-slate-600 hover:bg-slate-100 lg:hidden"><Menu size={20} /></button>
-          <GlobalSearch />
+          {location.pathname.startsWith('/journal') || JOURNAL_ONLY.includes(user?.role ?? '') ? <JournalSearch /> : <GlobalSearch />}
           <div className="ml-auto flex items-center gap-3">
+            {location.pathname.startsWith('/journal') && <ScriptToggle />}
             {can.write && !JOURNAL_ONLY.includes(user?.role ?? '') && <Link to="/employees?new=1" className={cn(buttonStyles({ variant: 'primary', size: 'sm' }), 'h-8')}><Plus size={15} /><span className="hidden sm:inline">Янги ходим</span><span className="sr-only sm:hidden">Янги ходим</span></Link>}
             <span className="hidden h-6 w-px bg-slate-200 sm:block" aria-hidden />
             <Popover.Root>

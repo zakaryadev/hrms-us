@@ -29,12 +29,15 @@ import Timesheet from './pages/Timesheet';
 import JournalList from './pages/journal/JournalList';
 import JournalOrgs from './pages/journal/Orgs';
 import JournalReport from './pages/journal/Report';
+import JournalSettings from './pages/journal/Settings';
+import { ScriptProvider } from './lib/script';
 import HomeRedirect from './components/HomeRedirect';
 
 export default function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
+      <ScriptProvider>
       <Routes>
         <Route path="setup" element={<Setup />} />
         <Route path="login" element={<Login />} />
@@ -47,6 +50,7 @@ export default function App() {
           <Route path="journal/kb" element={<JournalList kindKey="kb" />} />
           <Route path="journal/orgs" element={<JournalOrgs />} />
           <Route path="journal/report" element={<JournalReport />} />
+          <Route path="journal/settings" element={<RequireAuth roles={['superadmin']}><JournalSettings /></RequireAuth>} />
           <Route path="employees" element={<Employees />} />
           <Route path="import" element={<RequireAuth roles={['superadmin', 'kadrlar']}><ImportPage /></RequireAuth>} />
           <Route path="archive" element={<Archive />} />
@@ -65,6 +69,7 @@ export default function App() {
           <Route path="employees/:id" element={<EmployeeProfile />} />
         </Route>
       </Routes>
+      </ScriptProvider>
       </AuthProvider>
     </BrowserRouter>
   );
