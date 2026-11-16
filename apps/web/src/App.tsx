@@ -26,6 +26,10 @@ import Templates from './pages/Templates';
 // Word муҳаррири (SuperDoc) оғир — фақат шу саҳифа очилганда юкланади
 const TemplateEditor = lazy(() => import('./pages/TemplateEditor'));
 import Timesheet from './pages/Timesheet';
+import JournalList from './pages/journal/JournalList';
+import JournalOrgs from './pages/journal/Orgs';
+import JournalReport from './pages/journal/Report';
+import HomeRedirect from './components/HomeRedirect';
 
 export default function App() {
   return (
@@ -36,7 +40,13 @@ export default function App() {
         <Route path="login" element={<Login />} />
         <Route element={<RequireAuth><Layout /></RequireAuth>}>
           <Route path="users" element={<RequireAuth roles={['superadmin']}><Users /></RequireAuth>} />
-          <Route index element={<Suspense fallback={<Loading rows={6} />}><Dashboard /></Suspense>} />
+          <Route index element={<HomeRedirect><Suspense fallback={<Loading rows={6} />}><Dashboard /></Suspense></HomeRedirect>} />
+          <Route path="journal" element={<JournalList kindKey="entries" />} />
+          <Route path="journal/tickets" element={<JournalList kindKey="tickets" />} />
+          <Route path="journal/trainings" element={<JournalList kindKey="trainings" />} />
+          <Route path="journal/kb" element={<JournalList kindKey="kb" />} />
+          <Route path="journal/orgs" element={<JournalOrgs />} />
+          <Route path="journal/report" element={<JournalReport />} />
           <Route path="employees" element={<Employees />} />
           <Route path="import" element={<RequireAuth roles={['superadmin', 'kadrlar']}><ImportPage /></RequireAuth>} />
           <Route path="archive" element={<Archive />} />

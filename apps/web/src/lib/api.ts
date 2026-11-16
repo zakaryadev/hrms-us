@@ -30,7 +30,7 @@ export const GENDER_LABEL: Record<string, string> = { erkak: 'Эркак', ayol:
 export const EMP_TYPE_LABEL: Record<string, string> = { shtat: 'Штат', gpx: 'ГПХ (шартнома)' };
 export const CONTRACT_LABEL: Record<string, string> = { muddatsiz: 'Муддатсиз', muddatli: 'Муддатли' };
 
-export const ROLE_LABEL: Record<string, string> = { superadmin: 'Суперадмин', kadrlar: 'Кадрлар ходими', buxgalter: 'Бухгалтер' };
+export const ROLE_LABEL: Record<string, string> = { superadmin: 'Суперадмин', kadrlar: 'Кадрлар ходими', buxgalter: 'Бухгалтер', operator: 'Журнал оператори', rahbar: 'Раҳбар' };
 
 export const photoSrc = (photoUrl?: string | null) => (photoUrl ? `/api/files/${photoUrl}` : null);
 export function uploadPhoto(employeeId: string, file: File) {

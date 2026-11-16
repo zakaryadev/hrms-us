@@ -4,12 +4,12 @@ import { Navigate } from 'react-router-dom';
 import { Loading } from '../components/ui';
 import { api } from '../lib/api';
 
-export interface Me { id: string; login: string; fullName: string; role: 'superadmin' | 'kadrlar' | 'buxgalter' }
+export interface Me { id: string; login: string; fullName: string; role: 'superadmin' | 'kadrlar' | 'buxgalter' | 'operator' | 'rahbar' }
 interface Ctx { user: Me | null; needsSetup: boolean; logout: () => Promise<void>; refresh: () => Promise<void> }
 const AuthCtx = createContext<Ctx>(null as any);
 export const useAuth = () => useContext(AuthCtx);
 /** Бухгалтер фақат кўради (табелдан ташқари); superadmin — созламалар, шаблон, журнал. */
-export const useCan = () => { const r = useAuth().user?.role; return { write: r !== 'buxgalter', admin: r === 'superadmin' }; };
+export const useCan = () => { const r = useAuth().user?.role; return { write: r !== 'buxgalter' && r !== 'operator' && r !== 'rahbar', admin: r === 'superadmin' }; };
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const qc = useQueryClient();

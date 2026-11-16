@@ -2,7 +2,7 @@ import * as Dialog from '@radix-ui/react-dialog';
 import * as Popover from '@radix-ui/react-popover';
 import { useQuery } from '@tanstack/react-query';
 import {
-  Archive, BookMarked, CalendarDays, CalendarRange, ChevronDown, ChevronLeft, FileSpreadsheet, FileText, KeyRound, LayoutDashboard, LogOut, Menu, Network, Palmtree, Plus, ScrollText, UserCog, Users, Wallet, FileType2, History, Languages,
+  Archive, BookMarked, CalendarDays, CalendarRange, ChevronDown, ChevronLeft, FileSpreadsheet, FileText, KeyRound, LayoutDashboard, LogOut, Menu, Network, Palmtree, Plus, ScrollText, UserCog, Users, Wallet, FileType2, History, Languages, NotebookPen, ClipboardList, GraduationCap, Building2, BarChart3, LifeBuoy,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
@@ -15,7 +15,16 @@ import { buttonStyles, cn } from './kit';
 type Item = { to: string; label: string; icon: typeof Users; end?: boolean; badge?: 'onLeave' };
 type Group = { id: string; label: string; items: Item[]; admin?: boolean };
 
+const JOURNAL_ONLY = ['operator', 'rahbar'];
 const GROUPS: Group[] = [
+  { id: 'journal', label: 'Журнал', items: [
+    { to: '/journal', label: 'Кундалик журнал', icon: NotebookPen, end: true },
+    { to: '/journal/tickets', label: 'Техник мурожаатлар', icon: LifeBuoy },
+    { to: '/journal/trainings', label: 'Ўқитиш', icon: GraduationCap },
+    { to: '/journal/kb', label: 'Билимлар базаси', icon: ClipboardList },
+    { to: '/journal/orgs', label: 'Ташкилотлар', icon: Building2 },
+    { to: '/journal/report', label: 'Ойлик ҳисобот', icon: BarChart3 },
+  ] },
   { id: 'main', label: 'Асосий', items: [{ to: '/', label: 'Бош саҳифа', icon: LayoutDashboard, end: true }] },
   { id: 'hr', label: 'Кадрлар', items: [
     { to: '/employees', label: 'Ходимлар', icon: Users },
@@ -63,14 +72,15 @@ function SidebarNav({ collapsed, onNavigate }: { collapsed: boolean; onNavigate?
   const { user } = useAuth();
   const isAdmin = user?.role === 'superadmin';
   const can = useCan();
-  const stats = useQuery({ queryKey: ['stats'], queryFn: () => api<any>('/dashboard/stats'), staleTime: 60_000 });
+  const journalOnly = JOURNAL_ONLY.includes(user?.role ?? '');
+  const stats = useQuery({ queryKey: ['stats'], queryFn: () => api<any>('/dashboard/stats'), staleTime: 60_000, enabled: !journalOnly });
   const [closed, setClosed] = useState<Record<string, boolean>>(() => store.get('nav-closed', {}));
   const toggle = (id: string) => setClosed((c) => { const n = { ...c, [id]: !c[id] }; store.set('nav-closed', n); return n; });
   const location = useLocation();
 
   return (
     <nav className="flex-1 space-y-3 overflow-y-auto px-3 py-4" aria-label="Асосий меню">
-      {GROUPS.map((g) => {
+      {GROUPS.filter((g) => !journalOnly || g.id === 'journal').map((g) => {
         const items = g.items.filter((i) => ((i.to !== '/users' && i.to !== '/audit') || isAdmin) && (i.to !== '/import' || can.write));
         if (!items.length) return null;
         // Фаол саҳифа ётган гуруҳ ҳеч қачон бекилмайди
@@ -168,7 +178,7 @@ export default function Layout() {
           <button type="button" aria-label="Менюни очиш" onClick={() => setDrawer(true)} className="rounded-md p-2 text-slate-600 hover:bg-slate-100 lg:hidden"><Menu size={20} /></button>
           <GlobalSearch />
           <div className="ml-auto flex items-center gap-3">
-            {can.write && <Link to="/employees?new=1" className={cn(buttonStyles({ variant: 'primary', size: 'sm' }), 'h-8')}><Plus size={15} /><span className="hidden sm:inline">Янги ходим</span><span className="sr-only sm:hidden">Янги ходим</span></Link>}
+            {can.write && !JOURNAL_ONLY.includes(user?.role ?? '') && <Link to="/employees?new=1" className={cn(buttonStyles({ variant: 'primary', size: 'sm' }), 'h-8')}><Plus size={15} /><span className="hidden sm:inline">Янги ходим</span><span className="sr-only sm:hidden">Янги ходим</span></Link>}
             <span className="hidden h-6 w-px bg-slate-200 sm:block" aria-hidden />
             <Popover.Root>
               <Popover.Trigger asChild>
