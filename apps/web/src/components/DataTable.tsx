@@ -56,6 +56,10 @@ interface Props<T> {
   defaultSort?: Sort;
   pageSizeOptions?: number[];
   initialPageSize?: number;
+  /** Қатор босилганда (ичидаги тугма/ҳаволалар `stopPropagation` қилиши керак) */
+  onRowClick?: (row: T) => void;
+  /** Жадвалнинг ўз матнлари (Қидирув, Устунлар, саҳифалаш…) учун таржимон; берилмаса — кириллда */
+  t?: (s: string) => string;
 }
 
 const store = {
@@ -73,7 +77,7 @@ function compare(a: unknown, b: unknown) {
 
 export default function DataTable<T>({
   columns, rows, rowKey, storageKey, loading, emptyText = 'Маълумот йўқ', searchPlaceholder = 'Қидириш…', actions, toolbar,
-  manual, defaultSort = null, pageSizeOptions = [10, 20, 50, 100], initialPageSize = 20,
+  manual, defaultSort = null, pageSizeOptions = [10, 20, 50, 100], initialPageSize = 20, onRowClick, t: tr = (s) => s,
 }: Props<T>) {
   const sk = `dt:${storageKey}`;
   const saved = useMemo(() => store.get<{ hidden?: string[]; pageSize?: number }>(sk, {}), [sk]);
@@ -150,23 +154,23 @@ export default function DataTable<T>({
     <div className="space-y-3">
       <div className="card flex flex-wrap items-center gap-3 p-3">
         <div className="min-w-[200px] flex-1">
-          <Input icon={<Search size={16} />} value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }} placeholder={searchPlaceholder} aria-label="Қидирув" />
+          <Input icon={<Search size={16} />} value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }} placeholder={tr(searchPlaceholder)} aria-label={tr('Қидирув')} />
         </div>
         {toolbar}
         <Popover.Root>
           <Popover.Trigger asChild>
-            <Button variant="secondary" type="button"><Columns3 size={16} /> Устунлар</Button>
+            <Button variant="secondary" type="button"><Columns3 size={16} /> {tr('Устунлар')}</Button>
           </Popover.Trigger>
           <Popover.Portal>
             <Popover.Content align="end" sideOffset={6} className="z-50 w-60 rounded-lg border border-slate-200 bg-white p-3 shadow-lg">
-              <p className="mb-2 text-xs font-medium uppercase tracking-wide text-slate-500">Кўринадиган устунлар</p>
+              <p className="mb-2 text-xs font-medium uppercase tracking-wide text-slate-500">{tr('Кўринадиган устунлар')}</p>
               <div className="space-y-2">
                 {columns.map((c) => (
                   <Checkbox key={c.key} checked={c.locked || !hidden.includes(c.key)} disabled={c.locked} onChange={(v) => toggleCol(c.key, v)}>{c.header}</Checkbox>
                 ))}
               </div>
               <button type="button" className="mt-3 text-xs text-slate-500 underline hover:text-slate-800"
-                onClick={() => { const h = columns.filter((c) => c.hidden).map((c) => c.key); setHidden(h); persist(h, curPageSize); }}>Бошланғич ҳолатга қайтариш</button>
+                onClick={() => { const h = columns.filter((c) => c.hidden).map((c) => c.key); setHidden(h); persist(h, curPageSize); }}>{tr('Бошланғич ҳолатга қайтариш')}</button>
             </Popover.Content>
           </Popover.Portal>
         </Popover.Root>
@@ -184,20 +188,20 @@ export default function DataTable<T>({
                     className={cn('th', c.align === 'right' && 'text-right', c.align === 'center' && 'text-center')} style={c.minWidth ? { minWidth: c.minWidth } : undefined}>
                     {sortable ? (
                       <button type="button" onClick={() => toggleSort(c)} className={cn('inline-flex items-center gap-1 rounded hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400/50', on && 'text-slate-900')}>
-                        {c.header}
+                        {tr(c.header)}
                         {on ? (activeSort!.dir === 'asc' ? <ArrowUp size={13} /> : <ArrowDown size={13} />) : <ArrowUpDown size={13} className="opacity-40" />}
                       </button>
-                    ) : c.header}
+                    ) : tr(c.header)}
                   </th>
                 );
               })}
-              {actions && <th scope="col" className="th bg-white text-right md:sticky md:right-0 md:shadow-[-8px_0_8px_-8px_rgba(0,0,0,0.12)]">Амаллар</th>}
+              {actions && <th scope="col" className="th bg-white text-right md:sticky md:right-0 md:shadow-[-8px_0_8px_-8px_rgba(0,0,0,0.12)]">{tr('Амаллар')}</th>}
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
-            {loading && <tr><td colSpan={visible.length + (actions ? 1 : 0)} className="td py-10 text-center text-slate-500">Юкланмоқда…</td></tr>}
+            {loading && <tr><td colSpan={visible.length + (actions ? 1 : 0)} className="td py-10 text-center text-slate-500">{tr('Юкланмоқда…')}</td></tr>}
             {!loading && shown.map((r) => (
-              <tr key={rowKey(r)} className="group hover:bg-slate-50">
+              <tr key={rowKey(r)} onClick={onRowClick ? () => onRowClick(r) : undefined} className={cn('group hover:bg-slate-50', onRowClick && 'cursor-pointer')}>
                 {visible.map((c) => (
                   <td key={c.key} className={cn('td', c.nowrap && 'whitespace-nowrap', c.align === 'right' && 'text-right', c.align === 'center' && 'text-center', c.className)}
                     style={c.minWidth ? { minWidth: c.minWidth } : undefined}>
@@ -208,25 +212,25 @@ export default function DataTable<T>({
               </tr>
             ))}
             {!loading && shown.length === 0 && (
-              <tr><td colSpan={visible.length + (actions ? 1 : 0)} className="td py-10 text-center text-slate-500">{(manual ? manual.search : search.trim()) ? 'Ҳеч нарса топилмади' : emptyText}</td></tr>
+              <tr><td colSpan={visible.length + (actions ? 1 : 0)} className="td py-10 text-center text-slate-500">{(manual ? manual.search : search.trim()) ? tr('Ҳеч нарса топилмади') : tr(emptyText)}</td></tr>
             )}
           </tbody>
         </table>
       </div>
 
       <div className="flex flex-wrap items-center justify-between gap-3 text-sm text-slate-500">
-        <span>{total === 0 ? 'Жами: 0' : `${from}–${to} / жами: ${total}`}</span>
+        <span>{total === 0 ? `${tr('Жами')}: 0` : `${from}–${to} / ${tr('жами')}: ${total}`}</span>
         <div className="flex flex-wrap items-center gap-3">
           <label className="flex items-center gap-2">
-            Саҳифада
+            {tr('Саҳифада')}
             <Select plain className="!w-auto" value={String(curPageSize)} onChange={(v) => changeSize(Number(v))}>
               {[...new Set([...pageSizeOptions, curPageSize])].sort((a, b) => a - b).map((n) => <option key={n} value={String(n)}>{n}</option>)}
             </Select>
           </label>
           <div className="flex items-center gap-2">
-            <Button variant="secondary" disabled={cur <= 1} onClick={() => goPage(cur - 1)}>Олдинги</Button>
+            <Button variant="secondary" disabled={cur <= 1} onClick={() => goPage(cur - 1)}>{tr('Олдинги')}</Button>
             <span className="whitespace-nowrap">{cur} / {pages}</span>
-            <Button variant="secondary" disabled={cur >= pages} onClick={() => goPage(cur + 1)}>Кейинги</Button>
+            <Button variant="secondary" disabled={cur >= pages} onClick={() => goPage(cur + 1)}>{tr('Кейинги')}</Button>
           </div>
         </div>
       </div>

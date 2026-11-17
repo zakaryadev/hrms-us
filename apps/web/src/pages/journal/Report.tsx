@@ -9,6 +9,7 @@ import { fmtD, fmtMin, MONTHS, TICKET_STATUS, todayIso } from './labels';
 import { useL } from './hooks';
 import { useJournalLinks } from './JournalShell';
 import type { OptionRef, Report as ReportData } from './types';
+import { MonthFilter } from './ui/MonthFilter';
 import { StatusChip } from './ui/StatusMenu';
 
 function Bars({ title, rows }: { title: string; rows: Array<{ label: string; count: number }> }) {
@@ -46,7 +47,7 @@ export default function Report() {
     <div>
       <div className="hidden print:block"><h1 className="mb-4 text-xl font-bold">{t('ОЙЛИК ФАОЛИЯТ ҲИСОБОТИ')} — {t(MONTHS[+mm - 1])} {y}</h1></div>
       <div className="print:hidden"><PageHeader title={t('Ойлик ҳисобот')} hint={t('Кўрсаткичлар журналлардаги маълумотлардан ва ҳолатлар тарихидан автоматик ҳисобланади — кейинги ўзгартиришлар ўтган ой натижасини бузмайди.')}>
-        <input type="month" value={month} onChange={(e) => e.target.value && setMonth(e.target.value)} className="h-9 rounded-md border border-slate-200 bg-white px-2 text-sm" aria-label={t('Ой')} />
+        <MonthFilter value={month} onChange={(m) => m && setMonth(m)} required />
         <Select value={scope} onChange={(v) => setScope(v as 'dept' | 'me')} className="w-[170px]" options={[{ value: 'dept', label: t('Бутун бўлим') }, { value: 'me', label: t('Фақат мен') }]} />
         <Button variant="secondary" onClick={() => window.print()}><Printer size={16} />{t('Чоп этиш / PDF')}</Button>
       </PageHeader></div>

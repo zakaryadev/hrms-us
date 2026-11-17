@@ -1,8 +1,7 @@
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { Pencil, Search, Trash2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
-import { Input } from '../../components/kit';
-import { Button } from '../../components/kit';
+import { Button, Checkbox, Input } from '../../components/kit';
 import { Empty, ErrorNote, Loading, PageHeader } from '../../components/ui';
 import { api } from '../../lib/api';
 import { useT } from '../../lib/script';
@@ -11,8 +10,7 @@ import { useJournalWrite, useL, useRefresh } from './hooks';
 import { useJournalLinks } from './JournalShell';
 import type { Entry, EntryList } from './types';
 import { EntryComposer } from './ui/EntryComposer';
-
-const selCls = 'h-9 rounded-md border border-slate-200 bg-white px-2 text-sm shadow-sm focus:outline-none focus:ring-[3px] focus:ring-slate-400/40';
+import { MonthFilter } from './ui/MonthFilter';
 
 /** Кундалик журнал: тез киритиш + кунлар бўйича гуруҳланган рўйхат (ҳар кунга иш сони ва жами вақт) */
 export default function Entries() {
@@ -36,8 +34,8 @@ export default function Entries() {
       {write && <EntryComposer editing={editing} onDone={() => setEditing(null)} />}
       <div className="flex flex-wrap items-center gap-2">
         <div className="relative min-w-[240px] flex-1 sm:max-w-sm"><Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" /><Input className="pl-9" translit={false} placeholder={t('Қидириш…')} value={q} onChange={(e) => setQ(e.target.value)} /></div>
-        <input type="month" className={selCls} value={month} onChange={(e) => setMonth(e.target.value)} aria-label={t('Ой')} />
-        <label className="flex items-center gap-2 text-sm text-slate-600"><input type="checkbox" checked={mine} onChange={(e) => setMine(e.target.checked)} />{t('Фақат меники')}</label>
+        <MonthFilter value={month} onChange={setMonth} />
+        <Checkbox checked={mine} onChange={setMine}>{t('Фақат меники')}</Checkbox>
         {list.data && <span className="ml-auto text-sm text-slate-500">{list.data.total} {t('та ёзув')}{list.data.minutes > 0 && ` · ${t(fmtMin(list.data.minutes))}`}</span>}
       </div>
       <ErrorNote error={list.error ?? del.error} />

@@ -9,7 +9,7 @@ import { dayNum, durationMin, iso, normKey, OPTION_SELECT, optionRef, todayIso, 
 
 export interface ListQuery {
   q?: string; month?: string; status?: string; orgId?: string; ticketId?: string; mine?: string; open?: string;
-  page?: string; pageSize?: string;
+  page?: string; pageSize?: string; sortBy?: string; sortDir?: string;
 }
 const MONTH = /^\d{4}-(0[1-9]|1[0-2])$/;
 const ORG_REF = { select: { id: true, name: true, region: true } } as const;
@@ -26,6 +26,13 @@ const paging = (q: ListQuery) => {
   const pageSize = Math.min(Math.max(Number(q.pageSize) || 50, 1), 200);
   return { page, pageSize, skip: (page - 1) * pageSize, take: pageSize };
 };
+/** Тартиблаш: рухсат этилган калитлар рўйхати (`map`), номаълум калит — `fallback`; ҳар доим id билан барқарорлаштирилади. */
+function orderOf<T extends object>(q: ListQuery, map: Record<string, (d: 'asc' | 'desc') => T>, fallback: T[]): T[] {
+  const d = q.sortDir === 'desc' ? 'desc' : 'asc';
+  // hasOwn: `__proto__`/`constructor` каби калитлар прототипдан функция олиб келмаслиги учун
+  const f = q.sortBy && Object.hasOwn(map, q.sortBy) ? map[q.sortBy] : undefined;
+  return f ? [f(d)] : fallback;
+}
 const statusOf = (s?: string): TicketStatus | undefined => (Object.values(TicketStatus) as string[]).includes(s ?? '') ? (s as TicketStatus) : undefined;
 const nullableDate = (v: string | null | undefined) => (v ? toDate(v) : null);
 const isUnique = (e: unknown) => (e as { code?: string })?.code === 'P2002';
@@ -163,7 +170,10 @@ export class JournalService {
     const base = this.ticketWhere(q, user), status = statusOf(q.status);
     const where: Prisma.JournalTicketWhereInput = status ? { ...base, status } : base;
     const [rows, total, grouped] = await this.prisma.$transaction([
-      this.prisma.journalTicket.findMany({ where, skip, take, orderBy: [{ received: 'desc' }, { createdAt: 'desc' }], include: ticketInclude }),
+      this.prisma.journalTicket.findMany({ where, skip, take, include: ticketInclude, orderBy: [...orderOf<Prisma.JournalTicketOrderByWithRelationInput>(q, {
+        code: (d) => ({ code: d }), received: (d) => ({ received: d }), org: (d) => ({ org: { name: d } }), category: (d) => ({ category: { labelLat: d } }),
+        priority: (d) => ({ priority: { sort: d } }), status: (d) => ({ status: d }), resolved: (d) => ({ resolvedAt: d }),
+      }, [{ received: 'desc' }, { createdAt: 'desc' }]), { id: 'asc' }] }),
       this.prisma.journalTicket.count({ where }),
       this.prisma.journalTicket.groupBy({ by: ['status'], where: base, _count: true, orderBy: { status: 'asc' } }),
     ]);
@@ -312,7 +322,10 @@ export class JournalService {
       ...(q.mine === 'true' && { createdById: user.id }), ...this.contains(q.q, ['topic', 'trainer', 'result']),
     };
     const [rows, total, users] = await this.prisma.$transaction([
-      this.prisma.journalTraining.findMany({ where, skip, take, orderBy: [{ date: 'desc' }, { createdAt: 'desc' }], include: trainingInclude }),
+      this.prisma.journalTraining.findMany({ where, skip, take, include: trainingInclude, orderBy: [...orderOf<Prisma.JournalTrainingOrderByWithRelationInput>(q, {
+        date: (d) => ({ date: d }), org: (d) => ({ org: { name: d } }), topic: (d) => ({ topic: d }), format: (d) => ({ format: { labelLat: d } }),
+        count: (d) => ({ count: d }), trainer: (d) => ({ trainer: d }),
+      }, [{ date: 'desc' }, { createdAt: 'desc' }]), { id: 'asc' }] }),
       this.prisma.journalTraining.count({ where }),
       this.prisma.journalTraining.aggregate({ where, _sum: { count: true } }),
     ]);
@@ -345,7 +358,10 @@ export class JournalService {
       ...(q.mine === 'true' && { createdById: user.id }), ...this.contains(q.q, ['code', 'question', 'solution']),
     };
     const [rows, total] = await this.prisma.$transaction([
-      this.prisma.journalKb.findMany({ where, skip, take, orderBy: [{ created: 'desc' }, { createdAt: 'desc' }], include: kbInclude }),
+      this.prisma.journalKb.findMany({ where, skip, take, include: kbInclude, orderBy: [...orderOf<Prisma.JournalKbOrderByWithRelationInput>(q, {
+        code: (d) => ({ code: d }), created: (d) => ({ created: d }), category: (d) => ({ category: { labelLat: d } }), type: (d) => ({ type: { labelLat: d } }),
+        status: (d) => ({ status: d }), version: (d) => ({ version: d }),
+      }, [{ created: 'desc' }, { createdAt: 'desc' }]), { id: 'asc' }] }),
       this.prisma.journalKb.count({ where }),
     ]);
     return { items: rows.map((r) => this.kbOut(r)), total, page, pageSize };

@@ -114,6 +114,16 @@ describe('Ijro jurnali (e2e)', () => {
     expect((await op.get('/api/journal/tickets?open=true').expect(200)).body.total).toBe(5);
   });
 
+  it('tartiblash: ruxsat etilgan ustunlar bo\'yicha, noma\'lum ustun e\'tiborsiz', async () => {
+    const codes = (q: string) => op.get('/api/journal/tickets?pageSize=3&' + q).expect(200).then((r) => r.body.items.map((t: { code: string }) => t.code));
+    const asc = await codes('sortBy=code&sortDir=asc'), desc = await codes('sortBy=code&sortDir=desc');
+    expect(asc).toEqual([...asc].sort());
+    expect(desc).toEqual([...desc].sort().reverse());
+    await codes('sortBy=__proto__&sortDir=desc');                       // noma'lum kalit — xato bermaydi
+    await op.get('/api/journal/kb?sortBy=status').expect(200);
+    await op.get('/api/journal/trainings?sortBy=org&sortDir=desc').expect(200);
+  });
+
   it('kundalik ish: davomiylik (yarim tundan o\'tganda), murojaatdan tashkilot, kun/vaqt jami', async () => {
     const e = (await op.post('/api/journal/entries').send({ date: day(0), start: '23:00', end: '01:30', typeId: pick('work_type', 'Texnik yordam'), ticketId, done: 'Sozlandi' }).expect(201)).body;
     expect(e.durationMin).toBe(150);
