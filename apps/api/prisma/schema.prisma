@@ -244,6 +244,7 @@ model User {
   journalEntries   JournalEntry[]
   journalTrainings JournalTraining[]
   journalKb        JournalKb[]
+  journalEvents    JournalTicketEvent[]
 
   @@map("users")
 }
@@ -279,15 +280,67 @@ model AuditLog {
 
 // ───────── Ижро журнали (техник ёрдам фаолияти) ─────────
 
+enum JournalOptionKind {
+  work_type
+  channel
+  priority
+  client_group
+  training_format
+  category
+  kb_type
+}
+
+/// Мурожаат ҳолати. «Ёпиқ» ҳолатлар: resolved, cancelled (қаранг journal.constants.ts) — номи эмас, шу қиймат ҳисобга таянади.
+enum TicketStatus {
+  registered
+  in_progress
+  forwarded
+  resolved
+  cancelled
+}
+
+enum KbStatus {
+  draft
+  active
+  needs_update
+  archived
+}
+
+/// Журналнинг очиладиган рўйхатлари (иш тури, канал, устуворлик, мижозлар гуруҳи, формат, категория, материал тури).
+/// Ёзувлар номга эмас, id га боғланади — номни ўзгартириш ҳеч нарсани бузмайди. labelCyr бўш бўлса, labelLat дан ўгирилади.
+model JournalOption {
+  id       String            @id @default(uuid())
+  kind     JournalOptionKind
+  labelLat String            @map("label_lat")
+  labelCyr String?           @map("label_cyr")
+  sort     Int               @default(0)
+  active   Boolean           @default(true)
+
+  orgs               JournalOrg[]      @relation("OrgGroup")
+  ticketsByCategory  JournalTicket[]   @relation("TicketCategory")
+  ticketsByChannel   JournalTicket[]   @relation("TicketChannel")
+  ticketsByPriority  JournalTicket[]   @relation("TicketPriority")
+  entriesByType      JournalEntry[]    @relation("EntryType")
+  entriesByChannel   JournalEntry[]    @relation("EntryChannel")
+  trainingsByFormat  JournalTraining[] @relation("TrainingFormat")
+  kbByCategory       JournalKb[]       @relation("KbCategory")
+  kbByType           JournalKb[]       @relation("KbType")
+
+  @@unique([kind, labelLat])
+  @@index([kind, sort])
+  @@map("journal_options")
+}
+
 /// Ташкилотлар ягона рўйхати; қолган журналлар шунга боғланади. nameKey — дубликатларни аниқлаш учун нормаллаштирилган ном.
 model JournalOrg {
-  id        String   @id @default(uuid())
+  id        String         @id @default(uuid())
   name      String
-  nameKey   String   @unique @map("name_key")
-  region    String   @default("")
-  group     String   @default("")
-  note      String   @default("")
-  createdAt DateTime @default(now()) @map("created_at")
+  nameKey   String         @unique @map("name_key")
+  region    String         @default("")
+  groupId   String?        @map("group_id")
+  group     JournalOption? @relation("OrgGroup", fields: [groupId], references: [id], onDelete: SetNull)
+  note      String         @default("")
+  createdAt DateTime       @default(now()) @map("created_at")
 
   tickets   JournalTicket[]
   entries   JournalEntry[]
@@ -296,38 +349,57 @@ model JournalOrg {
   @@map("journal_orgs")
 }
 
-/// Техник мурожаатлар — марказий ёзув. Холат қийматлари `journal.constants.ts` даги рўйхатдан (ўзгартириладиган).
+/// Техник мурожаатлар — марказий ёзув. Ҳолат ўзгаришлари `JournalTicketEvent` да сақланади.
 model JournalTicket {
-  id          String      @id @default(uuid())
-  code        String      @unique
-  received    DateTime    @db.Date
-  orgId       String?     @map("org_id")
-  org         JournalOrg? @relation(fields: [orgId], references: [id], onDelete: SetNull)
-  group       String      @default("")
-  person      String      @default("")
-  channel     String      @default("")
-  category    String      @default("")
-  priority    String      @default("")
+  id          String         @id @default(uuid())
+  code        String         @unique
+  received    DateTime       @db.Date
+  orgId       String?        @map("org_id")
+  org         JournalOrg?    @relation(fields: [orgId], references: [id], onDelete: SetNull)
+  person      String         @default("")
+  channelId   String?        @map("channel_id")
+  channel     JournalOption? @relation("TicketChannel", fields: [channelId], references: [id], onDelete: SetNull)
+  categoryId  String?        @map("category_id")
+  category    JournalOption? @relation("TicketCategory", fields: [categoryId], references: [id], onDelete: SetNull)
+  priorityId  String?        @map("priority_id")
+  priority    JournalOption? @relation("TicketPriority", fields: [priorityId], references: [id], onDelete: SetNull)
   problem     String
-  actions     String      @default("")
-  dept        String      @default("")
-  status      String      @default("Yangi")
-  resolved    DateTime?   @db.Date
-  replied     Boolean?
-  note        String      @default("")
-  createdById String?     @map("created_by_id")
-  createdBy   User?       @relation(fields: [createdById], references: [id], onDelete: SetNull)
-  createdAt   DateTime    @default(now()) @map("created_at")
-  updatedAt   DateTime    @updatedAt @map("updated_at")
+  actions     String         @default("")
+  dept        String         @default("")
+  status      TicketStatus   @default(registered)
+  /// Охирги марта «Ҳал қилинди» бўлган сана (ҳолат ўзгарганда автоматик)
+  resolvedAt  DateTime?      @map("resolved_at") @db.Date
+  note        String         @default("")
+  createdById String?        @map("created_by_id")
+  createdBy   User?          @relation(fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt   DateTime       @default(now()) @map("created_at")
+  updatedAt   DateTime       @updatedAt @map("updated_at")
 
   entries   JournalEntry[]
   kb        JournalKb[]
   trainings JournalTraining[]
+  events    JournalTicketEvent[]
 
   @@index([received])
   @@index([status])
   @@index([orgId])
   @@map("journal_tickets")
+}
+
+/// Мурожаат ҳолатлари тарихи: ўтган ой ҳисоботи кейинги ўзгаришлардан бузилмаслиги учун.
+model JournalTicketEvent {
+  id       String        @id @default(uuid())
+  ticketId String        @map("ticket_id")
+  ticket   JournalTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  status   TicketStatus
+  at       DateTime      @default(now())
+  byId     String?       @map("by_id")
+  by       User?         @relation(fields: [byId], references: [id], onDelete: SetNull)
+  note     String        @default("")
+
+  @@index([ticketId, at])
+  @@index([at])
+  @@map("journal_ticket_events")
 }
 
 /// Кундалик журнал: ҳар бир бажарилган иш. start/end — "HH:mm".
@@ -336,20 +408,17 @@ model JournalEntry {
   date        DateTime       @db.Date
   start       String         @default("")
   end         String         @default("")
-  type        String
+  typeId      String?        @map("type_id")
+  type        JournalOption? @relation("EntryType", fields: [typeId], references: [id], onDelete: SetNull)
   orgId       String?        @map("org_id")
   org         JournalOrg?    @relation(fields: [orgId], references: [id], onDelete: SetNull)
   ticketId    String?        @map("ticket_id")
   ticket      JournalTicket? @relation(fields: [ticketId], references: [id], onDelete: SetNull)
   person      String         @default("")
-  channel     String         @default("")
-  content     String         @default("")
+  channelId   String?        @map("channel_id")
+  channel     JournalOption? @relation("EntryChannel", fields: [channelId], references: [id], onDelete: SetNull)
   done        String         @default("")
   result      String         @default("")
-  status      String         @default("")
-  next        String         @default("")
-  partner     String         @default("")
-  note        String         @default("")
   createdById String?        @map("created_by_id")
   createdBy   User?          @relation(fields: [createdById], references: [id], onDelete: SetNull)
   createdAt   DateTime       @default(now()) @map("created_at")
@@ -367,7 +436,8 @@ model JournalTraining {
   orgId       String?        @map("org_id")
   org         JournalOrg?    @relation(fields: [orgId], references: [id], onDelete: SetNull)
   topic       String
-  format      String         @default("")
+  formatId    String?        @map("format_id")
+  format      JournalOption? @relation("TrainingFormat", fields: [formatId], references: [id], onDelete: SetNull)
   count       Int            @default(0)
   ticketId    String?        @map("ticket_id")
   ticket      JournalTicket? @relation(fields: [ticketId], references: [id], onDelete: SetNull)
@@ -389,15 +459,17 @@ model JournalKb {
   id          String         @id @default(uuid())
   code        String         @unique
   created     DateTime       @db.Date
-  category    String         @default("")
-  type        String         @default("")
+  categoryId  String?        @map("category_id")
+  category    JournalOption? @relation("KbCategory", fields: [categoryId], references: [id], onDelete: SetNull)
+  typeId      String?        @map("type_id")
+  type        JournalOption? @relation("KbType", fields: [typeId], references: [id], onDelete: SetNull)
   question    String
   solution    String         @default("")
   ticketId    String?        @map("ticket_id")
   ticket      JournalTicket? @relation(fields: [ticketId], references: [id], onDelete: SetNull)
   link        String         @default("")
   version     String         @default("1.0")
-  status      String         @default("Loyiha")
+  status      KbStatus       @default(draft)
   review      DateTime?      @db.Date
   createdById String?        @map("created_by_id")
   createdBy   User?          @relation(fields: [createdById], references: [id], onDelete: SetNull)

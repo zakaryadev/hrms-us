@@ -1,28 +1,38 @@
-import { Body, Controller, Delete, Get, Param, ParseUUIDPipe, Patch, Post, Query } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpCode, Param, ParseUUIDPipe, Patch, Post, Put, Query } from '@nestjs/common';
 import { PartialType } from '@nestjs/mapped-types';
 import { CurrentUser, Roles, type AuthUser } from '../auth/decorators';
-import { EntryDto, JournalSettingsDto, KbDto, MergeOrgDto, OrgDto, OrgUpdateDto, TicketDto, TrainingDto } from './journal.dto';
+import { JournalOptionsService } from './journal-options.service';
+import { JournalReportService } from './journal-report.service';
+import {
+  EntryDto, KbDto, MergeOrgDto, OptionDto, OptionReorderDto, OptionUpdateDto, OrgDto, SettingsDto, TicketDto, TicketStatusDto, TrainingDto,
+} from './journal.dto';
 import { JournalService, type ListQuery } from './journal.service';
 
 class TicketUpdateDto extends PartialType(TicketDto) {}
 class EntryUpdateDto extends PartialType(EntryDto) {}
 class TrainingUpdateDto extends PartialType(TrainingDto) {}
 class KbUpdateDto extends PartialType(KbDto) {}
+class OrgUpdateDto extends PartialType(OrgDto) {}
 
 /**
- * Рухсатлар (AuthGuard'да): ёзиш — фақат superadmin/operator; ўқиш — superadmin, kadrlar, buxgalter, operator, rahbar.
- * Рўйхатларни (settings) ўзгартириш — фақат superadmin.
- * Ҳисоботда `scope=me` — фақат жорий ходим, акс ҳолда бутун бўлим.
+ * Рухсатлар (AuthGuard'да): ёзиш — фақат superadmin/operator; ўқиш — барча ролларга.
+ * Рўйхатлар ва меъёрни ўзгартириш — фақат superadmin.
  */
 @Controller('journal')
 export class JournalController {
-  constructor(private svc: JournalService) {}
+  constructor(private svc: JournalService, private options: JournalOptionsService, private reports: JournalReportService) {}
 
-  @Get('settings') settings() { return this.svc.getSettings(); }
-  @Roles('superadmin') @Patch('settings') updateSettings(@Body() dto: JournalSettingsDto) { return this.svc.updateSettings(dto); }
+  /** Рўйхатлар (иш тури, канал…) ва меъёр — барча формалар учун бир сўровда */
+  @Get('meta') meta() { return this.svc.meta(); }
+  @Roles('superadmin') @Patch('settings') settings(@Body() dto: SettingsDto) { return this.svc.setNormDays(dto.normDays); }
+
+  @Roles('superadmin') @Post('options') createOption(@Body() dto: OptionDto) { return this.options.create(dto); }
+  @Roles('superadmin') @Put('options/order') @HttpCode(204) reorder(@Body() dto: OptionReorderDto) { return this.options.reorder(dto.kind, dto.ids); }
+  @Roles('superadmin') @Patch('options/:id') updateOption(@Param('id', ParseUUIDPipe) id: string, @Body() dto: OptionUpdateDto) { return this.options.update(id, dto); }
+  @Roles('superadmin') @Delete('options/:id') @HttpCode(204) removeOption(@Param('id', ParseUUIDPipe) id: string) { return this.options.remove(id); }
 
   @Get('report') report(@Query('month') month: string, @Query('scope') scope: string | undefined, @CurrentUser() u: AuthUser) {
-    return this.svc.report(month, scope === 'me' ? u.id : undefined);
+    return this.reports.report(month, scope === 'me' ? u.id : undefined);
   }
 
   // Ташкилотлар
@@ -38,6 +48,7 @@ export class JournalController {
   @Get('tickets/:id') ticket(@Param('id', ParseUUIDPipe) id: string) { return this.svc.getTicket(id); }
   @Post('tickets') createTicket(@Body() dto: TicketDto, @CurrentUser() u: AuthUser) { return this.svc.createTicket(dto, u); }
   @Patch('tickets/:id') updateTicket(@Param('id', ParseUUIDPipe) id: string, @Body() dto: TicketUpdateDto) { return this.svc.updateTicket(id, dto); }
+  @Post('tickets/:id/status') @HttpCode(200) setStatus(@Param('id', ParseUUIDPipe) id: string, @Body() dto: TicketStatusDto, @CurrentUser() u: AuthUser) { return this.svc.setTicketStatus(id, dto, u); }
   @Delete('tickets/:id') removeTicket(@Param('id', ParseUUIDPipe) id: string) { return this.svc.removeTicket(id); }
 
   // Кундалик журнал

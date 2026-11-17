@@ -1,23 +1,24 @@
 import { useQuery } from '@tanstack/react-query';
 import { Search } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { api } from '../../lib/api';
 import { useT } from '../../lib/script';
+import { useJournalLinks } from './JournalShell';
+import type { Org, Page, Ticket } from './types';
 
-/** Журнал қидируви: мурожаат (ID, муаммо, ташкилот) ва ташкилот бўйича. Ctrl/⌘ + K — фокус. */
+/** Журнал қидируви: мурожаат (ID, муаммо, ташкилот) ва ташкилот бўйича. Танланса — тафсилот панели очилади. Ctrl/⌘ + K — фокус. */
 export default function JournalSearch() {
-  const nav = useNavigate(), t = useT(), ref = useRef<HTMLInputElement>(null);
+  const t = useT(), ref = useRef<HTMLInputElement>(null), { openTicket, openOrg } = useJournalLinks();
   const [q, setQ] = useState(''), [d, setD] = useState(''), [open, setOpen] = useState(false);
   useEffect(() => { const x = setTimeout(() => setD(q.trim()), 200); return () => clearTimeout(x); }, [q]);
   useEffect(() => {
     const k = (e: KeyboardEvent) => { if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); ref.current?.focus(); } };
     document.addEventListener('keydown', k); return () => document.removeEventListener('keydown', k);
   }, []);
-  const tickets = useQuery({ queryKey: ['j-search-t', d], enabled: !!d, queryFn: () => api<any>(`/journal/tickets?pageSize=5&q=${encodeURIComponent(d)}`) });
-  const orgs = useQuery({ queryKey: ['j-search-o', d], enabled: !!d, queryFn: () => api<any[]>(`/journal/orgs?q=${encodeURIComponent(d)}`) });
-  const T: any[] = d ? tickets.data?.items ?? [] : [], O: any[] = d ? (orgs.data ?? []).slice(0, 5) : [];
-  const go = (to: string) => { setOpen(false); setQ(''); ref.current?.blur(); nav(to); };
+  const tickets = useQuery({ queryKey: ['j', 'search-t', d], enabled: !!d, queryFn: () => api<Page<Ticket>>(`/journal/tickets?pageSize=5&q=${encodeURIComponent(d)}`) });
+  const orgs = useQuery({ queryKey: ['j', 'search-o', d], enabled: !!d, queryFn: () => api<Org[]>(`/journal/orgs?q=${encodeURIComponent(d)}`) });
+  const T = d ? tickets.data?.items ?? [] : [], O = d ? (orgs.data ?? []).slice(0, 5) : [];
+  const pick = (fn: () => void) => { fn(); setOpen(false); setQ(''); ref.current?.blur(); };
   return (
     <div className="relative w-full max-w-[360px]">
       <Search size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
@@ -29,14 +30,13 @@ export default function JournalSearch() {
       {open && d && (
         <div className="absolute left-0 right-0 top-12 z-50 max-h-96 overflow-y-auto rounded-lg border border-slate-200 bg-white p-1 shadow-md">
           {T.length > 0 && <p className="eyebrow px-2.5 pb-1 pt-2">{t('Мурожаатлар')}</p>}
-          {T.map((x) => <button key={x.id} type="button" onMouseDown={(e) => { e.preventDefault(); go(`/journal/tickets?open=${x.id}`); }} className="block w-full rounded-md px-2.5 py-2 text-left hover:bg-slate-100">
+          {T.map((x) => <button key={x.id} type="button" onMouseDown={(e) => { e.preventDefault(); pick(() => openTicket(x.id)); }} className="block w-full rounded-md px-2.5 py-2 text-left hover:bg-slate-100">
             <span className="text-sm font-medium">{x.code}</span><span className="block truncate text-xs text-slate-500">{x.org?.name ? x.org.name + ' · ' : ''}{x.problem}</span></button>)}
           {O.length > 0 && <p className="eyebrow px-2.5 pb-1 pt-2">{t('Ташкилотлар')}</p>}
-          {O.map((x) => <button key={x.id} type="button" onMouseDown={(e) => { e.preventDefault(); go(`/journal/orgs?open=${x.id}`); }} className="block w-full rounded-md px-2.5 py-2 text-left hover:bg-slate-100">
-            <span className="text-sm font-medium">{x.name}</span>{x.region && <span className="block text-xs text-slate-500">{t(x.region)}</span>}</button>)}
+          {O.map((x) => <button key={x.id} type="button" onMouseDown={(e) => { e.preventDefault(); pick(() => openOrg(x.id)); }} className="block w-full rounded-md px-2.5 py-2 text-left hover:bg-slate-100">
+            <span className="text-sm font-medium">{x.name}</span>{x.region && <span className="block text-xs text-slate-500">{x.region}</span>}</button>)}
           {!tickets.isLoading && !orgs.isLoading && T.length + O.length === 0 && <p className="px-3 py-3 text-sm text-slate-500">{t('Ҳеч нарса топилмади')}</p>}
-        </div>
-      )}
+        </div>)}
     </div>
   );
 }

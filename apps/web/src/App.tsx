@@ -26,7 +26,11 @@ import Templates from './pages/Templates';
 // Word муҳаррири (SuperDoc) оғир — фақат шу саҳифа очилганда юкланади
 const TemplateEditor = lazy(() => import('./pages/TemplateEditor'));
 import Timesheet from './pages/Timesheet';
-import JournalList from './pages/journal/JournalList';
+import JournalShell from './pages/journal/JournalShell';
+import JournalEntries from './pages/journal/Entries';
+import JournalTickets from './pages/journal/Tickets';
+import JournalTrainings from './pages/journal/Trainings';
+import JournalKb from './pages/journal/Kb';
 import JournalOrgs from './pages/journal/Orgs';
 import JournalReport from './pages/journal/Report';
 import JournalSettings from './pages/journal/Settings';
@@ -44,13 +48,15 @@ export default function App() {
         <Route element={<RequireAuth><Layout /></RequireAuth>}>
           <Route path="users" element={<RequireAuth roles={['superadmin']}><Users /></RequireAuth>} />
           <Route index element={<HomeRedirect><Suspense fallback={<Loading rows={6} />}><Dashboard /></Suspense></HomeRedirect>} />
-          <Route path="journal" element={<JournalList kindKey="entries" />} />
-          <Route path="journal/tickets" element={<JournalList kindKey="tickets" />} />
-          <Route path="journal/trainings" element={<JournalList kindKey="trainings" />} />
-          <Route path="journal/kb" element={<JournalList kindKey="kb" />} />
-          <Route path="journal/orgs" element={<JournalOrgs />} />
-          <Route path="journal/report" element={<JournalReport />} />
-          <Route path="journal/settings" element={<RequireAuth roles={['superadmin']}><JournalSettings /></RequireAuth>} />
+          <Route path="journal" element={<JournalShell />}>
+            <Route index element={<JournalEntries />} />
+            <Route path="tickets" element={<JournalTickets />} />
+            <Route path="trainings" element={<JournalTrainings />} />
+            <Route path="kb" element={<JournalKb />} />
+            <Route path="orgs" element={<JournalOrgs />} />
+            <Route path="report" element={<JournalReport />} />
+            <Route path="settings" element={<RequireAuth roles={['superadmin']}><JournalSettings /></RequireAuth>} />
+          </Route>
           <Route path="employees" element={<Employees />} />
           <Route path="import" element={<RequireAuth roles={['superadmin', 'kadrlar']}><ImportPage /></RequireAuth>} />
           <Route path="archive" element={<Archive />} />
